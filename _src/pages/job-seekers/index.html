@@ -1,0 +1,55 @@
+<!--{"title":"お仕事をお探しの方","section":"contact","hero":{"en":"Entry","ja":"お仕事をお探しの方","img":"hero-contact.jpg","crumbs":[["contact/","お問い合わせ"]]}}-->
+<section class="section">
+  <div class="container">
+    <div class="lead-block fade mb-48">
+      <p>掲載中のお仕事に関するお問い合わせ・ご応募はもちろん、あなたのご希望や働き方に合わせたお仕事探しのサポートも行っています。<br>以下のフォームに必要事項をご入力のうえ、送信してください。</p>
+    </div>
+
+    <form class="form" data-contact data-endpoint="{{formEndpoint.seekers}}" data-mailto="{{mail}}" data-subject="【HP】求職者様からのお問い合わせ・ご応募" novalidate>
+      <input type="hidden" name="_subject" value="【HP】求職者様からのお問い合わせ・ご応募">
+      <div class="hp-field" aria-hidden="true"><label>空欄のまま送信してください<input class="hp" type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
+
+      <div class="form__row">
+        <label class="form__label" for="s-name">氏名<span class="req">必須</span></label>
+        <div><input id="s-name" type="text" name="name" data-label="氏名" autocomplete="name" required></div>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="s-kana">ふりがな<span class="req">必須</span></label>
+        <div><input id="s-kana" type="text" name="kana" data-label="ふりがな" required></div>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="s-email">メールアドレス<span class="req">必須</span></label>
+        <div><input id="s-email" type="email" name="email" data-label="メールアドレス" autocomplete="email" required></div>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="s-tel">電話番号<span class="req">必須</span></label>
+        <div><input id="s-tel" type="tel" name="tel" data-label="電話番号" autocomplete="tel" pattern="[0-9０-９\-－ ]{10,15}" required></div>
+      </div>
+      <div class="form__row">
+        <span class="form__label" id="s-gender-label">性別<span class="req">必須</span></span>
+        <fieldset class="choices" aria-labelledby="s-gender-label" data-required>
+          <label><input type="radio" name="gender" value="男性" data-label="性別">男性</label>
+          <label><input type="radio" name="gender" value="女性">女性</label>
+          <label><input type="radio" name="gender" value="どちらでもない">どちらでもない</label>
+        </fieldset>
+      </div>
+      <div class="form__row">
+        <span class="form__label" id="s-job-label">希望職種</span>
+        <fieldset class="choices" aria-labelledby="s-job-label">
+          <label><input type="radio" name="job" value="オフィスワーク" data-label="希望職種">オフィスワーク</label>
+          <label><input type="radio" name="job" value="エンジニア">エンジニア</label>
+          <label><input type="radio" name="job" value="その他">その他</label>
+        </fieldset>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="s-message">お問い合わせ<span class="req">必須</span></label>
+        <div><textarea id="s-message" name="message" data-label="お問い合わせ" required></textarea></div>
+      </div>
+
+      <!--#include privacy-->
+      <p class="form__agree"><label><input type="checkbox" name="agree" value="同意する" required>個人情報の取り扱いについて同意する<span class="req">必須</span></label></p>
+      <div class="form__submit"><button class="btn" type="submit">送信する</button></div>
+      <p class="form__status" role="status" hidden></p>
+    </form>
+  </div>
+</section>

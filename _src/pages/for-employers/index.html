@@ -1,0 +1,57 @@
+<!--{"title":"企業担当者様向けお問い合わせ","section":"contact","hero":{"en":"Contact","ja":"企業担当者様向けお問い合わせ","img":"hero-contact.jpg","crumbs":[["contact/","お問い合わせ"]],"current":"企業担当者様"}}-->
+<section class="section">
+  <div class="container">
+    <div class="lead-block fade mb-48">
+      <p>人材派遣・人材紹介・システムエンジニアリング・システム開発など、貴社の状況やご要望に合わせて最適なご提案をいたします。<br>以下のフォームに必要事項をご入力のうえ、送信してください。</p>
+    </div>
+
+    <form class="form" data-contact data-endpoint="{{formEndpoint.employers}}" data-mailto="{{mail}}" data-subject="【HP】企業担当者様からのお問い合わせ" novalidate>
+      <input type="hidden" name="_subject" value="【HP】企業担当者様からのお問い合わせ">
+      <div class="hp-field" aria-hidden="true"><label>空欄のまま送信してください<input class="hp" type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
+
+      <div class="form__row">
+        <label class="form__label" for="f-company">企業名<span class="req">必須</span></label>
+        <div><input id="f-company" type="text" name="company" data-label="企業名" autocomplete="organization" required></div>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="f-name">ご担当者様名<span class="req">必須</span></label>
+        <div><input id="f-name" type="text" name="name" data-label="ご担当者様名" autocomplete="name" required></div>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="f-kana">ふりがな<span class="req">必須</span></label>
+        <div><input id="f-kana" type="text" name="kana" data-label="ふりがな" required></div>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="f-email">メール<span class="req">必須</span></label>
+        <div><input id="f-email" type="email" name="email" data-label="メール" autocomplete="email" required></div>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="f-tel">電話番号<span class="req">必須</span></label>
+        <div><input id="f-tel" type="tel" name="tel" data-label="電話番号" autocomplete="tel" pattern="[0-9０-９\-－ ]{10,15}" required></div>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="f-address">所在地<span class="req">必須</span></label>
+        <div><input id="f-address" type="text" name="address" data-label="所在地" autocomplete="street-address" required></div>
+      </div>
+      <div class="form__row">
+        <span class="form__label" id="f-type-label">お問い合わせ内容<span class="req">必須</span></span>
+        <fieldset class="choices" aria-labelledby="f-type-label" data-required>
+          <label><input type="radio" name="type" value="採用について" data-label="お問い合わせ内容">採用について</label>
+          <label><input type="radio" name="type" value="協業・パートナー">協業・パートナー</label>
+          <label><input type="radio" name="type" value="サービス紹介">サービス紹介</label>
+          <label><input type="radio" name="type" value="取材依頼">取材依頼</label>
+          <label><input type="radio" name="type" value="その他">その他</label>
+        </fieldset>
+      </div>
+      <div class="form__row">
+        <label class="form__label" for="f-message">お問い合わせ<span class="req">必須</span></label>
+        <div><textarea id="f-message" name="message" data-label="お問い合わせ" required></textarea></div>
+      </div>
+
+      <!--#include privacy-->
+      <p class="form__agree"><label><input type="checkbox" name="agree" value="同意する" required>個人情報の取り扱いについて同意する<span class="req">必須</span></label></p>
+      <div class="form__submit"><button class="btn" type="submit">送信する</button></div>
+      <p class="form__status" role="status" hidden></p>
+    </form>
+  </div>
+</section>

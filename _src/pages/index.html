@@ -1,0 +1,274 @@
+<!--{"bodyClass":"home"}-->
+<section class="kv" aria-label="メインビジュアル">
+  <div class="kv__media">
+    <video class="kv__video" autoplay muted loop playsinline preload="metadata" poster="{{root}}assets/img/top-outline-2.jpg" aria-hidden="true">
+      <source src="{{root}}assets/video/hero.mov" type="video/mp4">
+    </video>
+  </div>
+  <span class="kv__diamond kv__diamond--1" aria-hidden="true"></span>
+  <span class="kv__diamond kv__diamond--2" aria-hidden="true"></span>
+  <div class="kv__body">
+    <p class="eyebrow eyebrow--light eyebrow--load">Empathy × Nourish × Link</p>
+    <h1 class="kv__catch split split--load">人と技術の力で、<br>働くを<em>もっと自由に。</em></h1>
+    <p class="kv__rotate"><span class="rotator"><span class="is-active">人と企業</span><span>想いと価値</span><span>現在と未来</span></span>を、つなぐ。</p>
+    <p class="kv__lead">札幌・大通を拠点に、人材サービスとITサービスで<br class="pc-only">企業の成長と、一人ひとりの働き方を支えています。</p>
+  </div>
+  <div class="kv__news">
+    <span class="kv__news-label">News</span>
+    <a href="{{root}}news/company-established/"><time datetime="2026-02-05">2026.02.05</time>株式会社エモリスリンクを設立しました。{{arrow}}</a>
+  </div>
+  <a class="kv__scroll" href="#concept"><span>Scroll</span></a>
+</section>
+
+<section class="trust-bar" aria-label="会社の基本情報">
+  <ul class="container trust-bar__list">
+    <li><i class="bi bi-patch-check" aria-hidden="true"></i><span>労働者派遣事業許可<b>派01-301612</b></span></li>
+    <li><i class="bi bi-patch-check" aria-hidden="true"></i><span>有料職業紹介事業許可<b>01-ユ-300946</b></span></li>
+    <li><i class="bi bi-buildings" aria-hidden="true"></i><span>メイホーグループ<b>グループ会社</b></span></li>
+    <li><i class="bi bi-geo-alt" aria-hidden="true"></i><span>本社<b>札幌市中央区大通西7丁目</b></span></li>
+  </ul>
+</section>
+
+<section class="section concept" id="concept" aria-labelledby="concept-title">
+  <div class="container">
+    <div class="sec-head sec-head--center">
+      <p class="sec-head__en" aria-hidden="true">Concept</p>
+      <h2 class="sec-head__title split" id="concept-title">社名に込めた、3つの想い。</h2>
+      <p class="sec-head__lead fade">株式会社エモリスリンクは、人材サービスとITサービスを通じて、<br class="pc-only">人と企業をつなぐ架け橋となることを目指しています。</p>
+    </div>
+    <div class="equation">
+      <div class="equation__line" aria-hidden="true"><span class="equation__pulse"></span><span class="equation__pulse"></span><span class="equation__pulse"></span></div>
+      <article class="word-card tilt" style="--c1:#ff6fb1;--c2:#ffb36b;--n:0">
+        <span class="word-card__letter" aria-hidden="true">E</span>
+        <h3 class="word-card__title">Empathy<small>思いやり・共感</small></h3>
+        <p>人や企業の想いに寄り添う。<br>すべては相手を想うことから始まります。</p>
+      </article>
+      <span class="equation__op" style="--n:0" aria-hidden="true"><i></i></span>
+      <article class="word-card tilt" style="--c1:#8fd65a;--c2:#3aafb9;--n:1">
+        <span class="word-card__letter" aria-hidden="true">N</span>
+        <h3 class="word-card__title">Nourish<small>育む</small></h3>
+        <p>一人ひとりの可能性を育み、<br>価値へと変えていきます。</p>
+      </article>
+      <span class="equation__op" style="--n:1" aria-hidden="true"><i></i></span>
+      <article class="word-card tilt" style="--c1:#1fa0d8;--c2:#004968;--n:2">
+        <span class="word-card__letter" aria-hidden="true">L</span>
+        <h3 class="word-card__title">Link<small>つなぐ</small></h3>
+        <p>人と企業、想いと価値、<br>現在と未来をつなぐ存在に。</p>
+      </article>
+    </div>
+    <p class="equation__result"><span class="equation__eq" aria-hidden="true"><i></i><i></i></span><strong class="equation__word" data-text="EMORIS LINK">EMORIS LINK</strong></p>
+  </div>
+</section>
+
+<section class="section map" aria-labelledby="map-title">
+  <div class="map__inner">
+    <div class="map__side">
+      <p class="sec-head__en" aria-hidden="true">Link Map</p>
+      <h2 class="sec-head__title split" id="map-title">札幌・大通から、<br>人と企業をつなぐ。</h2>
+      <p class="fade">本社を起点に、人材とITの7つの領域へ。<br>ピンや一覧を選ぶと、それぞれの事業をご覧いただけます。</p>
+      <ol class="map__list">
+        {{maplist}}
+      </ol>
+    </div>
+    <div class="map__stage">
+      <div class="map__canvas fade">
+        {{isomap}}
+        <div class="map__pins">
+      {{mappins}}
+        </div>
+      </div>
+      <div class="map-card" id="map-card" aria-live="polite">
+        <span class="map-card__no"></span>
+        <p class="map-card__en"></p>
+        <h3 class="map-card__title"></h3>
+        <p class="map-card__text"></p>
+        <a class="map-card__link" href="#"><span></span>{{arrow}}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="svc" id="service" aria-labelledby="service-title">
+  <div class="svc__head">
+    <div>
+      <p class="sec-head__en sec-head__en--light" aria-hidden="true">Service</p>
+      <h2 class="sec-head__title split" id="service-title">人と企業をつなぎ、<br>価値と成長を生み出す。</h2>
+    </div>
+    <div class="svc__ctrl">
+      <p class="svc__count" aria-hidden="true"><span class="svc__now">01</span><span class="svc__total"> / 04</span></p>
+      <button class="car-btn car-btn--prev" type="button" aria-label="前のサービスへ" aria-controls="svc-track"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="car-btn car-btn--next" type="button" aria-label="次のサービスへ" aria-controls="svc-track"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+  <div class="carousel" role="region" aria-roledescription="カルーセル" aria-label="主なサービス">
+    <p class="visually-hidden carousel__status" aria-live="polite"></p>
+    <div class="carousel__viewport">
+      <div class="carousel__track" id="svc-track">
+        <a class="svc-panel" href="{{root}}service/staffing/">
+          <div class="svc-panel__img"><img src="{{root}}assets/img/top-service-staffing.jpg" alt="" loading="lazy"></div>
+          <div class="svc-panel__body">
+            <span class="svc-panel__num">01</span>
+            <span class="svc-panel__en">Staffing</span>
+            <h3 class="svc-panel__title">人材派遣</h3>
+            <p class="svc-panel__catch">即戦力を、必要なときに。</p>
+            <p class="svc-panel__text">企業の状況やフェーズに合わせて、即戦力人材を柔軟にご提供。現場の生産性向上と安定運営を支援します。</p>
+            <span class="svc-panel__more">詳しく見る{{arrow}}</span>
+          </div>
+        </a>
+        <a class="svc-panel" href="{{root}}service/recruitment/">
+          <div class="svc-panel__img"><img src="{{root}}assets/img/top-service-recruitment.jpg" alt="" loading="lazy"></div>
+          <div class="svc-panel__body">
+            <span class="svc-panel__num">02</span>
+            <span class="svc-panel__en">Recruitment</span>
+            <h3 class="svc-panel__title">人材紹介</h3>
+            <p class="svc-panel__catch">未来を創る出会いを。</p>
+            <p class="svc-panel__text">スキルだけでなく、企業文化や成長ビジョンとの適合性まで見極めた人材をご紹介します。</p>
+            <span class="svc-panel__more">詳しく見る{{arrow}}</span>
+          </div>
+        </a>
+        <a class="svc-panel" href="{{root}}service/ses/">
+          <div class="svc-panel__img"><img src="{{root}}assets/img/top-service-ses.jpg" alt="" loading="lazy"></div>
+          <div class="svc-panel__body">
+            <span class="svc-panel__num">03</span>
+            <span class="svc-panel__en">System Engineering</span>
+            <h3 class="svc-panel__title">システムエンジニアリング</h3>
+            <p class="svc-panel__catch">技術力を、必要な現場へ。</p>
+            <p class="svc-panel__text">経験豊富なエンジニアがプロジェクトに参画し、開発・運用・改善までをサポートします。</p>
+            <span class="svc-panel__more">詳しく見る{{arrow}}</span>
+          </div>
+        </a>
+        <a class="svc-panel" href="{{root}}service/system-development/">
+          <div class="svc-panel__img"><img src="{{root}}assets/img/top-service-dev.jpg" alt="" loading="lazy"></div>
+          <div class="svc-panel__body">
+            <span class="svc-panel__num">04</span>
+            <span class="svc-panel__en">System Development</span>
+            <h3 class="svc-panel__title">システム開発</h3>
+            <p class="svc-panel__catch">構想を、確かな仕組みに。</p>
+            <p class="svc-panel__text">企画・設計から開発・運用まで一貫対応。拡張性と実用性を兼ね備えたシステムで成長を支えます。</p>
+            <span class="svc-panel__more">詳しく見る{{arrow}}</span>
+          </div>
+        </a>
+      </div>
+    </div>
+    <div class="carousel__foot">
+      <div class="carousel__progress" aria-hidden="true"><span class="carousel__fill"></span><span class="carousel__timer"></span></div>
+      <ol class="carousel__dots">
+        <li><button type="button" data-go="0">人材派遣</button></li>
+        <li><button type="button" data-go="1">人材紹介</button></li>
+        <li><button type="button" data-go="2">システムエンジニアリング</button></li>
+        <li><button type="button" data-go="3">システム開発</button></li>
+      </ol>
+    </div>
+  </div>
+  <div class="svc-more">
+    <p class="svc-more__title">その他のサービス</p>
+    <ul class="chips">
+      <li><a href="{{root}}service/temp-to-perm/">紹介予定派遣</a></li>
+      <li><a href="{{root}}service/outsourcing/">業務委託</a></li>
+      <li><a href="{{root}}service/web-design/">WEBデザイン</a></li>
+      <li><a href="{{root}}service/web-marketing/">WEBマーケティング</a></li>
+    </ul>
+    <a class="btn btn--grad magnetic" href="{{root}}service/">サービス一覧へ</a>
+  </div>
+</section>
+
+<section class="section corp" aria-labelledby="corp-title">
+  <div class="container">
+    <div class="corp__panel">
+      <div class="corp__head">
+        <div>
+          <p class="sec-head__en sec-head__en--light" aria-hidden="true">Company</p>
+          <h2 class="sec-head__title split" id="corp-title">確かな基盤で、<br>長く続く信頼を。</h2>
+        </div>
+        <div class="corp__lead fade">
+          <p>エモリスリンクは、メイホーグループの経営基盤を活かしながら、札幌に本社を置く地域密着型企業として、迅速で柔軟な意思決定を実現しています。</p>
+          <a class="text-arrow text-arrow--light" href="{{root}}company/about/">会社概要を見る{{arrow}}</a>
+        </div>
+      </div>
+      <ul class="facts" data-count-group>
+        <li class="fact fade"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span class="fact__label">設立</span><span class="fact__value"><b data-count="2026">2026</b>年2月</span></li>
+        <li class="fact fade"><i class="bi bi-bank" aria-hidden="true"></i><span class="fact__label">資本金</span><span class="fact__value"><b data-count="3000">3,000</b>万円</span></li>
+        <li class="fact fade"><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i><span class="fact__label">サービス領域</span><span class="fact__value"><b data-count="8">8</b>領域</span></li>
+        <li class="fact fade"><i class="bi bi-diagram-3" aria-hidden="true"></i><span class="fact__label">メイホーグループ</span><span class="fact__value"><b data-count="24">24</b>社</span><small>※グループ概要に掲載の企業数</small></li>
+      </ul>
+      <div class="licenses">
+        <div class="license fade">
+          <span class="license__icon"><i class="bi bi-shield-check" aria-hidden="true"></i></span>
+          <div><p class="license__name">労働者派遣事業許可</p><p class="license__no">派01-301612</p></div>
+        </div>
+        <div class="license fade">
+          <span class="license__icon"><i class="bi bi-shield-check" aria-hidden="true"></i></span>
+          <div><p class="license__name">有料職業紹介事業許可</p><p class="license__no">01-ユ-300946</p></div>
+        </div>
+        <a class="license license--group fade" href="{{root}}company/group-overview/">
+          <img src="{{root}}assets/img/logo-meihogroup.png" alt="メイホーグループ" loading="lazy">
+          <span>グループ概要を見る{{arrow}}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section message-sec" aria-labelledby="message-title">
+  <div class="container message-sec__grid">
+    <div class="message-sec__visual fade">
+      <div class="link-frame link-frame--sm">
+        <div class="link-frame__a"><img src="{{root}}assets/img/company-message.jpg" alt="" loading="lazy"></div>
+        <span class="link-frame__b"></span>
+        <span class="link-frame__pill"></span>
+      </div>
+    </div>
+    <div>
+      <p class="sec-head__en" aria-hidden="true">Message</p>
+      <p class="message-sec__mission fade">Mission</p>
+      <h2 class="message-sec__quote split" id="message-title">人と企業をつなぎ、<br>関わるすべての人の<br>幸せを追求する。</h2>
+      <p class="fade">人と企業をつなぐ仕事には、人の人生や企業の未来を変える力がある。だからこそ私たちは、単に仕事を紹介するだけの会社ではなく、人の可能性を広げ、企業の成長を支え、社会へ価値を生み出す存在でありたいと考えています。</p>
+      <p class="message-sec__sign fade">代表取締役社長<strong>真浦 健人</strong></p>
+      <a class="btn magnetic fade" href="{{root}}company/message/">代表メッセージを読む</a>
+    </div>
+  </div>
+</section>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__track">
+    <span>Empathy</span><i></i><span>Nourish</span><i></i><span>Link</span><i></i><span>People &amp; Technology</span><i></i>
+    <span>Empathy</span><i></i><span>Nourish</span><i></i><span>Link</span><i></i><span>People &amp; Technology</span><i></i>
+  </div>
+</div>
+
+<section class="section recruit-sec" aria-labelledby="recruit-title">
+  <div class="container">
+    <div class="recruit-panel">
+      <div class="recruit-panel__text">
+        <p class="sec-head__en sec-head__en--light" aria-hidden="true">Recruit</p>
+        <h2 class="sec-head__title split" id="recruit-title">未来をつなぐ仕事を。</h2>
+        <p class="fade">決まりきったレールより、まだ形のない地図のほうが面白い。正解をなぞるのではなく、自分たちで正解をつくっていく。そんな挑戦を、一緒に楽しめる仲間を探しています。</p>
+        <ul class="recruit-panel__jobs fade">
+          <li><a href="{{root}}system-engineer/"><span class="recruit-panel__tag">IT Solution</span>システムエンジニア{{arrow}}</a></li>
+          <li><a href="{{root}}coordinator/"><span class="recruit-panel__tag">Business Solution</span>人材コーディネーター{{arrow}}</a></li>
+        </ul>
+        <a class="btn btn--white magnetic fade" href="{{root}}recruit/">採用情報を見る</a>
+      </div>
+      <div class="lattice" aria-hidden="true">
+        <span class="lattice__cell" data-parallax="-0.05"><img src="{{root}}assets/img/top-outline-3.jpg" alt="" loading="lazy"></span>
+        <span class="lattice__cell" data-parallax="0.04"><img src="{{root}}assets/img/banner-4.jpg" alt="" loading="lazy"></span>
+        <span class="lattice__cell" data-parallax="-0.03"><img src="{{root}}assets/img/top-access-1.jpg" alt="" loading="lazy"></span>
+        <span class="lattice__cell" data-parallax="0.06"><img src="{{root}}assets/img/sv-ses.jpg" alt="" loading="lazy"></span>
+        <span class="lattice__cell" data-parallax="-0.04"><img src="{{root}}assets/img/top-outline-2.jpg" alt="" loading="lazy"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section news-sec" aria-labelledby="news-title">
+  <div class="container news-sec__grid">
+    <div>
+      <p class="sec-head__en" aria-hidden="true">News</p>
+      <h2 class="sec-head__title" id="news-title">お知らせ</h2>
+      <a class="text-arrow" href="{{root}}news/">お知らせ一覧{{arrow}}</a>
+    </div>
+    <ul class="news-list fade">
+      <li><a href="{{root}}news/company-established/"><time datetime="2026-02-05">2026.02.05</time><span class="news-list__cat">お知らせ</span><span class="title">株式会社エモリスリンクを設立しました。</span></a></li>
+    </ul>
+  </div>
+</section>
