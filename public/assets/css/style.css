@@ -269,28 +269,46 @@ body.menu-open { overflow: hidden; }
 }
 .kv__video { width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); animation: kvZoom 18s ease-out forwards; }
 @keyframes kvZoom { to { transform: scale(1); } }
-.kv__media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0, 32, 50, .82) 0%, rgba(0, 32, 50, .45) 45%, rgba(0, 32, 50, .1) 100%), linear-gradient(0deg, rgba(0, 32, 50, .45), transparent 40%); }
 .kv__diamond { position: absolute; z-index: 2; aspect-ratio: 1; border-radius: 26%; transform: rotate(45deg); pointer-events: none; }
 .kv__diamond--1 { right: clamp(18px, 2.6vw, 44px); bottom: clamp(18px, 2.6vw, 44px); width: clamp(44px, 5vw, 76px); background: var(--grad); animation: floatB 8s ease-in-out infinite; }
 .kv__diamond--2 { right: clamp(60px, 9vw, 150px); top: clamp(40px, 8vh, 90px); width: clamp(70px, 9vw, 140px); border: 3px solid rgba(255, 255, 255, .35); animation: floatA 10s ease-in-out infinite; }
-.kv__body { position: absolute; z-index: 2; left: clamp(32px, 7vw, 120px); right: clamp(32px, 30%, 520px); bottom: clamp(120px, 18vh, 190px); color: #fff; }
-.kv__catch { font-size: clamp(34px, 5vw, 78px); font-weight: 900; line-height: 1.3; letter-spacing: .03em; color: #fff; text-shadow: 0 6px 30px rgba(0, 25, 40, .35); }
+/* 左から白く抜ける明るい重ね（文字は濃紺で読ませる） */
+.kv__media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255, 255, 255, .95) 0%, rgba(255, 255, 255, .86) 30%, rgba(255, 255, 255, .35) 55%, rgba(255, 255, 255, 0) 72%), linear-gradient(0deg, rgba(255, 255, 255, .55), transparent 30%); }
+/* 虹色の光の帯 */
+.kv__light { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; mix-blend-mode: screen; }
+.kv__light span { position: absolute; width: 75%; height: clamp(26px, 3.4vw, 56px); left: -20%; border-radius: 999px; background: linear-gradient(90deg, rgba(255, 79, 160, 0), rgba(255, 79, 160, .75) 20%, rgba(255, 163, 58, .7) 40%, rgba(143, 209, 79, .65) 60%, rgba(43, 181, 230, .75) 80%, rgba(43, 181, 230, 0)); filter: blur(2px); opacity: .55; transform: rotate(-32deg); }
+.kv__light span:nth-child(1) { top: -8%; left: 62%; opacity: .5; }
+.kv__light span:nth-child(2) { top: -1%; left: 70%; height: clamp(10px, 1.2vw, 20px); opacity: .6; }
+.kv__light span:nth-child(3) { top: 96%; left: 52%; opacity: .55; }
+.kv__light span:nth-child(4) { top: 104%; left: 60%; height: clamp(12px, 1.4vw, 22px); opacity: .7; }
+.kv__light span { animation: lightShimmer 7s ease-in-out infinite; }
+.kv__light span:nth-child(2n) { animation-delay: -3.5s; }
+@keyframes lightShimmer { 0%, 100% { translate: 0 0; filter: blur(2px) hue-rotate(0deg); } 50% { translate: -40px 18px; filter: blur(3px) hue-rotate(25deg); } }
+
+.kv__script { position: absolute; z-index: 3; right: clamp(70px, 9vw, 170px); bottom: clamp(150px, 24vh, 240px); margin: 0; font-family: "Caveat", cursive; font-size: clamp(30px, 3.4vw, 54px); font-weight: 600; line-height: 1; color: #fff; text-shadow: 0 2px 18px rgba(0, 40, 60, .35); transform: rotate(-12deg); clip-path: inset(0 100% 0 0); transition: clip-path 1.8s var(--ease) 1.4s; pointer-events: none; }
+.is-loaded .kv__script { clip-path: inset(-20% -5% -20% 0); }
+html:not(.js) .kv__script { clip-path: none; }
+
+.kv__body { position: absolute; z-index: 2; left: clamp(32px, 7vw, 120px); right: clamp(32px, 40%, 640px); bottom: clamp(120px, 18vh, 190px); color: var(--ink); }
+.kv__eyebrow { position: relative; display: inline-block; margin: 0 0 22px; padding-bottom: 12px; font-family: var(--f-head); font-size: clamp(13px, 1.1vw, 15px); font-weight: 700; letter-spacing: .14em; color: var(--navy-dd); }
+.kv__eyebrow::after { content: ""; position: absolute; left: 0; bottom: 0; width: 72px; height: 3px; border-radius: 3px; background: var(--grad); }
+/* 手書き（マーカー）風のタイトル */
+/* タイトル：ゴシック。太すぎ・大きすぎにならないよう 700・最大64px に抑える */
+.kv__catch { font-family: var(--f-head); font-size: clamp(30px, 4.1vw, 64px); font-weight: 700; line-height: 1.42; letter-spacing: .06em; color: var(--navy-dd); }
 .kv__catch em { font-style: normal; }
-.kv__catch em .ch { background: linear-gradient(115deg, #ffb0d4, #ffd29e 35%, #c4f0a2 65%, #8fd8f5); background-size: 800% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
-.kv__catch em .ch:nth-child(1) { background-position: 0 0; }
-.kv__catch em .ch:nth-child(2) { background-position: 16% 0; }
-.kv__catch em .ch:nth-child(3) { background-position: 32% 0; }
-.kv__catch em .ch:nth-child(4) { background-position: 48% 0; }
-.kv__catch em .ch:nth-child(5) { background-position: 64% 0; }
-.kv__catch em .ch:nth-child(6) { background-position: 80% 0; }
-.kv__catch em .ch:nth-child(7) { background-position: 100% 0; }
-html:not(.js) .kv__catch em { color: #ffd29e; }
-.kv__rotate { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin: 24px 0 14px; font-family: var(--f-head); font-size: clamp(17px, 1.8vw, 22px); font-weight: 700; }
-.rotator { position: relative; display: inline-grid; height: 1.7em; overflow: hidden; padding: 0 16px; border-radius: 999px; background: #fff; }
-.rotator span { grid-area: 1 / 1; display: flex; align-items: center; justify-content: center; color: var(--navy); transform: translateY(110%); transition: transform .7s var(--ease); }
-.rotator span.is-active { transform: none; }
-.rotator span.is-out { transform: translateY(-110%); }
-.kv__lead { margin: 0; color: rgba(255, 255, 255, .86); font-size: clamp(14px, 1.3vw, 16px); }
+/* 「もっと自由に。」は1文字ずつグラデーションに沿った色に（分割後は「もっ」「と」「自」「由」「に。」の5つ） */
+.kv__catch em .ch:nth-child(1) { color: #ec3d8c; }
+.kv__catch em .ch:nth-child(2) { color: #f0664a; }
+.kv__catch em .ch:nth-child(3) { color: #e48a17; }
+.kv__catch em .ch:nth-child(4) { color: #7aa62a; }
+.kv__catch em .ch:nth-child(n + 5) { color: #1793c9; }
+html:not(.js) .kv__catch em { color: #ec3d8c; }
+/* 筆で引いたような下線（タイトルの後に描かれる） */
+.kv__stroke { display: block; width: min(72%, 480px); height: clamp(14px, 1.8vw, 24px); margin: 2px 0 26px clamp(16px, 4vw, 70px); overflow: visible; transform: rotate(-2deg); }
+.kv__stroke path { fill: none; stroke: url(#kvStrokeGrad); stroke-width: 9; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.1s cubic-bezier(.6, .05, .3, 1) 1.15s; }
+.is-loaded .kv__stroke path { stroke-dashoffset: 0; }
+html:not(.js) .kv__stroke path { stroke-dashoffset: 0; }
+.kv__lead { margin: 0; color: var(--sub); font-size: clamp(14px, 1.25vw, 16px); font-weight: 500; }
 .kv__news { position: absolute; z-index: 3; left: clamp(10px, 1.6vw, 24px); bottom: clamp(10px, 1.6vw, 24px); display: flex; align-items: center; gap: 22px; max-width: min(700px, 68%); padding: 20px 30px 6px 0; background: #fff; border-top-right-radius: var(--r); }
 .kv__news-label { display: inline-flex; align-items: center; gap: 10px; padding-left: 4px; font-family: var(--f-en); font-weight: 700; font-size: 15px; color: var(--navy-dd); }
 .kv__news-label::before { content: ""; width: 8px; height: 8px; border-radius: 28%; transform: rotate(45deg); background: var(--grad); }
@@ -302,8 +320,11 @@ html:not(.js) .kv__catch em { color: #ffd29e; }
 @keyframes scrollLine { 0% { transform: scaleY(0); } 60% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
 @media (max-width: 860px) {
   .kv { height: auto; min-height: calc(100svh - var(--header-h)); }
-  .kv__body { right: 24px; left: 28px; bottom: 150px; }
-  .kv__catch { font-size: clamp(26px, 7.6vw, 46px); }
+  .kv__body { right: 24px; left: 24px; bottom: 140px; }
+  .kv__catch { font-size: clamp(26px, 7.8vw, 46px); }
+  .kv__media::after { background: linear-gradient(0deg, rgba(255, 255, 255, .96) 0%, rgba(255, 255, 255, .88) 45%, rgba(255, 255, 255, .2) 75%, rgba(255, 255, 255, 0) 100%); }
+  .kv__script { right: 24px; top: 40px; bottom: auto; font-size: 30px; }
+  .kv__stroke { margin-left: 20px; }
   .kv__news { right: clamp(10px, 1.6vw, 24px); max-width: none; flex-wrap: wrap; gap: 4px 12px; padding: 14px 20px 4px 6px; }
   .kv__news a { font-size: 13px; }
   .kv__scroll { display: none; }
@@ -606,9 +627,36 @@ html:not(.js) .equation__word { clip-path: none; }
 /* 帯テキスト */
 .ticker { overflow: hidden; padding: clamp(24px, 3vw, 40px) 0; background: #fff; border-bottom: 1px solid var(--line); }
 .ticker__track { display: flex; align-items: center; width: max-content; will-change: transform; }
-.ticker span { padding: 0 clamp(20px, 3vw, 44px); font-family: var(--f-en); font-weight: 700; font-size: clamp(48px, 8vw, 120px); line-height: 1.1; white-space: nowrap; color: #d3e6ea; }
-.ticker span:nth-of-type(2n) { color: var(--navy); }
-.ticker i { flex: 0 0 auto; width: clamp(26px, 3vw, 44px); aspect-ratio: 1; border-radius: 26%; transform: rotate(45deg); background: var(--grad); }
+/* 単語が Empathy → Nourish → Link → People & Technology の順に、左から右へ濃紺に染まり、
+   同じく左から右へ色が抜けてループする。
+   背景を「淡色｜濃紺｜淡色」の3区間にして文字で切り抜き、表示位置をずらして塗り進める */
+.ticker { --tk-dur: 14s; }
+.ticker span {
+  padding: 0 clamp(20px, 3vw, 44px); font-family: var(--f-en); font-weight: 700; font-size: clamp(48px, 8vw, 120px); line-height: 1.1; white-space: nowrap;
+  color: transparent; background: linear-gradient(90deg, #d3e6ea 0 33.34%, var(--navy) 33.34% 66.66%, #d3e6ea 66.66% 100%);
+  background-size: 300% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text;
+  animation: var(--tk-dur) cubic-bezier(.55, 0, .35, 1) infinite;
+}
+.ticker span:nth-of-type(4n + 1) { animation-name: tkFill1; }
+.ticker span:nth-of-type(4n + 2) { animation-name: tkFill2; }
+.ticker span:nth-of-type(4n + 3) { animation-name: tkFill3; }
+.ticker span:nth-of-type(4n + 4) { animation-name: tkFill4; }
+@keyframes tkFill1 { 0% { background-position: 100% 0; } 10%, 66% { background-position: 50% 0; } 76%, 100% { background-position: 0 0; } }
+@keyframes tkFill2 { 0%, 12% { background-position: 100% 0; } 22%, 70% { background-position: 50% 0; } 80%, 100% { background-position: 0 0; } }
+@keyframes tkFill3 { 0%, 24% { background-position: 100% 0; } 34%, 74% { background-position: 50% 0; } 84%, 100% { background-position: 0 0; } }
+@keyframes tkFill4 { 0%, 36% { background-position: 100% 0; } 50%, 78% { background-position: 50% 0; } 90%, 100% { background-position: 0 0; } }
+/* ひし形は、色が通り過ぎるタイミングで小さく弾む */
+.ticker i { flex: 0 0 auto; width: clamp(26px, 3vw, 44px); aspect-ratio: 1; border-radius: 26%; transform: rotate(45deg); background: var(--grad); animation: tkPop var(--tk-dur) ease-in-out infinite; }
+.ticker i:nth-of-type(4n + 1) { animation-delay: calc(var(--tk-dur) * .1); }
+.ticker i:nth-of-type(4n + 2) { animation-delay: calc(var(--tk-dur) * .22); }
+.ticker i:nth-of-type(4n + 3) { animation-delay: calc(var(--tk-dur) * .34); }
+.ticker i:nth-of-type(4n + 4) { animation-delay: calc(var(--tk-dur) * .5); }
+@keyframes tkPop { 0%, 8%, 100% { transform: rotate(45deg) scale(1); } 4% { transform: rotate(135deg) scale(1.25); } }
+/* 色の変化は位置が動かないので、動きを減らす設定でも続ける（ひし形の弾みは止める） */
+@media (prefers-reduced-motion: reduce) {
+  .ticker span { animation-duration: var(--tk-dur) !important; animation-iteration-count: infinite !important; }
+  .ticker i { animation: none !important; }
+}
 
 /* =========================================================
    トップ：お知らせ
