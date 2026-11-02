@@ -103,32 +103,41 @@
       slides.forEach((s, i) => { s.tabIndex = i === real ? 0 : -1; });
       status.textContent = `${real + 1} / ${count}：${slides[real].querySelector('.svc-panel__title').textContent}`;
     };
-    // 複製の位置で止まったら、同じ見た目の本物の位置へ瞬時に戻す（無限ループ）
+    // 複製の位置で止まったら、同じ見た目の本物の位置へ瞬時に戻す（無限ループ）。
+    // 差し替えの瞬間は文字の出現や写真のズームをやり直さないよう、演出を止めて完成状態で入れ替える
+    const jumpToReal = () => {
+      if (pos >= 0 && pos < count) return;
+      track.classList.add('is-jumping');
+      pos = ((pos % count) + count) % count;
+      render(false);
+      void track.offsetWidth;
+      requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove('is-jumping')));
+    };
     track.addEventListener('transitionend', (e) => {
-      if (e.target !== track) return;
-      if (pos < 0 || pos >= count) {
-        pos = ((pos % count) + count) % count;
-        render(false);
-      }
+      if (e.target === track) jumpToReal();
     });
 
     let auto = null;
     const restartTimer = () => {
       timer.classList.remove('is-run');
       void timer.offsetWidth; // アニメーションを最初から
-      if (!reduceMotion) timer.classList.add('is-run');
+      timer.classList.add('is-run');
     };
+    // to は本物のスライド番号（ドット用）。移動中に複製の位置にいたら先に本物へ戻してから動かす
     const go = (to, user = false) => {
-      if (pos < 0 || pos >= count) { pos = ((pos % count) + count) % count; render(false); void track.offsetWidth; }
+      jumpToReal();
+      void track.offsetWidth;
       pos = to;
       render(true);
       if (user) startAuto();
     };
-    const next = (user) => go(pos + 1, user);
-    const prev = (user) => go(pos - 1, user);
+    const step = (d, user) => { jumpToReal(); go(pos + d, user); };
+    const next = (user) => step(1, user);
+    const prev = (user) => step(-1, user);
+    // 自動送り：「＞」を押したのと同じ動きで、一定時間ごとに次へ進む
+    // （ご要望により、動きを減らす設定の端末でも動かす。マウスを乗せている間・操作中は一時停止）
     function startAuto() {
       clearInterval(auto);
-      if (reduceMotion) return;
       restartTimer();
       auto = setInterval(() => { next(false); restartTimer(); }, AUTOPLAY);
     }
@@ -454,6 +463,27 @@
     });
   }
 
+  // ---------- メインビジュアルの動画：再生できる状態になってからフェードイン（静止画は出さない） ----------
+  const kvVideo = document.querySelector('.kv__video');
+  if (kvVideo) {
+    const ready = () => kvVideo.classList.add('is-ready');
+    if (kvVideo.readyState >= 3) ready();
+    else {
+      kvVideo.addEventListener('playing', ready, { once: true });
+      kvVideo.addEventListener('canplay', ready, { once: true });
+    }
+  }
+
+  // ---------- お問い合わせ導線：画面に入ったら見出し・カードを表示し、背景画像をゆっくり引く ----------
+  const contactCta = document.querySelector('.contact-cta');
+  if (contactCta) {
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([en], obs) => { if (en.isIntersecting) { contactCta.classList.add('is-in'); obs.disconnect(); } }, { rootMargin: '0px 0px -20% 0px' }).observe(contactCta);
+    } else {
+      contactCta.classList.add('is-in');
+    }
+  }
+
   // ---------- 動画：画面外では停止（会社の実写映像はコンテンツなので、動きを減らす設定でも再生する） ----------
   document.querySelectorAll('video').forEach((video) => {
     if (!('IntersectionObserver' in window)) return;
@@ -463,11 +493,40 @@
     }).observe(video);
   });
 
-  // フッター付近ではフローティングバナーを隠す
-  const floating = document.querySelector('.floating-banner');
-  const ctaBlock = document.querySelector('.contact-cta');
-  if (floating && ctaBlock && 'IntersectionObserver' in window) {
-    new IntersectionObserver(([en]) => floating.classList.toggle('is-hidden', en.isIntersecting || en.boundingClientRect.top < 0)).observe(ctaBlock);
+  // ---------- 採用キャンペーン：右端のタブ。押すとバナーが開く ----------
+  // 初めての方には、少しスクロールした時点で一度だけ開いて見せる。×で閉じたらブラウザに記憶し、以降はタブだけ
+  const promo = document.querySelector('.promo');
+  if (promo) {
+    const tab = promo.querySelector('.promo__tab');
+    const panel = promo.querySelector('.promo__panel');
+    const KEY = 'emorislink-promo-closed';
+    const store = {
+      get: () => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } },
+      set: () => { try { localStorage.setItem(KEY, '1'); } catch { /* 保存できない環境では記憶しない */ } },
+    };
+    const setOpen = (open) => {
+      panel.hidden = !open;
+      promo.classList.toggle('is-open', open);
+      tab.setAttribute('aria-expanded', String(open));
+      tab.setAttribute('aria-label', open ? 'キャンペーンバナーをしまう' : 'キャンペーンバナーを開く');
+    };
+    setOpen(false);
+    tab.addEventListener('click', () => setOpen(panel.hidden));
+    promo.querySelector('.promo__close').addEventListener('click', () => { store.set(); setOpen(false); tab.focus(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) setOpen(false); });
+    if (!store.get()) {
+      const firstOpen = () => {
+        if (window.scrollY < 300) return;
+        window.removeEventListener('scroll', firstOpen);
+        setOpen(true);
+      };
+      window.addEventListener('scroll', firstOpen, { passive: true });
+    }
+    // ページ下部のお問い合わせ欄の付近では隠す
+    const ctaBlock = document.querySelector('.contact-cta');
+    if (ctaBlock && 'IntersectionObserver' in window) {
+      new IntersectionObserver(([en]) => promo.classList.toggle('is-hidden', en.isIntersecting || en.boundingClientRect.top < 0)).observe(ctaBlock);
+    }
   }
 
   // ---------- 募集ページの「応募する」から来た場合は希望職種を選択しておく ----------

@@ -1,37 +1,27 @@
 <!--{"bodyClass":"home"}-->
 <section class="kv" aria-label="メインビジュアル">
   <div class="kv__media">
-    <video class="kv__video" autoplay muted loop playsinline preload="metadata" poster="{{root}}assets/img/top-outline-2.jpg" aria-hidden="true">
+    <video class="kv__video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
       <source src="{{root}}assets/video/hero.mov" type="video/mp4">
     </video>
-    <div class="kv__light" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
   </div>
-  <span class="kv__diamond kv__diamond--1" aria-hidden="true"></span>
-  <span class="kv__diamond kv__diamond--2" aria-hidden="true"></span>
-  <p class="kv__script" aria-hidden="true">Empathy × Nourish × Link</p>
-  <div class="kv__body">
-    <p class="kv__eyebrow eyebrow--load">札幌から、人と企業をつなぐ。</p>
-    <h1 class="kv__catch split split--load">人と技術の力で、<br>働くを<em>もっと自由に。</em></h1>
-    <svg class="kv__stroke" viewBox="0 0 600 44" preserveAspectRatio="none" aria-hidden="true">
-      <defs><linearGradient id="kvStrokeGrad" x1="0" x2="1"><stop offset="0" stop-color="#ff4fa0"/><stop offset=".35" stop-color="#ffa33a"/><stop offset=".65" stop-color="#8fd14f"/><stop offset="1" stop-color="#2bb5e6"/></linearGradient></defs>
-      <path d="M8 30 C 120 18, 260 34, 400 20 S 560 14, 592 10" pathLength="1"/>
-    </svg>
+  <p class="kv__bigword" aria-hidden="true"><span>EMORIS LINK — EMPATHY × NOURISH × LINK — </span><span>EMORIS LINK — EMPATHY × NOURISH × LINK — </span></p>
+  <div class="kv__inner">
+    <p class="kv__eyebrow"><span class="kv__eyebrow-line" aria-hidden="true"></span>Empathy × Nourish × Link</p>
+    <h1 class="kv__catch">
+      <span class="kv__line"><span>人と技術の力で、</span></span>
+      <span class="kv__line"><span>働くを<em>もっと自由に。</em></span></span>
+    </h1>
     <p class="kv__lead">札幌・大通を拠点に、人材サービスとITサービスで<br class="pc-only">企業の成長と、一人ひとりの働き方を支えています。</p>
+    <div class="kv__btns">
+      <a class="btn btn--white magnetic" href="{{root}}service/">事業内容を見る</a>
+      <a class="btn btn--outline magnetic" href="{{root}}recruit/">採用情報</a>
+    </div>
   </div>
-  <div class="kv__news">
-    <span class="kv__news-label">News</span>
-    <a href="{{root}}news/company-established/"><time datetime="2026-02-05">2026.02.05</time>株式会社エモリスリンクを設立しました。{{arrow}}</a>
+  <div class="kv__bar">
+    <a class="kv__news" href="{{root}}news/company-established/"><span class="kv__news-label">News</span><time datetime="2026-02-05">2026.02.05</time><span class="kv__news-title">株式会社エモリスリンクを設立しました。</span>{{arrow}}</a>
+    <a class="kv__scroll" href="#concept"><span>Scroll</span><i aria-hidden="true"></i></a>
   </div>
-  <a class="kv__scroll" href="#concept"><span>Scroll</span></a>
-</section>
-
-<section class="trust-bar" aria-label="会社の基本情報">
-  <ul class="container trust-bar__list">
-    <li><i class="bi bi-patch-check" aria-hidden="true"></i><span>労働者派遣事業許可<b>派01-301612</b></span></li>
-    <li><i class="bi bi-patch-check" aria-hidden="true"></i><span>有料職業紹介事業許可<b>01-ユ-300946</b></span></li>
-    <li><i class="bi bi-buildings" aria-hidden="true"></i><span>メイホーグループ<b>グループ会社</b></span></li>
-    <li><i class="bi bi-geo-alt" aria-hidden="true"></i><span>本社<b>札幌市中央区大通西7丁目</b></span></li>
-  </ul>
 </section>
 
 <section class="section concept" id="concept" aria-labelledby="concept-title">
@@ -173,7 +163,7 @@
       <li><a href="{{root}}service/web-design/">WEBデザイン</a></li>
       <li><a href="{{root}}service/web-marketing/">WEBマーケティング</a></li>
     </ul>
-    <a class="btn btn--grad magnetic" href="{{root}}service/">サービス一覧へ</a>
+    <a class="btn btn--white magnetic" href="{{root}}service/">サービス一覧へ</a>
   </div>
 </section>
 
@@ -241,26 +231,68 @@
   </div>
 </div>
 
-<section class="section recruit-sec" aria-labelledby="recruit-title">
+<!--
+  Recruit の画像は public/assets/img/top-recruit/ に置いています（現在は仮画像）。
+  同じファイル名で上書きすれば差し替わります。推奨サイズ：
+    main.jpg              … 1600×1200px（4:3 横長）チームや職場の様子
+    job-engineer.jpg      … 1200×800px （3:2 横長）システムエンジニアの仕事風景（文字パネルが左に重なるので人物は右寄り）
+    job-coordinator.jpg   … 1200×800px （3:2 横長）コーディネーターの仕事風景（文字パネルが左に重なるので人物は右寄り）
+    life-1.jpg〜life-6.jpg …  600×800px （3:4 縦長）オフィス・社員・働く様子
+-->
+<section class="section recruit-top" aria-labelledby="recruit-title">
   <div class="container">
-    <div class="recruit-panel">
-      <div class="recruit-panel__text">
-        <p class="sec-head__en sec-head__en--light" aria-hidden="true">Recruit</p>
+    <div class="recruit-top__head">
+      <div class="recruit-top__text">
+        <p class="sec-head__en" aria-hidden="true">Recruit</p>
         <h2 class="sec-head__title split" id="recruit-title">未来をつなぐ仕事を。</h2>
-        <p class="fade">決まりきったレールより、まだ形のない地図のほうが面白い。正解をなぞるのではなく、自分たちで正解をつくっていく。そんな挑戦を、一緒に楽しめる仲間を探しています。</p>
-        <ul class="recruit-panel__jobs fade">
-          <li><a href="{{root}}system-engineer/"><span class="recruit-panel__tag">IT Solution</span>システムエンジニア{{arrow}}</a></li>
-          <li><a href="{{root}}coordinator/"><span class="recruit-panel__tag">Business Solution</span>人材コーディネーター{{arrow}}</a></li>
-        </ul>
-        <a class="btn btn--white magnetic fade" href="{{root}}recruit/">採用情報を見る</a>
+        <p class="fade">決まりきったレールより、まだ形のない地図のほうが面白い。<br>正解をなぞるのではなく、自分たちで正解をつくっていく。<br>そんな挑戦を、一緒に楽しめる仲間を探しています。</p>
+        <a class="btn magnetic fade" href="{{root}}recruit/">採用情報を見る</a>
       </div>
-      <div class="lattice" aria-hidden="true">
-        <span class="lattice__cell" data-parallax="-0.05"><img src="{{root}}assets/img/top-outline-3.jpg" alt="" loading="lazy"></span>
-        <span class="lattice__cell" data-parallax="0.04"><img src="{{root}}assets/img/banner-4.jpg" alt="" loading="lazy"></span>
-        <span class="lattice__cell" data-parallax="-0.03"><img src="{{root}}assets/img/top-access-1.jpg" alt="" loading="lazy"></span>
-        <span class="lattice__cell" data-parallax="0.06"><img src="{{root}}assets/img/sv-ses.jpg" alt="" loading="lazy"></span>
-        <span class="lattice__cell" data-parallax="-0.04"><img src="{{root}}assets/img/top-outline-2.jpg" alt="" loading="lazy"></span>
-      </div>
+      <figure class="recruit-top__visual">
+        <div class="recruit-top__photo fade"><img src="{{root}}assets/img/top-recruit/main.jpg" alt="" width="1600" height="1200" loading="lazy"></div>
+        <div class="recruit-top__badge" aria-hidden="true">
+          <svg viewBox="0 0 200 200"><defs><path id="hiring-circle" d="M100,100 m-76,0 a76,76 0 1,1 152,0 a76,76 0 1,1 -152,0"/></defs><text><textPath href="#hiring-circle" textLength="474" lengthAdjust="spacing">WE'RE HIRING ・ JOIN EMORISLINK ・</textPath></text></svg>
+          <img src="{{root}}assets/img/logo-mark.png" alt="">
+        </div>
+      </figure>
+    </div>
+
+    <div class="job-row">
+      <a class="job-item tilt fade" href="{{root}}system-engineer/">
+        <div class="job-item__photo"><img src="{{root}}assets/img/top-recruit/job-engineer.jpg" alt="" width="1200" height="800" loading="lazy"></div>
+        <div class="job-item__body">
+          <span class="job-item__tag">IT Solution</span>
+          <h3 class="job-item__title">システムエンジニア</h3>
+          <dl class="job-item__facts">
+            <div><dt>月給</dt><dd>35〜55<small>万円</small></dd></div>
+            <div><dt>月平均残業</dt><dd>5<small>h以内</small></dd></div>
+            <div><dt>年間休日</dt><dd>125<small>日</small></dd></div>
+          </dl>
+          <ul class="job-item__tags"><li>案件選択 自由</li><li>フルリモート相談可</li><li>前給保証制度</li></ul>
+          <span class="job-item__more">募集要項を見る{{arrow}}</span>
+        </div>
+      </a>
+      <a class="job-item tilt fade" href="{{root}}coordinator/">
+        <div class="job-item__photo"><img src="{{root}}assets/img/top-recruit/job-coordinator.jpg" alt="" width="1200" height="800" loading="lazy"></div>
+        <div class="job-item__body">
+          <span class="job-item__tag">Business Solution</span>
+          <h3 class="job-item__title">人材コーディネーター</h3>
+          <dl class="job-item__facts">
+            <div><dt>月給</dt><dd>23〜30<small>万円</small></dd></div>
+            <div><dt>月平均残業</dt><dd>20<small>h以下</small></dd></div>
+            <div><dt>年間休日</dt><dd>125<small>日</small></dd></div>
+          </dl>
+          <ul class="job-item__tags"><li>未経験OK</li><li>土日祝休み</li><li>転勤なし</li></ul>
+          <span class="job-item__more">募集要項を見る{{arrow}}</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="life-strip" aria-hidden="true">
+    <div class="life-strip__track">
+      <img src="{{root}}assets/img/top-recruit/life-1.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-2.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-3.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-4.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-5.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-6.jpg" alt="" width="600" height="800" loading="lazy">
+      <img src="{{root}}assets/img/top-recruit/life-1.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-2.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-3.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-4.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-5.jpg" alt="" width="600" height="800" loading="lazy"><img src="{{root}}assets/img/top-recruit/life-6.jpg" alt="" width="600" height="800" loading="lazy">
     </div>
   </div>
 </section>

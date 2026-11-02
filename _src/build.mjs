@@ -75,7 +75,7 @@ function header(r, current) {
 
 <header class="header" id="header">
   <div class="header__inner">
-    <a class="header__logo" href="${r}" aria-label="${config.siteName} トップへ"><img src="${r}assets/img/logo-footer.png" alt="EMORISLINK" width="270" height="66"></a>
+    <a class="header__logo" href="${r}" aria-label="${config.siteName} トップへ"><img class="header__logo-d" src="${r}assets/img/logo-footer.png" alt="EMORISLINK" width="270" height="66"><img class="header__logo-w" src="${r}assets/img/logo-header-white.png" alt="" width="270" height="66" aria-hidden="true"></a>
     <nav class="gnav" aria-label="グローバルナビゲーション">
       <ul class="gnav__list">${items}
       </ul>
@@ -115,26 +115,33 @@ function footer(r) {
       </div>`;
   return `
 <section class="contact-cta" aria-labelledby="contact-cta-title">
-  <div class="blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+  <!-- 背景画像：assets/img/contact-bg.jpg（同じ名前で上書きすれば差し替わる。推奨 2400×1350px／16:9） -->
+  <div class="contact-cta__media" aria-hidden="true">
+    <img class="contact-cta__bg" src="${r}assets/img/contact-bg.jpg" alt="" width="1672" height="941" loading="lazy">
+  </div>
   <div class="contact-cta__inner">
-    <p class="eyebrow eyebrow--light">Contact</p>
-    <h2 class="contact-cta__title split" id="contact-cta-title">一緒に、未来をつなごう。</h2>
-    <p class="contact-cta__lead">人材のこと、ITのこと、これからの働き方のこと。<br class="pc-only">まずはお気軽にご相談ください。</p>
-    <div class="contact-cta__cards">
-      <a class="cta-card tilt" href="${r}for-employers/">
+    <div class="contact-cta__text">
+      <p class="contact-cta__en" aria-hidden="true">Contact</p>
+      <h2 class="contact-cta__title" id="contact-cta-title"><span class="contact-cta__line"><span>一緒に、</span></span><span class="contact-cta__line"><span>未来をつなごう。</span></span></h2>
+      <p class="contact-cta__lead">人材のこと、ITのこと、これからの働き方のこと。<br>まずはお気軽にご相談ください。</p>
+    </div>
+    <div class="contact-cta__bottom">
+      <p class="contact-cta__tel"><span class="contact-cta__tel-label">お電話でのお問い合わせ</span><a href="tel:${config.tel.replace(/-/g, '')}">${config.tel}</a><small>受付 9:00〜18:00（土日祝除く）</small></p>
+      <div class="contact-cta__cards">
+      <a class="cta-card" href="${r}for-employers/">
         <span class="cta-card__en">For Business</span>
         <strong class="cta-card__title">企業のご担当者様</strong>
         <span class="cta-card__text">人材派遣・人材紹介・SES・システム開発・Web制作のご相談</span>
         <span class="cta-card__arrow">${ARROW}</span>
       </a>
-      <a class="cta-card tilt" href="${r}job-seekers/">
+      <a class="cta-card" href="${r}job-seekers/">
         <span class="cta-card__en">For Job Seekers</span>
         <strong class="cta-card__title">お仕事をお探しの方</strong>
         <span class="cta-card__text">お仕事探し・ご応募・キャリアのご相談</span>
         <span class="cta-card__arrow">${ARROW}</span>
       </a>
+      </div>
     </div>
-    <p class="contact-cta__tel">お電話でのお問い合わせ <a href="tel:${config.tel.replace(/-/g, '')}">${config.tel}</a><small>受付 9:00〜18:00（土日祝除く）</small></p>
   </div>
 </section>
 
@@ -156,9 +163,16 @@ function footer(r) {
   <p class="footer__big" aria-hidden="true">EMORISLINK</p>
 </footer>
 
-<a class="floating-banner" href="${r}system-engineer/">
-  <img src="${r}assets/img/floating-banner.png" alt="公式HP経由で応募いただいた方限定 入社祝い金20万円 経験者システムエンジニア 詳細・応募はこちら" width="310" height="162">
-</a>
+<aside class="promo" aria-label="採用キャンペーン">
+  <button class="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel">
+    <span class="promo__tab-text">入社祝い金<b>20</b>万円</span>
+    <i class="bi bi-chevron-left" aria-hidden="true"></i>
+  </button>
+  <div class="promo__panel" id="promo-panel" hidden>
+    <a class="promo__banner" href="${r}system-engineer/"><img src="${r}assets/img/floating-banner.png" alt="公式HP経由で応募いただいた方限定 入社祝い金20万円 経験者システムエンジニア 詳細・応募はこちら" width="310" height="162"></a>
+    <button class="promo__close" type="button" aria-label="キャンペーンバナーを閉じる"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+  </div>
+</aside>
 <a class="pagetop" href="#top" aria-label="ページの先頭へ">
   <svg viewBox="0 0 56 56" aria-hidden="true"><circle class="pagetop__track" cx="28" cy="28" r="26"/><circle class="pagetop__ring" cx="28" cy="28" r="26"/></svg>
   <span aria-hidden="true">↑</span>
@@ -169,30 +183,21 @@ function pageHero(r, hero) {
   if (!hero) return '';
   const crumbs = [['', 'HOME'], ...(hero.crumbs || [])];
   const tag = hero.noH1 ? 'p' : 'h1';
+  // 写真を全面に敷き、タイトル（英字＋日本語）とパンくずだけを重ねる
   return `
 <section class="page-hero">
-  <div class="blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+  <div class="page-hero__media" aria-hidden="true"><img src="${r}assets/img/${hero.img || 'hero-company.jpg'}" alt=""></div>
   <div class="page-hero__inner">
-    <div class="page-hero__text">
-      <p class="eyebrow eyebrow--load">${hero.en}</p>
-      <${tag} class="page-hero__title split split--load">${hero.ja}</${tag}>
-      ${hero.catch ? `<p class="page-hero__catch">${hero.catch}</p>` : ''}
-    </div>
-    ${hero.img ? `<div class="page-hero__visual">
-      <div class="link-frame link-frame--sm">
-        <div class="link-frame__a"><img src="${r}assets/img/${hero.img}" alt=""></div>
-        <span class="link-frame__b"></span>
-        <span class="link-frame__pill"></span>
-      </div>
-    </div>` : ''}
+    <p class="page-hero__en" aria-hidden="true">${hero.en}</p>
+    <${tag} class="page-hero__title">${hero.ja}</${tag}>
   </div>
-</section>
-<nav class="breadcrumb" aria-label="パンくずリスト">
-  <ol>
-    ${crumbs.map(([h, t]) => `<li><a href="${r}${h}">${t}</a></li>`).join('')}
-    <li aria-current="page">${hero.current || hero.ja}</li>
-  </ol>
-</nav>`;
+  <nav class="breadcrumb" aria-label="パンくずリスト">
+    <ol>
+      ${crumbs.map(([h, t]) => `<li><a href="${r}${h}">${t}</a></li>`).join('')}
+      <li aria-current="page">${hero.current || hero.ja}</li>
+    </ol>
+  </nav>
+</section>`;
 }
 
 function layout({ meta, body, route }) {
@@ -227,7 +232,7 @@ function layout({ meta, body, route }) {
 <script>document.documentElement.classList.add('js')</script>
 <script src="${r}assets/js/main.js?v=${VERSION}" defer></script>
 </head>
-<body class="${meta.bodyClass || 'page'}" id="top">
+<body class="${meta.bodyClass || 'page'}${meta.hero ? ' has-hero' : ''}" id="top">
 <a class="skip-link" href="#main">本文へスキップ</a>
 ${header(r, meta.section)}
 <main id="main">
@@ -293,7 +298,7 @@ function build() {
 }
 
 function serve(port = 8080) {
-  const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mov': 'video/mp4', '.pdf': 'application/pdf', '.xml': 'application/xml', '.txt': 'text/plain' };
+  const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mov': 'video/mp4', '.mp4': 'video/mp4', '.webp': 'image/webp', '.pdf': 'application/pdf', '.xml': 'application/xml', '.txt': 'text/plain' };
   http
     .createServer((req, res) => {
       let p = path.join(OUT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
