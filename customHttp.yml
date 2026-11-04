@@ -1,0 +1,21 @@
+# AWS Amplify Hosting：全ページに付けるセキュリティ用のレスポンスヘッダー
+customHeaders:
+  - pattern: '**'
+    headers:
+      # 常に HTTPS で接続させる（1年間）。サブドメインは別サービスの可能性があるので対象外
+      - key: 'Strict-Transport-Security'
+        value: 'max-age=31536000'
+      # ファイルの種類を推測させない（偽装ファイル対策）
+      - key: 'X-Content-Type-Options'
+        value: 'nosniff'
+      # 他のサイトの中に埋め込ませない（なりすましページ・クリックジャッキング対策）
+      - key: 'X-Frame-Options'
+        value: 'DENY'
+      - key: 'Content-Security-Policy'
+        value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+      # 外部サイトへ移動するときは、ドメイン名だけを伝える
+      - key: 'Referrer-Policy'
+        value: 'strict-origin-when-cross-origin'
+      # カメラ・マイク・位置情報は使わない
+      - key: 'Permissions-Policy'
+        value: 'camera=(), microphone=(), geolocation=(), payment=()'
