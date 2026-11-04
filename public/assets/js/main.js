@@ -504,32 +504,41 @@
     }).observe(video);
   });
 
-  // ---------- 採用キャンペーン：右端のタブ。押すとバナーが開く ----------
-  // 初めての方には、少しスクロールした時点で一度だけ開いて見せる。×で閉じたらブラウザに記憶し、以降はタブだけ
+  // ---------- 右端のタブ（EMORIS AGENT／入社祝い金）。押すとバナーが開く ----------
+  // 入社祝い金は、初めての方に少しスクロールした時点で一度だけ開いて見せる。×で閉じたらブラウザに記憶し、以降はタブだけ
   const promo = document.querySelector('.promo');
   if (promo) {
-    const tab = promo.querySelector('.promo__tab');
-    const panel = promo.querySelector('.promo__panel');
-    const KEY = 'emorislink-promo-closed';
-    const store = {
-      get: () => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } },
-      set: () => { try { localStorage.setItem(KEY, '1'); } catch { /* 保存できない環境では記憶しない */ } },
-    };
-    const setOpen = (open) => {
-      panel.hidden = !open;
-      promo.classList.toggle('is-open', open);
-      tab.setAttribute('aria-expanded', String(open));
-      tab.setAttribute('aria-label', open ? 'キャンペーンバナーをしまう' : 'キャンペーンバナーを開く');
-    };
-    setOpen(false);
-    tab.addEventListener('click', () => setOpen(panel.hidden));
-    promo.querySelector('.promo__close').addEventListener('click', () => { store.set(); setOpen(false); tab.focus(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) setOpen(false); });
-    if (!store.get()) {
+    const items = [...promo.querySelectorAll('.promo__item')].map((item) => {
+      const tab = item.querySelector('.promo__tab');
+      const panel = item.querySelector('.promo__panel');
+      const label = tab.querySelector('.promo__tab-text').textContent;
+      const KEY = item.dataset.key;
+      const store = {
+        get: () => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } },
+        set: () => { try { localStorage.setItem(KEY, '1'); } catch { /* 保存できない環境では記憶しない */ } },
+      };
+      const setOpen = (open) => {
+        panel.hidden = !open;
+        item.classList.toggle('is-open', open);
+        tab.setAttribute('aria-expanded', String(open));
+        tab.setAttribute('aria-label', `${label}のバナーを${open ? 'しまう' : '開く'}`);
+      };
+      return { item, tab, panel, store, setOpen };
+    });
+    // 片方を開くと、もう片方は閉じる
+    const openOnly = (target) => items.forEach((it) => it.setOpen(it === target));
+    items.forEach((it) => {
+      it.setOpen(false);
+      it.tab.addEventListener('click', () => (it.panel.hidden ? openOnly(it) : it.setOpen(false)));
+      it.item.querySelector('.promo__close').addEventListener('click', () => { it.store.set(); it.setOpen(false); it.tab.focus(); });
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') items.forEach((it) => it.setOpen(false)); });
+    const auto = items.find((it) => 'autoOpen' in it.item.dataset);
+    if (auto && !auto.store.get()) {
       const firstOpen = () => {
         if (window.scrollY < 300) return;
         window.removeEventListener('scroll', firstOpen);
-        setOpen(true);
+        if (items.every((it) => it.panel.hidden)) openOnly(auto);
       };
       window.addEventListener('scroll', firstOpen, { passive: true });
     }

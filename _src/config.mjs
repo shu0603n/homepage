@@ -7,6 +7,13 @@ export default {
   tel: '011-590-4888',
   mail: 'info@emorislink.co.jp',
 
+  // 公式SNS（フッターにアイコンで表示。url が空のものは表示しない）
+  // 公式LINE を開設したら、line の url に友だち追加用の URL（例: 'https://lin.ee/xxxxxxx'）を入れる
+  social: [
+    { id: 'instagram', name: 'Instagram', url: 'https://www.instagram.com/emorislink_info/' },
+    { id: 'line', name: '公式LINE', url: '' },
+  ],
+
   // お問い合わせフォームの送信先
   // 標準は同じサーバーの api/contact.php（_src/api/contact.php をビルド時にコピー。宛先などの設定はそのファイル内）
   // PHP が使えないサーバーでは Formspree などの URL（例: 'https://formspree.io/f/xxxxxxxx'）に差し替える

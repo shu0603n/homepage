@@ -233,8 +233,8 @@
   Recruit の画像は public/assets/img/top-recruit/ に置いています（現在は仮画像）。
   同じファイル名で上書きすれば差し替わります。推奨サイズ：
     main.jpg              … 1600×1200px（4:3 横長）チームや職場の様子
-    job-engineer.jpg      … 1200×800px （3:2 横長）システムエンジニアの仕事風景（文字パネルが左に重なるので人物は右寄り）
-    job-coordinator.jpg   … 1200×800px （3:2 横長）コーディネーターの仕事風景（文字パネルが左に重なるので人物は右寄り）
+    job-engineer.jpg      … 1600×900px （16:9 横長）システムエンジニアの仕事風景（文字は写真の下に置くので構図は自由。人物は中央付近だとスマホの 3:2 でも切れにくい）
+    job-coordinator.jpg   … 1600×900px （16:9 横長）コーディネーターの仕事風景（文字は写真の下に置くので構図は自由。人物は中央付近だとスマホの 3:2 でも切れにくい）
     life-1.jpg〜life-6.jpg …  600×800px （3:4 縦長）オフィス・社員・働く様子
 -->
 <section class="section recruit-top" aria-labelledby="recruit-title">
@@ -257,32 +257,36 @@
 
     <div class="job-row">
       <a class="job-item tilt fade" href="{{root}}system-engineer/">
-        <div class="job-item__photo"><img src="{{root}}assets/img/top-recruit/job-engineer.jpg" alt="" width="1200" height="800" loading="lazy"></div>
-        <div class="job-item__body">
+        <!-- 写真は一旦なし（戻すときはこのコメントを外す）<div class="job-item__photo"><img src="{{root}}assets/img/top-recruit/job-engineer.jpg" alt="" width="1600" height="900" loading="lazy"></div> -->
+        <div class="job-item__head">
           <span class="job-item__tag">IT Solution</span>
           <h3 class="job-item__title">システムエンジニア</h3>
+        </div>
+        <div class="job-item__body">
           <dl class="job-item__facts">
             <div><dt>月給</dt><dd>35〜55<small>万円</small></dd></div>
             <div><dt>月平均残業</dt><dd>5<small>h以内</small></dd></div>
             <div><dt>年間休日</dt><dd>125<small>日</small></dd></div>
           </dl>
           <ul class="job-item__tags"><li>案件選択 自由</li><li>フルリモート相談可</li><li>前給保証制度</li></ul>
-          <span class="job-item__more">募集要項を見る{{arrow}}</span>
         </div>
+        <span class="job-item__more">募集要項を見る{{arrow}}</span>
       </a>
       <a class="job-item tilt fade" href="{{root}}coordinator/">
-        <div class="job-item__photo"><img src="{{root}}assets/img/top-recruit/job-coordinator.jpg" alt="" width="1200" height="800" loading="lazy"></div>
-        <div class="job-item__body">
+        <!-- 写真は一旦なし（戻すときはこのコメントを外す）<div class="job-item__photo"><img src="{{root}}assets/img/top-recruit/job-coordinator.jpg" alt="" width="1600" height="900" loading="lazy"></div> -->
+        <div class="job-item__head">
           <span class="job-item__tag">Business Solution</span>
           <h3 class="job-item__title">人材コーディネーター</h3>
+        </div>
+        <div class="job-item__body">
           <dl class="job-item__facts">
             <div><dt>月給</dt><dd>23〜30<small>万円</small></dd></div>
             <div><dt>月平均残業</dt><dd>20<small>h以下</small></dd></div>
             <div><dt>年間休日</dt><dd>125<small>日</small></dd></div>
           </dl>
           <ul class="job-item__tags"><li>未経験OK</li><li>土日祝休み</li><li>転勤なし</li></ul>
-          <span class="job-item__more">募集要項を見る{{arrow}}</span>
         </div>
+        <span class="job-item__more">募集要項を見る{{arrow}}</span>
       </a>
     </div>
   </div>

@@ -109,6 +109,20 @@ function mapList(r) {
   return PINS.map((p) => `<li><button class="map__item" type="button" data-pin="${p.id}" data-title="${p.title}" data-en="${p.en}" data-text="${p.text}" data-href="${r}${p.href}" data-link="${p.link}" style="--c:${p.color}"><span class="map__no">${p.no}</span><span class="map__name">${p.title}</span></button></li>`).join('\n        ');
 }
 
+// 公式SNS のアイコンリンク（config.social の url が入っているものだけ）
+const SOCIAL_ICONS = {
+  instagram: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/></svg>',
+  line: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c-5.2 0-9.4 3.4-9.4 7.6 0 3.8 3.3 6.9 7.8 7.5.3.1.7.2.8.5.1.2.1.6 0 .9l-.1.8c0 .2-.2.9.8.5s5.4-3.2 7.4-5.4c1.4-1.5 2.1-3.1 2.1-4.8 0-4.2-4.2-7.6-9.4-7.6Z" fill="currentColor"/><path d="M6.6 9.4v3.7h2.3M10.4 9.4v3.7M12.3 13.1V9.4l2.6 3.7V9.4M18.4 9.4h-2.2v3.7h2.2M16.2 11.25h2" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+function socialLinks() {
+  const items = (config.social || []).filter((s) => s.url);
+  if (!items.length) return '';
+  return `
+      <ul class="footer__sns" aria-label="公式SNS">${items
+        .map((s) => `<li><a class="footer__sns-link footer__sns-link--${s.id}" href="${s.url}" target="_blank" rel="noopener" aria-label="${s.name}（新しいタブで開きます）">${SOCIAL_ICONS[s.id] || ''}<span>${s.name}</span></a></li>`)
+        .join('')}</ul>`;
+}
+
 function footer(r) {
   const col = (en, href, items) => `
       <div class="footer__col">
@@ -153,9 +167,9 @@ function footer(r) {
       <a class="footer__logo" href="${r}"><img src="${r}assets/img/logo-footer.png" alt="EMORISLINK" width="270" height="66" loading="lazy"></a>
       <p class="footer__catch">人と技術の力で、働くをもっと自由に。</p>
       <address class="footer__addr">〒060-0042<br>北海道札幌市中央区大通西7丁目1-1<br>井門札幌パークフロントビル 1F<br>TEL <a href="tel:${config.tel.replace(/-/g, '')}">${config.tel}</a></address>
-      <p class="footer__group"><img src="${r}assets/img/logo-meihogroup.png" alt="" loading="lazy">メイホーグループ</p>
+      <p class="footer__group"><img src="${r}assets/img/logo-meihogroup.png" alt="" loading="lazy">メイホーグループ</p>${socialLinks()}
     </div>
-    <nav class="footer__nav" aria-label="フッターナビゲーション">${col('Service', 'service/', SERVICES.map(([s, ja]) => [`service/${s}/`, ja]))}${col('Company', 'company/', COMPANY.map(([s, ja]) => [`company/${s}/`, ja]))}${col('Recruit', 'recruit/', RECRUIT.map(([s, ja]) => [`${s}/`, ja]))}${col('Contact', 'contact/', [['for-employers/', '企業担当者様'], ['job-seekers/', 'お仕事をお探しの方'], ['news/', 'お知らせ']])}
+    <nav class="footer__nav" aria-label="フッターナビゲーション">${col('Service', 'service/', SERVICES.map(([s, ja]) => [`service/${s}/`, ja]))}${col('Company', 'company/', COMPANY.map(([s, ja]) => [`company/${s}/`, ja]))}${col('Recruit', 'recruit/', RECRUIT.map(([s, ja]) => [`${s}/`, ja]))}${col('Contact', 'contact/', [['for-employers/', '企業担当者様'], ['job-seekers/', 'お仕事をお探しの方']])}
     </nav>
   </div>
   <div class="footer__bottom">
@@ -165,14 +179,26 @@ function footer(r) {
   <p class="footer__big" aria-hidden="true">EMORISLINK</p>
 </footer>
 
-<aside class="promo" aria-label="採用キャンペーン">
-  <button class="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel">
-    <span class="promo__tab-text">入社祝い金<b>20</b>万円</span>
-    <i class="bi bi-chevron-left" aria-hidden="true"></i>
-  </button>
-  <div class="promo__panel" id="promo-panel" hidden>
-    <a class="promo__banner" href="${r}system-engineer/"><img src="${r}assets/img/floating-banner.png" alt="公式HP経由で応募いただいた方限定 入社祝い金20万円 経験者システムエンジニア 詳細・応募はこちら" width="310" height="162"></a>
-    <button class="promo__close" type="button" aria-label="キャンペーンバナーを閉じる"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+<aside class="promo" aria-label="キャンペーン・お知らせ">
+  <div class="promo__item promo__item--agent" data-key="emorislink-promo-agent-closed">
+    <button class="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-agent">
+      <span class="promo__tab-text">無料会員登録</span>
+      <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </button>
+    <div class="promo__panel" id="promo-panel-agent" hidden>
+      <a class="promo__banner" href="https://emoris-jobs.com/" target="_blank" rel="noopener"><img src="${r}assets/img/floating-banner-agent.jpg" alt="幅広い業界・職種から、あなたに合う仕事が見つかる。EMORIS AGENT 登録・利用はすべて無料 無料で会員登録する（新しいタブで開きます）" width="800" height="418"></a>
+      <button class="promo__close" type="button" aria-label="EMORIS AGENT のバナーを閉じる"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </div>
+  </div>
+  <div class="promo__item promo__item--bonus" data-key="emorislink-promo-closed" data-auto-open>
+    <button class="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-bonus">
+      <span class="promo__tab-text">入社祝い金<b>20</b>万円</span>
+      <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </button>
+    <div class="promo__panel" id="promo-panel-bonus" hidden>
+      <a class="promo__banner" href="${r}system-engineer/"><img src="${r}assets/img/floating-banner.jpg" alt="公式HP経由で応募いただいた方限定 入社祝い金20万円 経験者システムエンジニア 詳細・応募はこちら" width="800" height="418"></a>
+      <button class="promo__close" type="button" aria-label="入社祝い金のバナーを閉じる"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </div>
   </div>
 </aside>
 <a class="pagetop" href="#top" aria-label="ページの先頭へ">

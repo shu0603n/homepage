@@ -50,6 +50,7 @@ const organization = {
     areaServed: 'JP',
     availableLanguage: 'Japanese',
   },
+  sameAs: (config.social || []).filter((s) => s.url).map((s) => s.url),
   knowsAbout: ['人材派遣', '人材紹介', '紹介予定派遣', '業務委託', 'システムエンジニアリングサービス（SES）', 'システム開発', 'WEBデザイン', 'WEBマーケティング'],
 };
 
