@@ -305,6 +305,9 @@ function build() {
   fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
   // AI 向けの会社概要（llms.txt）
   fs.copyFileSync(path.join(SRC, 'llms.txt'), path.join(OUT, 'llms.txt'));
+  // お問い合わせメール送信（サイトで唯一の PHP）
+  fs.mkdirSync(path.join(OUT, 'api'), { recursive: true });
+  fs.copyFileSync(path.join(SRC, 'api', 'contact.php'), path.join(OUT, 'api', 'contact.php'));
   console.log(`built ${routes.length + 1} pages → ${path.relative(process.cwd(), OUT) || OUT}`);
 }
 
@@ -314,6 +317,11 @@ function serve(port = 8080) {
     .createServer((req, res) => {
       let p = path.join(OUT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
       if (!p.startsWith(OUT)) return res.writeHead(403).end();
+      // このプレビューは PHP を実行できない（メール送信は公開サーバーでのみ動く）
+      if (p.endsWith('.php')) {
+        res.writeHead(501, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ ok: false, message: 'ローカルの確認環境ではメールを送信できません。公開サーバー（PHP が使える環境）で動作します。' }));
+      }
       if (fs.existsSync(p) && fs.statSync(p).isDirectory()) p = path.join(p, 'index.html');
       if (!fs.existsSync(p)) {
         res.writeHead(404, { 'Content-Type': types['.html'] });

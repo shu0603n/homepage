@@ -5,8 +5,9 @@
       <p>掲載中のお仕事に関するお問い合わせ・ご応募はもちろん、あなたのご希望や働き方に合わせたお仕事探しのサポートも行っています。<br>以下のフォームに必要事項をご入力のうえ、送信してください。</p>
     </div>
 
-    <form class="form" data-contact data-endpoint="{{formEndpoint.seekers}}" data-mailto="{{mail}}" data-subject="【HP】求職者様からのお問い合わせ・ご応募" novalidate>
-      <input type="hidden" name="_subject" value="【HP】求職者様からのお問い合わせ・ご応募">
+    <form class="form" data-contact data-endpoint="{{formEndpoint.seekers}}" data-mailto="{{mail}}" data-subject="【お仕事をお探しの方】HPよりお問い合わせがありました" novalidate>
+      <input type="hidden" name="_form" value="seekers">
+      <input type="hidden" name="_subject" value="【お仕事をお探しの方】HPよりお問い合わせがありました">
       <div class="hp-field" aria-hidden="true"><label>空欄のまま送信してください<input class="hp" type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
 
       <div class="form__row">

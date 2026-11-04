@@ -5,8 +5,9 @@
       <p>人材派遣・人材紹介・システムエンジニアリング・システム開発など、貴社の状況やご要望に合わせて最適なご提案をいたします。<br>以下のフォームに必要事項をご入力のうえ、送信してください。</p>
     </div>
 
-    <form class="form" data-contact data-endpoint="{{formEndpoint.employers}}" data-mailto="{{mail}}" data-subject="【HP】企業担当者様からのお問い合わせ" novalidate>
-      <input type="hidden" name="_subject" value="【HP】企業担当者様からのお問い合わせ">
+    <form class="form" data-contact data-endpoint="{{formEndpoint.employers}}" data-mailto="{{mail}}" data-subject="【企業担当者】HPよりお問い合わせがありました" novalidate>
+      <input type="hidden" name="_form" value="employers">
+      <input type="hidden" name="_subject" value="【企業担当者】HPよりお問い合わせがありました">
       <div class="hp-field" aria-hidden="true"><label>空欄のまま送信してください<input class="hp" type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
 
       <div class="form__row">

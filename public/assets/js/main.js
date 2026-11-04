@@ -27,6 +27,17 @@
   });
 
   // ---------- スクロール連動（ヘッダー・進捗・パララックス） ----------
+  // 透明ヘッダーの状態でメガメニューを開いている間は、ヘッダーも白にしてメニューと一体に見せる
+  document.querySelectorAll('.gnav__item').forEach((item) => {
+    if (!item.querySelector('.gnav__drop')) return;
+    const open = () => body.classList.add('drop-open');
+    const close = () => { if (!item.matches(':hover, :focus-within')) body.classList.remove('drop-open'); };
+    item.addEventListener('mouseenter', open);
+    item.addEventListener('mouseleave', close);
+    item.addEventListener('focusin', open);
+    item.addEventListener('focusout', () => setTimeout(close));
+  });
+
   let lastY = window.scrollY;
   const parallaxEls = [...document.querySelectorAll('[data-parallax]')];
 
@@ -592,7 +603,7 @@
     const toText = (fd) => {
       const lines = [];
       for (const [k, v] of fd.entries()) {
-        if (k === 'agree' || k === '_gotcha' || k === '_subject') continue;
+        if (k === 'agree' || k === '_gotcha' || k === '_subject' || k === '_form') continue;
         const label = form.querySelector(`[name="${k}"]`)?.dataset.label || k;
         lines.push(`【${label}】\n${v}\n`);
       }
@@ -617,7 +628,16 @@
       submit.disabled = true;
       try {
         const res = await fetch(endpoint, { method: 'POST', body: fd, headers: { Accept: 'application/json' } });
-        if (!res.ok) throw new Error(res.status);
+        const data = await res.json().catch(() => null);
+        if (!res.ok || data?.ok !== true) {
+          // 入力不備・連続送信（422 / 429）、ローカル確認環境（501）はサーバーの説明をそのまま表示
+          if ([422, 429, 501].includes(res.status) && data?.message) {
+            submit.disabled = false;
+            showStatus(data.message, false);
+            return;
+          }
+          throw new Error(res.status);
+        }
         form.reset();
         syncAgree();
         showStatus('お問い合わせありがとうございます。内容を確認のうえ、担当者より順次ご連絡いたします。', true);
