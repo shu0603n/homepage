@@ -7,6 +7,7 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import config from './config.mjs';
 import { isoMap, PINS, pinPos } from './isomap.mjs';
+import { jsonLd } from './schema.mjs';
 
 const SRC = path.dirname(fileURLToPath(import.meta.url));
 const PAGES = path.join(SRC, 'pages');
@@ -14,6 +15,8 @@ const PARTIALS = path.join(SRC, 'partials');
 const OUT = path.join(SRC, '..', 'public');
 // CSS/JS の読み込みURLにビルドごとの番号を付け、ブラウザに古いファイルを使わせない
 const VERSION = Date.now().toString(36);
+// サイトマップの更新日・求人の掲載日に使う（ビルドした日）
+const TODAY = new Date().toISOString().slice(0, 10);
 
 const SERVICES = [
   ['staffing', '人材派遣'],
@@ -43,7 +46,6 @@ const NAV = [
   ['service', 'Service', '事業内容', 'service/', SERVICES.map(([s, ja]) => [`service/${s}/`, ja])],
   ['company', 'Company', '企業情報', 'company/', COMPANY.map(([s, ja]) => [`company/${s}/`, ja])],
   ['recruit', 'Recruit', '採用情報', 'recruit/', RECRUIT.map(([s, ja]) => [`${s}/`, ja])],
-  ['news', 'News', 'お知らせ', 'news/', []],
 ];
 
 const ARROW = '<svg class="ico-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -200,12 +202,14 @@ function pageHero(r, hero) {
 </section>`;
 }
 
-function layout({ meta, body, route }) {
+function layout({ meta, body, route, isSpecial }) {
   const depth = route ? route.split('/').filter(Boolean).length : 0;
   const r = depth ? '../'.repeat(depth) : './';
-  const title = meta.title ? `${meta.title} | ${config.siteName}` : `${config.siteName} | 人材派遣・人材紹介・SES・システム開発・Web制作`;
+  const title = meta.title ? `${meta.title} | ${config.siteName}` : `${config.siteName} | 札幌の人材派遣・人材紹介・SES・システム開発・Web制作`;
   const desc = meta.description || config.defaultDescription;
   const url = `${config.siteUrl}/${route}`;
+  // SNS・検索結果用の画像：ページ先頭の写真（トップは札幌の街並み）
+  const image = `${config.siteUrl}/assets/img/${meta.ogImage || meta.hero?.img || 'contact-bg.jpg'}`;
   return `<!doctype html>
 <html lang="ja">
 <head>
@@ -213,14 +217,19 @@ function layout({ meta, body, route }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title}</title>
 <meta name="description" content="${desc}">
-<link rel="canonical" href="${url}">
+${isSpecial ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${url}">`}
 <meta property="og:type" content="${route ? 'article' : 'website'}">
+<meta property="og:locale" content="ja_JP">
 <meta property="og:site_name" content="${config.siteName}">
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${desc}">
 <meta property="og:url" content="${url}">
-<meta property="og:image" content="${config.siteUrl}/assets/img/${meta.ogImage || 'banner-1.jpg'}">
+<meta property="og:image" content="${image}">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${desc}">
+<meta name="twitter:image" content="${image}">
+${jsonLd({ route, meta, url, title, desc, image, isSpecial, datePosted: TODAY })}
 <meta name="theme-color" content="#004968">
 <link rel="icon" href="${r}assets/img/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="${r}assets/img/apple-touch-icon.png">
@@ -280,7 +289,7 @@ function build() {
     const route = isSpecial ? '' : rel.replace(/index\.html$/, '');
     const outFile = path.join(OUT, rel);
     fs.mkdirSync(path.dirname(outFile), { recursive: true });
-    let html = layout({ meta, body, route });
+    let html = layout({ meta, body, route, isSpecial });
     // 404 はどの階層からでも表示されるのでルート絶対パスにする
     if (isSpecial) html = html.replaceAll('"./', '"/').replaceAll("'./", "'/");
     fs.writeFileSync(outFile, html);
@@ -290,10 +299,12 @@ function build() {
   fs.writeFileSync(
     path.join(OUT, 'sitemap.xml'),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes
-      .map((r) => `  <url><loc>${config.siteUrl}/${r}</loc></url>`)
+      .map((r) => `  <url><loc>${config.siteUrl}/${r}</loc><lastmod>${TODAY}</lastmod></url>`)
       .join('\n')}\n</urlset>\n`
   );
   fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
+  // AI 向けの会社概要（llms.txt）
+  fs.copyFileSync(path.join(SRC, 'llms.txt'), path.join(OUT, 'llms.txt'));
   console.log(`built ${routes.length + 1} pages → ${path.relative(process.cwd(), OUT) || OUT}`);
 }
 

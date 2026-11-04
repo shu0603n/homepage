@@ -1,4 +1,4 @@
-<!--{"bodyClass":"home"}-->
+<!--{"bodyClass":"home","description":"札幌・大通の株式会社エモリスリンクは、人材派遣・人材紹介・紹介予定派遣・業務委託・システムエンジニアリング（SES）・システム開発・WEBデザイン・WEBマーケティングを提供。人材とITの両面から、人と企業をつなぎます。"}-->
 <section class="kv" aria-label="メインビジュアル">
   <div class="kv__media">
     <video class="kv__video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
@@ -206,13 +206,11 @@
 
 <section class="section message-sec" aria-labelledby="message-title">
   <div class="container message-sec__grid">
-    <div class="message-sec__visual fade">
-      <div class="link-frame link-frame--sm">
-        <div class="link-frame__a"><img src="{{root}}assets/img/company-message.jpg" alt="" loading="lazy"></div>
-        <span class="link-frame__b"></span>
-        <span class="link-frame__pill"></span>
-      </div>
-    </div>
+    <!-- 写真：assets/img/message.jpg（同じ名前で上書きすれば差し替わる。推奨 1200×1500px／4:5 縦長） -->
+    <figure class="message-sec__visual">
+      <span class="message-sec__frame" aria-hidden="true"></span>
+      <div class="message-sec__photo"><img src="{{root}}assets/img/message.jpg" alt="" width="1200" height="1500" loading="lazy"></div>
+    </figure>
     <div>
       <p class="sec-head__en" aria-hidden="true">Message</p>
       <p class="message-sec__mission fade">Mission</p>

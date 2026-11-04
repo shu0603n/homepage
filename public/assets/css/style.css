@@ -447,7 +447,7 @@ html:not(.js) .kv__eyebrow-line { width: 56px; }
 .license p { margin: 0; }
 .license__icon { display: grid; place-items: center; flex: 0 0 auto; width: 48px; height: 48px; border-radius: 30%; background: var(--grad); font-size: 22px; color: #fff; }
 .license__name { font-size: 13px; color: rgba(255, 255, 255, .8); }
-.license__no { font-family: var(--f-en); font-size: 22px; font-weight: 600; letter-spacing: .04em; }
+.license__no { font-family: var(--f-en); font-size: clamp(18px, 1.9vw, 22px); white-space: nowrap; font-weight: 600; letter-spacing: .04em; }
 .license--group { flex-direction: column; align-items: flex-start; justify-content: center; gap: 10px; background: #fff; color: var(--navy); box-shadow: none; transition: transform .4s var(--ease); }
 .license--group img { height: 30px; width: auto; }
 .license--group span { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
@@ -464,7 +464,16 @@ html:not(.js) .kv__eyebrow-line { width: 56px; }
    トップ：代表メッセージ
    ========================================================= */
 .message-sec__grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(40px, 7vw, 110px); align-items: center; }
-.message-sec__visual { width: 100%; max-width: 460px; justify-self: center; }
+/* 代表メッセージの写真：縦長の角丸＋右下45°の切り落とし、後ろにずらしたグラデーションの枠、 */
+.message-sec__visual { position: relative; width: 100%; max-width: 440px; margin: 0; justify-self: center; padding: 0 22px 22px 0; }
+.message-sec__photo { position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-radius: var(--r-l); background: var(--bg-soft); box-shadow: var(--shadow); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 90px), calc(100% - 90px) 100%, 0 100%); }
+.message-sec__photo img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08); transition: transform 1.6s var(--ease); }
+.message-sec__frame { position: absolute; z-index: -1; left: 22px; top: 22px; right: 0; bottom: 0; border-radius: var(--r-l); border: 3px solid transparent; background: var(--grad) border-box; -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.js .message-sec__photo { opacity: 0; transform: translateY(40px); transition: opacity 1s var(--ease), transform 1.2s var(--ease); }
+.js .message-sec__frame { opacity: 0; transform: translate(-22px, -22px); transition: opacity 1s var(--ease) .35s, transform 1.2s var(--ease) .35s; }
+.message-sec__visual.is-in .message-sec__photo, .message-sec__visual.is-in .message-sec__frame { opacity: 1; transform: none; }
+.message-sec__visual.is-in .message-sec__photo img { transform: scale(1); }
+@media (prefers-reduced-motion: reduce) { .js .message-sec__photo, .js .message-sec__frame, .message-sec__photo img { transform: none; } }
 .message-sec__mission { display: inline-block; margin: 14px 0 14px; padding: 4px 16px; border-radius: 999px; background: var(--teal-soft); font-family: var(--f-en); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--navy); }
 .message-sec__quote { margin-bottom: 28px; padding-left: 26px; font-size: clamp(26px, 3.3vw, 44px); font-weight: 900; line-height: 1.5; color: var(--navy-dd); border-left: 4px solid transparent; border-image: var(--grad) 1; }
 .message-sec__sign { margin: 28px 0 32px; font-size: 13px; color: var(--sub); }
@@ -737,7 +746,9 @@ html:not(.js) .equation__word { clip-path: none; }
 /* =========================================================
    トップ：お知らせ
    ========================================================= */
-.news-sec__grid { display: grid; grid-template-columns: 300px 1fr; gap: 48px; }
+.news-sec__grid { display: grid; grid-template-columns: 300px 1fr; gap: 48px; align-items: center; }
+/* トップのお知らせは新しい3件まで（4件目以降は一覧ページで表示） */
+.news-sec .news-list li:nth-child(n + 4) { display: none; }
 .news-sec__grid .sec-head__title { margin-bottom: 24px; }
 @media (max-width: 860px) { .news-sec__grid { grid-template-columns: 1fr; gap: 24px; } }
 
@@ -784,7 +795,9 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
 @media (max-width: 767px) { .page-hero { min-height: 320px; } }
 
 .lead { font-size: clamp(16px, 1.6vw, 18px); line-height: 2.2; }
-.lead-block { max-width: 860px; margin: 0 auto; text-align: center; }
+.lead-block { max-width: 860px; margin-left: auto; margin-right: auto; text-align: center; }
+.lead-block.mb-48 { margin-bottom: clamp(48px, 5.5vw, 76px); }
+.lead-block > :last-child { margin-bottom: 0; }
 
 /* 一覧カード */
 .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(18px, 2.6vw, 32px); }

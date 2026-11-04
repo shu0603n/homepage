@@ -268,7 +268,7 @@
     document.querySelectorAll('[data-count]').forEach((el) => { el.textContent = '0'; });
   }
   const groupOf = (el) => el.closest('[data-count-group]');
-  const targets = document.querySelectorAll('.fade, .split:not(.split--load), .reveal-img, .equation, .equation__result, [data-count-group], [data-count]');
+  const targets = document.querySelectorAll('.fade, .split:not(.split--load), .reveal-img, .equation, .equation__result, .message-sec__visual, [data-count-group], [data-count]');
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((en) => {
