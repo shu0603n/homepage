@@ -127,7 +127,7 @@ function footer(r) {
   const col = (en, href, items) => `
       <div class="footer__col">
         <a class="footer__title" href="${r}${href}">${en}</a>
-        ${items.length ? `<ul>${items.map(([h, t]) => `<li><a href="${r}${h}">${t}</a></li>`).join('')}</ul>` : ''}
+        ${items.length ? `<ul>${items.map(([h, t]) => (/^https?:/.test(h) ? `<li><a href="${h}" target="_blank" rel="noopener">${t}<i class="bi bi-box-arrow-up-right" aria-hidden="true"></i><span class="visually-hidden">（新しいタブで開きます）</span></a></li>` : `<li><a href="${r}${h}">${t}</a></li>`)).join('')}</ul>` : ''}
       </div>`;
   return `
 <section class="contact-cta" aria-labelledby="contact-cta-title">
@@ -169,7 +169,7 @@ function footer(r) {
       <address class="footer__addr">〒060-0042<br>北海道札幌市中央区大通西7丁目1-1<br>井門札幌パークフロントビル 1F<br>TEL <a href="tel:${config.tel.replace(/-/g, '')}">${config.tel}</a></address>
       <p class="footer__group"><img src="${r}assets/img/logo-meihogroup.png" alt="" loading="lazy">メイホーグループ</p>${socialLinks()}
     </div>
-    <nav class="footer__nav" aria-label="フッターナビゲーション">${col('Service', 'service/', SERVICES.map(([s, ja]) => [`service/${s}/`, ja]))}${col('Company', 'company/', COMPANY.map(([s, ja]) => [`company/${s}/`, ja]))}${col('Recruit', 'recruit/', RECRUIT.map(([s, ja]) => [`${s}/`, ja]))}${col('Contact', 'contact/', [['for-employers/', '企業担当者様'], ['job-seekers/', 'お仕事をお探しの方']])}
+    <nav class="footer__nav" aria-label="フッターナビゲーション">${col('Service', 'service/', SERVICES.map(([s, ja]) => [`service/${s}/`, ja]))}${col('Company', 'company/', COMPANY.map(([s, ja]) => [`company/${s}/`, ja]))}${col('Recruit', 'recruit/', RECRUIT.map(([s, ja]) => [`${s}/`, ja]))}${col('Contact', 'contact/', [['for-employers/', '企業担当者様'], ['job-seekers/', 'お仕事をお探しの方'], ['https://emoris-jobs.com/', 'EMORIS AGENT']])}
     </nav>
   </div>
   <div class="footer__bottom">

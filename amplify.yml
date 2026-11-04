@@ -1,0 +1,15 @@
+# AWS Amplify Hosting のビルド設定
+# サイトの公開用ファイルは public/ にある（リポジトリ直下には index.html がないので、ここを指定しないと 404 になる）
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        # _src から public を作り直す（Node.js のみで動く。追加のインストールは不要）
+        - node _src/build.mjs
+  artifacts:
+    baseDirectory: public
+    files:
+      - '**/*'
+  cache:
+    paths: []
