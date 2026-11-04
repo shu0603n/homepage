@@ -14,12 +14,11 @@ export default {
     { id: 'line', name: '公式LINE', url: '' },
   ],
 
-  // お問い合わせフォームの送信先
-  // 標準は同じサーバーの api/contact.php（_src/api/contact.php をビルド時にコピー。宛先などの設定はそのファイル内）
-  // PHP が使えないサーバーでは Formspree などの URL（例: 'https://formspree.io/f/xxxxxxxx'）に差し替える
-  // 空にすると、送信時に利用者のメールソフトが起動し info@ 宛のメールが作成される
+  // お問い合わせフォームの送信先：AWS Lambda の関数 URL（プログラムは aws/contact/index.mjs、設定手順は aws/contact/README.md）
+  // 例: 'https://xxxxxxxxxxxxxxxx.lambda-url.ap-northeast-1.on.aws/'（2つのフォームとも同じ URL でよい）
+  // 空のあいだは、送信時に利用者のメールソフトが起動し info@ 宛のメールが作成される（仮の動き）
   formEndpoint: {
-    employers: '/api/contact.php',
-    seekers: '/api/contact.php',
+    employers: 'https://nfv4wni5hb2eo463fjkuwp25su0wknbq.lambda-url.ap-northeast-1.on.aws/',
+    seekers: 'https://nfv4wni5hb2eo463fjkuwp25su0wknbq.lambda-url.ap-northeast-1.on.aws/',
   },
 };

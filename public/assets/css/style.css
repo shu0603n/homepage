@@ -177,12 +177,6 @@ button { font: inherit; }
 /* =========================================================
    ページ遷移・進捗
    ========================================================= */
-.veil { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: var(--grad-cool); pointer-events: none; transform: translateY(0); transition: transform .8s var(--ease); }
-.veil img { width: 84px; animation: veilSpin 1.4s var(--ease) infinite; }
-@keyframes veilSpin { 0% { transform: scale(.85) rotate(0); } 50% { transform: scale(1) rotate(90deg); } 100% { transform: scale(.85) rotate(180deg); } }
-.is-loaded .veil { transform: translateY(-101%); }
-.is-leaving .veil { transform: translateY(0); transition-duration: .55s; }
-html:not(.js) .veil { display: none; }
 
 .progress { position: fixed; top: 0; left: 0; right: 0; z-index: 120; height: 3px; pointer-events: none; }
 .progress span { display: block; height: 100%; width: 100%; background: var(--grad); transform-origin: left; transform: scaleX(var(--p, 0)); }
@@ -1327,7 +1321,6 @@ html:not(.js) .contact-cta__line > span, html:not(.js) .contact-cta__lead, html:
   .js .split .ch { transform: none; transition: opacity .6s ease; transition-delay: calc(var(--i) * 28ms); }
   .js .eyebrow--load { transform: none; transition: opacity .8s ease .2s; }
   .js .reveal-img { transform: none; transition: clip-path 1.3s var(--ease); }
-  .veil { display: none; }
 }
 
 /* =========================================================

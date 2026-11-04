@@ -73,7 +73,6 @@ function header(r, current) {
       </div>`).join('');
 
   return `
-<div class="veil" aria-hidden="true"><img src="${r}assets/img/logo-mark.png" alt="" width="120" height="120"></div>
 
 <header class="header" id="header">
   <div class="header__inner">
@@ -169,7 +168,7 @@ function footer(r) {
       <address class="footer__addr">〒060-0042<br>北海道札幌市中央区大通西7丁目1-1<br>井門札幌パークフロントビル 1F<br>TEL <a href="tel:${config.tel.replace(/-/g, '')}">${config.tel}</a></address>
       <p class="footer__group"><img src="${r}assets/img/logo-meihogroup.png" alt="" loading="lazy">メイホーグループ</p>${socialLinks()}
     </div>
-    <nav class="footer__nav" aria-label="フッターナビゲーション">${col('Service', 'service/', SERVICES.map(([s, ja]) => [`service/${s}/`, ja]))}${col('Company', 'company/', COMPANY.map(([s, ja]) => [`company/${s}/`, ja]))}${col('Recruit', 'recruit/', RECRUIT.map(([s, ja]) => [`${s}/`, ja]))}${col('Contact', 'contact/', [['for-employers/', '企業担当者様'], ['job-seekers/', 'お仕事をお探しの方'], ['https://emoris-jobs.com/', 'EMORIS AGENT']])}
+    <nav class="footer__nav" aria-label="フッターナビゲーション">${col('Service', 'service/', SERVICES.map(([s, ja]) => [`service/${s}/`, ja]))}${col('Company', 'company/', COMPANY.map(([s, ja]) => [`company/${s}/`, ja]))}${col('Recruit', 'recruit/', RECRUIT.map(([s, ja]) => [`${s}/`, ja]))}${col('Contact', 'contact/', [['for-employers/', '企業担当者様'], ['job-seekers/', 'お仕事をお探しの方'], ['https://emoris-jobs.com/?utm_medium=instagram&amp;utm_campaign=seeker-2026-11', 'EMORIS AGENT']])}
     </nav>
   </div>
   <div class="footer__bottom">
@@ -186,7 +185,7 @@ function footer(r) {
       <i class="bi bi-chevron-left" aria-hidden="true"></i>
     </button>
     <div class="promo__panel" id="promo-panel-agent" hidden>
-      <a class="promo__banner" href="https://emoris-jobs.com/" target="_blank" rel="noopener"><img src="${r}assets/img/floating-banner-agent.jpg" alt="幅広い業界・職種から、あなたに合う仕事が見つかる。EMORIS AGENT 登録・利用はすべて無料 無料で会員登録する（新しいタブで開きます）" width="800" height="418"></a>
+      <a class="promo__banner" href="https://emoris-jobs.com/?utm_medium=instagram&amp;utm_campaign=seeker-2026-11" target="_blank" rel="noopener"><img src="${r}assets/img/floating-banner-agent.jpg" alt="幅広い業界・職種から、あなたに合う仕事が見つかる。EMORIS AGENT 登録・利用はすべて無料 無料で会員登録する（新しいタブで開きます）" width="800" height="418"></a>
       <button class="promo__close" type="button" aria-label="EMORIS AGENT のバナーを閉じる"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
     </div>
   </div>
@@ -331,9 +330,6 @@ function build() {
   fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
   // AI 向けの会社概要（llms.txt）
   fs.copyFileSync(path.join(SRC, 'llms.txt'), path.join(OUT, 'llms.txt'));
-  // お問い合わせメール送信（サイトで唯一の PHP）
-  fs.mkdirSync(path.join(OUT, 'api'), { recursive: true });
-  fs.copyFileSync(path.join(SRC, 'api', 'contact.php'), path.join(OUT, 'api', 'contact.php'));
   console.log(`built ${routes.length + 1} pages → ${path.relative(process.cwd(), OUT) || OUT}`);
 }
 
@@ -343,11 +339,6 @@ function serve(port = 8080) {
     .createServer((req, res) => {
       let p = path.join(OUT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
       if (!p.startsWith(OUT)) return res.writeHead(403).end();
-      // このプレビューは PHP を実行できない（メール送信は公開サーバーでのみ動く）
-      if (p.endsWith('.php')) {
-        res.writeHead(501, { 'Content-Type': 'application/json; charset=utf-8' });
-        return res.end(JSON.stringify({ ok: false, message: 'ローカルの確認環境ではメールを送信できません。公開サーバー（PHP が使える環境）で動作します。' }));
-      }
       if (fs.existsSync(p) && fs.statSync(p).isDirectory()) p = path.join(p, 'index.html');
       if (!fs.existsSync(p)) {
         res.writeHead(404, { 'Content-Type': types['.html'] });

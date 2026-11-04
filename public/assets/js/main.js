@@ -6,25 +6,9 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  // ---------- ページ遷移（読み込み時にベールを上げ、内部リンク移動時に下ろす） ----------
-  const showPage = () => requestAnimationFrame(() => root.classList.add('is-loaded'));
-  if (document.readyState === 'complete') showPage();
-  else window.addEventListener('load', showPage);
-  setTimeout(showPage, 2500); // 読み込みが遅くても表示する
-  window.addEventListener('pageshow', (e) => { if (e.persisted) root.classList.remove('is-leaving'); });
-
-  document.addEventListener('click', (e) => {
-    const a = e.target.closest('a[href]');
-    if (!a || reduceMotion || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    if (a.target === '_blank' || a.hasAttribute('download')) return;
-    const url = new URL(a.href, location.href);
-    if (url.origin !== location.origin || /^(mailto|tel):/.test(a.href)) return;
-    if (url.pathname === location.pathname && url.hash) return;
-    if (/\.(pdf|jpg|png|mov|mp4)$/i.test(url.pathname)) return;
-    e.preventDefault();
-    root.classList.add('is-leaving');
-    setTimeout(() => { location.href = a.href; }, 520);
-  });
+  // ---------- 読み込み直後の演出（見出しが現れる等）を始める ----------
+  // 画像の読み込み完了は待たず、HTML を読み終えた時点ですぐ始める
+  requestAnimationFrame(() => root.classList.add('is-loaded'));
 
   // ---------- スクロール連動（ヘッダー・進捗・パララックス） ----------
   // 透明ヘッダーの状態でメガメニューを開いている間は、ヘッダーも白にしてメニューと一体に見せる
@@ -250,9 +234,7 @@
   });
   // 読み込み直後に出す見出し
   const revealLoad = () => document.querySelectorAll('.split--load').forEach((el) => setTimeout(() => el.classList.add('is-in'), 350));
-  if (root.classList.contains('is-loaded')) revealLoad();
-  else window.addEventListener('load', revealLoad);
-  setTimeout(revealLoad, 2600);
+  revealLoad();
 
   // ---------- 画面に入ったら表示 ----------
   // 数字のカウントアップ：グループ内の数字はすべて0から同時に始まり、同時に出そろう
@@ -636,11 +618,11 @@
 
       submit.disabled = true;
       try {
-        const res = await fetch(endpoint, { method: 'POST', body: fd, headers: { Accept: 'application/json' } });
+        const res = await fetch(endpoint, { method: 'POST', body: new URLSearchParams(fd), headers: { Accept: 'application/json' } });
         const data = await res.json().catch(() => null);
         if (!res.ok || data?.ok !== true) {
-          // 入力不備・連続送信（422 / 429）、ローカル確認環境（501）はサーバーの説明をそのまま表示
-          if ([422, 429, 501].includes(res.status) && data?.message) {
+          // 入力不備・連続送信（422 / 429）はサーバーの説明をそのまま表示
+          if ([422, 429].includes(res.status) && data?.message) {
             submit.disabled = false;
             showStatus(data.message, false);
             return;
