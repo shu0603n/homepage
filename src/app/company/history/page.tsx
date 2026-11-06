@@ -1,0 +1,53 @@
+import type { Metadata } from "next";
+import { PageShell } from "@/components/site/PageShell";
+import { buildMetadata } from "@/lib/metadata";
+import { CompanyNav } from "@/components/partials/CompanyNav";
+
+const meta = {
+  title: "沿革",
+  description: "株式会社エモリスリンクの沿革。2026年2月に株式会社エモリスリンクを設立し、2026年8月に株式会社メイホーアティーボより会社分割により事業を承継しました。",
+  section: "company",
+  hero: {
+    en: "History",
+    ja: "沿革",
+    img: "company-history.jpg",
+    crumbs: [
+      [
+        "company/",
+        "企業情報"
+      ]
+    ]
+  }
+} as const;
+
+export const metadata: Metadata = buildMetadata("company/history/", meta);
+
+export default function CompanyHistoryPage() {
+  return (
+    <PageShell route="company/history/" meta={meta}>
+      <section className="section">
+        <div className="container with-side">
+          <div>
+            <h2 className="page-catch fade">
+              ユーザー目線に立ったサービスで
+              <br />
+              お客様に愛される企業に
+            </h2>
+            <ol className="timeline fade">
+              <li>
+                <p className="timeline__year">2026</p>
+                <dl>
+                  <dt>2月</dt>
+                  <dd>株式会社エモリスリンク設立</dd>
+                  <dt>8月</dt>
+                  <dd>株式会社メイホーアティーボより会社分割により事業承継</dd>
+                </dl>
+              </li>
+            </ol>
+          </div>
+          <CompanyNav />
+        </div>
+      </section>
+    </PageShell>
+  );
+}
