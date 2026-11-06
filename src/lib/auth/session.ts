@@ -1,5 +1,6 @@
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
+import { findStaffById, isLoginBlocked } from "@/lib/auth/staff";
 
 // ログイン状態は「署名つきの Cookie（JWT）」で保持する。
 // Cognito でも LINE でも、ログインに成功したら同じ形のセッションを作るので、画面側はログイン方法を意識しなくてよい。
@@ -41,7 +42,21 @@ export async function createSession(session: Session): Promise<void> {
   });
 }
 
+// Cookie の署名が正しく、かつ紐づくスタッフがまだ存在して有効な場合だけセッションとして扱う。
+// スタッフを社内システムで削除・NG/BL にしたら、発行済みのログイン状態もすぐ使えなくなる
 export async function getSession(): Promise<Session | null> {
+  const session = await readSessionCookie();
+  if (!session || session.staffId === null) return null;
+  try {
+    const staff = await findStaffById(session.staffId);
+    return staff && !isLoginBlocked(staff) ? session : null;
+  } catch (error) {
+    console.error("session staff check failed:", error);
+    return null;
+  }
+}
+
+async function readSessionCookie(): Promise<Session | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;

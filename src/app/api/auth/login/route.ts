@@ -15,14 +15,15 @@ export async function POST(request: Request) {
 
   try {
     const user = await signIn(email, password);
-    // 社内システムのスタッフ情報と紐づける（DB に接続できない場合でもログイン自体は成功させる）
+    // 社内システムのスタッフ情報と紐づける。スタッフが削除されている場合（Cognito のアカウントだけが残っている場合）はログインさせない
     const staff = await findStaffByMail(email).catch((error) => {
       console.error("staff lookup failed:", error);
-      return null;
+      return undefined;
     });
-    if (isLoginBlocked(staff)) return jsonError("このアカウントではログインできません。お電話にてお問い合わせください。", 403);
-    if (staff) await reactivateIfUnsubscribed(staff.id).catch((error) => console.error("staff reactivate failed:", error));
-    await createSession({ sub: user.sub, email: user.email, staffId: staff?.id ?? null, via: "cognito" });
+    if (staff === undefined) return jsonError("ただいまログインできません。時間をおいて再度お試しください。", 503);
+    if (staff === null || isLoginBlocked(staff)) return jsonError("このアカウントではログインできません。お電話にてお問い合わせください。", 403);
+    await reactivateIfUnsubscribed(staff.id).catch((error) => console.error("staff reactivate failed:", error));
+    await createSession({ sub: user.sub, email: user.email, staffId: staff.id, via: "cognito" });
     return NextResponse.json({ ok: true });
   } catch (error) {
     const code = error instanceof CognitoAuthError ? error.code : "unknown";

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { CognitoAuthError, createUser, userExists } from "@/lib/auth/cognito";
+import { CognitoAuthError, createUser, deleteUser, userExists } from "@/lib/auth/cognito";
 import { AUTH_MESSAGES, isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { createSession } from "@/lib/auth/session";
-import { createStaff, deleteStaff } from "@/lib/auth/staff";
+import { createStaff, deleteStaff, findStaffByMail } from "@/lib/auth/staff";
 import { parseRegistration } from "@/lib/auth/validation";
 
 // スタッフ登録：DB の staff に登録し、Cognito にログイン用アカウントを作る。登録後はそのままログイン状態にする
@@ -15,7 +15,11 @@ export async function POST(request: Request) {
 
   let createdStaffId: number | null = null;
   try {
-    if (await userExists(input.mail)) return jsonError(AUTH_MESSAGES.user_exists, 409);
+    if (await userExists(input.mail)) {
+      // スタッフが社内システムで削除され、ログイン用アカウントだけが残っている場合は、そのアカウントを消して登録し直せるようにする
+      if (await findStaffByMail(input.mail)) return jsonError(AUTH_MESSAGES.user_exists, 409);
+      await deleteUser(input.mail);
+    }
 
     // next-app の登録フォームと同じく、メールが重複していても毎回新しいスタッフ行を作る（重複の整理は社内システム側で行う）。
     // 既存スタッフの情報を、メール未確認のまま他人が引き継げないようにする意味もある
