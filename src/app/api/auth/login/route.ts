@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { CognitoAuthError, signIn } from "@/lib/auth/cognito";
 import { AUTH_MESSAGES, isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { createSession } from "@/lib/auth/session";
-import { findStaffByMail } from "@/lib/auth/staff";
+import { findStaffByMail, isLoginBlocked, reactivateIfUnsubscribed } from "@/lib/auth/staff";
 import { isEmail, normalizeEmail } from "@/lib/auth/validation";
 
 export async function POST(request: Request) {
@@ -20,6 +20,8 @@ export async function POST(request: Request) {
       console.error("staff lookup failed:", error);
       return null;
     });
+    if (isLoginBlocked(staff)) return jsonError("このアカウントではログインできません。お電話にてお問い合わせください。", 403);
+    if (staff) await reactivateIfUnsubscribed(staff.id).catch((error) => console.error("staff reactivate failed:", error));
     await createSession({ sub: user.sub, email: user.email, staffId: staff?.id ?? null, via: "cognito" });
     return NextResponse.json({ ok: true });
   } catch (error) {

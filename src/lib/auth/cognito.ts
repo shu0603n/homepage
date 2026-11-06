@@ -4,6 +4,7 @@ import {
   AdminGetUserCommand,
   AdminInitiateAuthCommand,
   AdminSetUserPasswordCommand,
+  AdminUpdateUserAttributesCommand,
   CognitoIdentityProviderClient,
   ConfirmForgotPasswordCommand,
   ForgotPasswordCommand,
@@ -180,6 +181,26 @@ export async function confirmPasswordReset(email: string, code: string, newPassw
       }),
     );
   } catch (error) {
+    throw toAuthError(error);
+  }
+}
+
+// ログイン用メールアドレスを変更する（確認コードによる本人確認は呼び出し側で済ませてから呼ぶ）。
+// メールをユーザー名にしているプールなので、変更後は新しいメールでログインする
+export async function changeUserEmail(currentEmail: string, newEmail: string): Promise<void> {
+  try {
+    await getClient().send(
+      new AdminUpdateUserAttributesCommand({
+        UserPoolId: requireEnv("COGNITO_USER_POOL_ID"),
+        Username: currentEmail,
+        UserAttributes: [
+          { Name: "email", Value: newEmail },
+          { Name: "email_verified", Value: "true" },
+        ],
+      }),
+    );
+  } catch (error) {
+    if (errorName(error) === "AliasExistsException") throw new CognitoAuthError("user_exists");
     throw toAuthError(error);
   }
 }

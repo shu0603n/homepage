@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { PageShell } from "@/components/site/PageShell";
 import { getSession } from "@/lib/auth/session";
-import { findStaffById } from "@/lib/auth/staff";
+import { getStaffProfile } from "@/lib/auth/staff";
 import { buildMetadata } from "@/lib/metadata";
 
 const meta = {
@@ -21,7 +21,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   const session = await getSession();
   if (!session) redirect("/login/?next=/mypage/");
 
-  const staff = session.staffId === null ? null : await findStaffById(session.staffId).catch(() => null);
+  const profile = session.staffId === null ? null : await getStaffProfile(session.staffId).catch(() => null);
   const justRegistered = (await searchParams).registered === "1";
 
   return (
@@ -30,7 +30,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
         <div className="container container--narrow">
           {justRegistered && <p className="form__status is-ok">ご登録ありがとうございます。担当者よりご連絡いたします。</p>}
           <div className="lead-block fade mb-48">
-            <p className="lead">{staff?.name ? `${staff.name} 様、ようこそ。` : "ようこそ。"}</p>
+            <p className="lead">{profile?.name ? `${profile.name} 様、ようこそ。` : "ようこそ。"}</p>
             <p>ログイン中のメールアドレス：{session.email ?? "（LINE でログイン中）"}</p>
           </div>
           <p className="lead-block">
@@ -39,6 +39,11 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
             </Link>
           </p>
           <p className="lead-block">
+            <Link className="btn" href="/mypage/profile/">
+              登録情報を編集する
+            </Link>
+          </p>
+          <p className="lead-block mypage-section">
             <LogoutButton />
           </p>
         </div>

@@ -1389,6 +1389,10 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
 .form__actions { margin-top: 32px; text-align: center; }
 .form__actions .btn { min-width: 280px; }
 .form__actions .btn[disabled] { background: var(--line); color: var(--sub); box-shadow: none; cursor: not-allowed; }
+.form__unsubscribe { margin-top: 12px; text-align: right; }
+.form__unsubscribe-btn { padding: 4px 0; border: 0; background: none; font: inherit; font-size: 13px; color: var(--sub); text-decoration: underline; cursor: pointer; }
+.form__unsubscribe-btn:hover { color: #c0392b; }
+.form__unsubscribe-btn[disabled] { opacity: .5; cursor: not-allowed; }
 .form__note { margin: 0 0 8px; font-size: 14px; line-height: 1.8; color: var(--sub); }
 .form__help { margin: 6px 0 0; font-size: 12px; color: var(--sub); }
 .form input[type="password"], .form input[type="number"], .form input[type="date"] {
@@ -1449,3 +1453,13 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
   .job-card__img { flex: 0 0 auto; aspect-ratio: 4 / 3; }
   .job-info__row { grid-template-columns: 1fr; gap: 4px; }
 }
+.form__static { margin: 0; padding: 12px 0; font-weight: 700; word-break: break-all; }
+.mypage-section { margin-top: clamp(40px, 5vw, 64px); }
+
+/* ヘッダーのログイン／マイページ（アイコンだけ） */
+.header__icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--navy); color: var(--navy); font-size: 20px; line-height: 1; transition: background .4s, color .4s, box-shadow .4s; }
+.header__icon:hover { background: var(--navy); color: #fff; }
+body:is(:has(.kv), :has(.page-hero)):not(.is-scrolled):not(.menu-open):not(.drop-open) .header__icon { color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .6); }
+body:is(:has(.kv), :has(.page-hero)):not(.is-scrolled):not(.menu-open):not(.drop-open) .header__icon:hover { background: #fff; color: var(--navy-dd); }
+.header__actions { align-items: center; }
+.menu__auth { display: flex; flex-wrap: wrap; gap: 12px; }

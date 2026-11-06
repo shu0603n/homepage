@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { isLineLoginEnabled, verifyLineIdToken } from "@/lib/auth/line";
 import { createSession } from "@/lib/auth/session";
-import { findStaffByLineUserId } from "@/lib/auth/staff";
+import { findStaffByLineUserId, isLoginBlocked, reactivateIfUnsubscribed } from "@/lib/auth/staff";
 
 // LINE（LIFF）からのログイン。LIFF_ID を設定するまでは無効（501）。
 // LINE と紐づいたスタッフ（staff.line_user_id）が見つかったときだけ、通常のログインと同じセッションを作る
@@ -19,6 +19,9 @@ export async function POST(request: Request) {
   const staff = await findStaffByLineUserId(lineUserId);
   if (!staff) return jsonError("LINE と連携済みのアカウントが見つかりません。", 404);
 
+  if (isLoginBlocked(staff)) return jsonError("このアカウントではログインできません。お電話にてお問い合わせください。", 403);
+
+  await reactivateIfUnsubscribed(staff.id).catch((error) => console.error("staff reactivate failed:", error));
   await createSession({ sub: lineUserId, email: staff.mail, staffId: staff.id, via: "line" });
   return NextResponse.json({ ok: true });
 }

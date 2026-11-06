@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { CSSProperties } from "react";
-import { AuthLink } from "@/components/auth/AuthLink";
+import { AuthIconLink, AuthTextLink } from "@/components/auth/AuthLink";
+import { useLoggedIn } from "@/components/auth/useLoggedIn";
 import { Arrow } from "@/components/site/Arrow";
 import { CONTACT_NAV, NAV, SITE, sectionOf, telHref } from "@/lib/site";
 
@@ -17,7 +18,9 @@ function Chevron() {
 
 // ヘッダーとスマホ用メニュー。開閉やスクロール連動は SiteBehavior（lib/behavior.ts）が担当
 export function Header() {
-  const current = sectionOf(usePathname());
+  const pathname = usePathname();
+  const current = sectionOf(pathname);
+  const loggedIn = useLoggedIn();
   const menuGroups = [...NAV, CONTACT_NAV];
   return (
     <>
@@ -55,10 +58,16 @@ export function Header() {
                   )}
                 </li>
               ))}
+              {loggedIn && (
+                <li className={`gnav__item${pathname.startsWith("/jobs/") ? " is-current" : ""}`}>
+                  <Link className="gnav__link" href="/jobs/">
+                    案件一覧
+                  </Link>
+                </li>
+              )}
             </ul>
           </nav>
           <div className="header__actions">
-            <AuthLink className="header__sub" />
             <Link className="header__sub" href="/job-seekers/">
               お仕事をお探しの方
             </Link>
@@ -66,6 +75,7 @@ export function Header() {
               お問い合わせ
               <Arrow />
             </Link>
+            <AuthIconLink loggedIn={loggedIn} />
           </div>
           <button className="menu-btn" type="button" aria-label="メニューを開く" aria-expanded="false" aria-controls="drawer">
             <span />
@@ -100,7 +110,12 @@ export function Header() {
           ))}
         </nav>
         <p className="menu__auth">
-          <AuthLink className="btn" />
+          {loggedIn && (
+            <Link className="btn btn--ghost" href="/jobs/">
+              案件一覧
+            </Link>
+          )}{" "}
+          <AuthTextLink loggedIn={loggedIn} className="btn" />
         </p>
         <p className="menu__tel">
           TEL <a href={telHref}>{SITE.tel}</a>
