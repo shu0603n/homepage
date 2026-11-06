@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { CSSProperties } from "react";
+import { AuthLink } from "@/components/auth/AuthLink";
 import { Arrow } from "@/components/site/Arrow";
 import { CONTACT_NAV, NAV, SITE, sectionOf, telHref } from "@/lib/site";
 
@@ -57,6 +58,7 @@ export function Header() {
             </ul>
           </nav>
           <div className="header__actions">
+            <AuthLink className="header__sub" />
             <Link className="header__sub" href="/job-seekers/">
               お仕事をお探しの方
             </Link>
@@ -97,6 +99,9 @@ export function Header() {
             </div>
           ))}
         </nav>
+        <p className="menu__auth">
+          <AuthLink className="btn" />
+        </p>
         <p className="menu__tel">
           TEL <a href={telHref}>{SITE.tel}</a>
           <small>受付 9:00〜18:00（土日祝除く）</small>

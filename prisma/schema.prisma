@@ -5,3 +5,326 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// next-app（社内システム）の staff テーブルと同じ定義。
+// このサイトで使うモデル（スタッフ登録・ログイン・案件一覧・応募）だけを取り込んでいる。
+// 他のモデルが必要になったら next-app/prisma/schema.prisma から足す。
+// DB の構造は next-app 側で管理するため、ここからマイグレーションは実行しない。
+
+model staff {
+  id                        Int                @id
+  birthday                  DateTime?          @db.Date
+  name                      String?            @db.VarChar(255)
+  mail                      String?            @db.VarChar(255)
+  created_at                DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at                DateTime?          @default(now()) @db.Timestamp(6)
+  gender                    String?            @db.VarChar
+  staff_status              String?            @db.VarChar
+  registration_medium       String?            @db.VarChar(255)
+  situation                 String?            @db.VarChar(255)
+  registration_method       String?            @db.VarChar(255)
+  postal_code               String?            @db.VarChar(20)
+  prefecture                String?            @db.VarChar(10)
+  address                   String?            @db.VarChar(500)
+  phone_number              String?            @db.VarChar(100)
+  interview_staff           String?            @db.VarChar(255)
+  time_slot                 String?            @db.VarChar(255)
+  weekly_preference         String?            @db.VarChar(255)
+  weekend_holiday           String?            @db.VarChar(255)
+  work_remarks              String?            @db.Text
+  desired_job_type          String?            @db.VarChar(255)
+  accept_fulltime_job       Boolean?           @default(false)
+  min_hourly_wage           Int?
+  period                    String?            @db.VarChar(255)
+  desired_start_date        DateTime?          @db.Date
+  job_type_remarks          String?            @db.VarChar(500)
+  work_histories            String[]           @default([]) @db.Text
+  other_remarks             String?            @db.VarChar(500)
+  anti_social_check         String?            @db.Text
+  anti_social_remarks       String?            @db.Text
+  work_reasons              String[]           @default([]) @db.Text
+  employment_insurance      DateTime?          @db.Date
+  employment_insurance_loss DateTime?          @db.Date
+  social_insurance          DateTime?          @db.Date
+  social_insurance_loss     DateTime?          @db.Date
+  emergency_contact         String?            @db.VarChar(255)
+  emergency_contact_number  String?            @db.VarChar(100)
+  relationship              String?            @db.VarChar(100)
+  remarks                   String?            @db.Text
+  name_k                    String?            @db.VarChar(255)
+  entry_flag                Boolean?           @default(false)
+  registration_date         DateTime?          @db.Date
+  line_user_id              String?            @db.VarChar(255)
+  application               application[]
+
+  @@index([gender, birthday], map: "idx_staff_gender_birthday")
+  @@index([id], map: "idx_staff_id")
+  @@index([staff_status], map: "idx_staff_status")
+  @@index([name], map: "idx_staff_name")
+  @@index([situation], map: "idx_staff_situation")
+  @@index([registration_medium], map: "idx_staff_registration_medium")
+  @@index([prefecture], map: "idx_staff_prefecture")
+}
+
+model project {
+  id                           Int               @id(map: "example_table_pkey") @default(autoincrement())
+  hp_posting_flag              Boolean           @default(false)
+  hp_display_flag              Boolean           @default(false)
+  priority_flag                Boolean           @default(false)
+  client_id                    Int?
+  contract_id                  Int?
+  working_postal_code          String?           @db.VarChar(255)
+  working_address              String?           @db.VarChar(255)
+  holiday                      String?           @db.VarChar(255)
+  project_title                String?           @db.VarChar(255)
+  description                  String?
+  working_start_time           String?           @db.VarChar(10)
+  working_end_time             String?           @db.VarChar(10)
+  start_date                   DateTime?         @db.Date
+  end_date                     DateTime?         @db.Date
+  dispatch_source              String?           @default("株式会社トライブ") @db.VarChar(255)
+  fertilizer_type              String?           @db.VarChar(255)
+  training_schedule            String?           @db.VarChar(255)
+  trial_period_duration        String?           @db.VarChar(255)
+  training_memo                String?           @db.VarChar(255)
+  contract_period              String?           @db.VarChar(255)
+  working_hours_per_day        String[]          @default([]) @db.VarChar(255)
+  work_notes                   String?           @db.VarChar(255)
+  price_type                   Int?
+  overtime_hours               String?           @db.VarChar(255)
+  welfare_programs             String?           @db.VarChar(255)
+  work_environment_description String?           @db.VarChar(255)
+  dress_code                   String?           @db.VarChar(255)
+  gender_ratio                 String?           @db.VarChar(255)
+  environmental_notes          String?           @db.VarChar(255)
+  special_notes                String?           @db.VarChar(255)
+  hr_requirements              String?
+  gender_requirements          String?           @db.VarChar(255)
+  employee_id                  Int?
+  price                        Int?
+  employment_department_name   String?           @db.VarChar(255)
+  organizational_unit_name     String?           @db.VarChar(255)
+  office_address               String?           @db.VarChar(255)
+  period_id                    Int?
+  transportation_id            Int?
+  working_days_max_count       Int?
+  working_days_min_count       Int?
+  recruitment_max_count        Int?
+  recruitment_min_count        Int?
+  age_max_requirements         Int?
+  age_min_requirements         Int?
+  job_type_salary_id           Int?
+  tags                         String[]          @db.VarChar
+  remarks                      String?
+  office_address2              String?           @db.VarChar(255)
+  working_address2             String?           @db.VarChar(255)
+  contractPeriod               String?           @db.VarChar(255)
+  work_start_date              DateTime?         @db.Date
+  avatar                       String?
+  page_views                   Int?              @default(0)
+  detailed_page_views          Int?              @default(0)
+  applications                 Int?              @default(0)
+  working_days                 String[]          @db.VarChar
+  project_internal_title       String?           @db.VarChar(255)
+  payment_price                Int?
+  commercial_flow              String?           @db.VarChar(20)
+  created_at                   DateTime?         @default(now()) @db.Timestamp(6)
+  remote                       String?           @db.VarChar(20)
+  work_location                String?           @db.VarChar(50)
+  application                  application[]
+  client                       client?           @relation(fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "example_table_client_id_fkey")
+  contract                     contract?         @relation(fields: [contract_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "example_table_contract_id_fkey")
+  job_type_salary              job_type_salary?  @relation(fields: [job_type_salary_id], references: [id], map: "fk_job_type_salary")
+  period                       period?           @relation(fields: [period_id], references: [id], onUpdate: NoAction, map: "fk_project_period")
+  transportation               transportation?   @relation(fields: [transportation_id], references: [id], onUpdate: NoAction, map: "fk_project_transportation")
+  employee                     employee?         @relation(fields: [employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model recruit_project {
+  id                  Int           @id @default(autoincrement())
+  title               String        @db.VarChar(255)
+  tags                String[]      @default([]) @db.VarChar
+  description         String?
+  salary_min          Int?
+  salary_max          Int?
+  image               String?
+  url                 String?
+  file                String?
+  is_recruiting       Boolean       @default(true)
+  priority_flag       Boolean       @default(false)
+  employee_id         Int?
+  client_name         String?       @db.VarChar(255)
+  page_views          Int           @default(0)
+  detailed_page_views Int           @default(0)
+  applications        Int           @default(0)
+  created_at          DateTime      @default(now()) @db.Timestamp(6)
+  updated_at          DateTime      @default(now()) @db.Timestamp(6)
+  application         application[]
+  employee            employee?     @relation(fields: [employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recruit_project_employee")
+}
+
+model application {
+  id                 Int              @id @default(autoincrement())
+  name               String?          @db.VarChar(255)
+  tel                String?          @db.VarChar(20)
+  desired_time       String?          @db.VarChar(20)
+  days_off           String[]         @default([]) @db.VarChar(255)
+  other_days_off     String?          @db.VarChar(255)
+  other_inquiries    String?
+  mail_list_id       Int?
+  created_at         DateTime?        @default(now()) @db.Timestamp(6)
+  is_responded       Boolean?         @default(false)
+  staff_id           Int?
+  desired_no         String[]         @db.VarChar
+  project_id         Int?
+  gender             String?          @db.VarChar
+  mail               String?          @db.VarChar(255)
+  birthday           DateTime?        @db.Date
+  avatar             String?          @db.VarChar
+  memo               String?
+  file_paths         String[]         @default([]) @db.Text
+  recruit_project_id Int?
+  staff              staff?           @relation(fields: [staff_id], references: [id], onUpdate: NoAction, map: "fk_application_staff")
+  mail_list          mail_list?       @relation(fields: [mail_list_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_mail_list")
+  project            project?         @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "fk_project")
+  recruit_project    recruit_project? @relation(fields: [recruit_project_id], references: [id], onDelete: Cascade, map: "fk_application_recruit_project")
+
+  @@index([mail_list_id, staff_id], map: "idx_application_mail_list_staff")
+}
+
+model client {
+  id               Int                @id @default(autoincrement())
+  name             String             @db.VarChar(255)
+  name_k           String?            @db.VarChar(255)
+  phone            String?            @db.VarChar(255)
+  email            String?            @db.VarChar(255)
+  postal_code      String?            @db.VarChar(255)
+  remarks          String?
+  department_id    Int
+  client_code      Int?
+  closing_date     String?            @db.VarChar(255)
+  url              String?
+  avatar           String?
+  created_at       DateTime           @default(now()) @db.Timestamp(6)
+  updated_at       DateTime           @default(now()) @db.Timestamp(6)
+  industry_id      Int?
+  transaction_id   Int                @default(0)
+  employee_id      Int?
+  list             String?            @db.VarChar(255)
+  basic_contract   String?
+  domains          String[]
+  nda_contract     String?
+  bp_employees     employee[]         @relation("employee_bp_client")
+  employee         employee?          @relation(fields: [employee_id], references: [id], onUpdate: NoAction, map: "fk_client_employee")
+  project          project[]
+
+  @@index([department_id, employee_id], map: "idx_client_department_employee")
+  @@index([employee_id], map: "idx_client_employee")
+  @@index([transaction_id, department_id], map: "idx_client_transaction_department")
+}
+
+model contract {
+  id            Int         @id @default(autoincrement())
+  name          String      @db.VarChar(30)
+  department_id Int?
+  project       project[]
+}
+
+model period {
+  id      Int       @id @default(autoincrement())
+  name    String    @db.VarChar(30)
+  project project[]
+}
+
+model transportation {
+  id      Int       @id @default(autoincrement())
+  name    String    @db.VarChar(30)
+  project project[]
+}
+
+model employee {
+  id                            Int                            @id @default(autoincrement())
+  sei                           String                         @db.VarChar(255)
+  mei                           String                         @db.VarChar(255)
+  sei_k                         String?                        @db.VarChar(255)
+  mei_k                         String?                        @db.VarChar(255)
+  gender                        String?                        @db.VarChar(255)
+  birthday                      DateTime?                      @db.Date
+  job_category_id               Int?
+  client_id                     Int?
+  project_id                    Int?
+  initial_sei                   String?                        @db.VarChar(255)
+  initial_mei                   String?                        @db.VarChar(255)
+  nearest_station               String?                        @db.VarChar(255)
+  skill_sheet_file_name         String?                        @db.VarChar(255)
+  skill_sheet_file_path         String?
+  address                       String?                        @db.VarChar(255)
+  joining_date                  DateTime?                      @db.Date
+  retirement_date               DateTime?                      @db.Date
+  phone_number                  String?                        @db.VarChar(255)
+  email                         String?                        @unique(map: "unique_email") @db.VarChar(255)
+  postal_code                   String?                        @db.VarChar(8)
+  remarks                       String?
+  position_id                   Int?
+  hol_authority_id              Int?
+  employment_id                 Int?
+  password                      String?                        @db.VarChar(255)
+  avatar                        String?
+  department_id                 Int
+  direct_superior_id            Int?
+  mbti                          String?                        @db.VarChar
+  work_start_time               DateTime?                      @default(dbgenerated("'09:00:00'::time without time zone")) @db.Time(6)
+  work_end_time                 DateTime?                      @default(dbgenerated("'18:00:00'::time without time zone")) @db.Time(6)
+  work_break_time               DateTime?                      @default(dbgenerated("'01:00:00'::time without time zone")) @db.Time(6)
+  work_days_per_week            Int?                           @default(0)
+  total_granted_days            Decimal?                       @db.Decimal(5, 1)
+  appeal_point                  String[]                       @map("appeal-point") @db.VarChar
+  summary                       String?                        @db.VarChar
+  slack_user_id                 String?                        @db.VarChar(255)
+  attendance_notify_exempt      Boolean                        @default(false)
+  client                        client[]
+  recruit_project               recruit_project[]
+  bp_client                     client?                        @relation("employee_bp_client", fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_employee_bp_client")
+  direct_superior               employee?                      @relation("employeeToemployee", fields: [direct_superior_id], references: [id], onUpdate: NoAction, map: "fk_direct_superior")
+  other_employee                employee[]                     @relation("employeeToemployee")
+  mail_list                     mail_list[]
+  project                       project[]
+
+  @@index([id], map: "idx_employee_id")
+  @@index([id, sei, mei], map: "idx_employee_join")
+}
+
+model job_type_salary {
+  id                        Int       @id @default(autoincrement())
+  job_type                  String    @db.VarChar
+  name                      String    @db.VarChar
+  min_hourly_wage           Int?
+  years_experience          Int
+  regional_adjustment_index Decimal   @db.Decimal(5, 3)
+  retirement_rate           Decimal   @db.Decimal(4, 2)
+  commuting_allowance       Int
+  updated_at                DateTime? @default(now()) @db.Timestamp(6)
+  created_at                DateTime? @default(now()) @db.Timestamp(6)
+  project                   project[]
+}
+
+model mail_list {
+  id               Int                @id @default(autoincrement())
+  title            String             @db.VarChar(255)
+  main_text        String?
+  create_at        DateTime?          @default(now()) @db.Timestamp(6)
+  update_at        DateTime?          @default(now()) @db.Timestamp(6)
+  employee_id      Int?
+  desired_no       String[]           @db.VarChar
+  is_complete      Boolean?           @default(false)
+  attachment       String[]           @db.VarChar
+  department_id    Int?
+  tags             String[]           @db.VarChar
+  application      application[]
+  employee         employee?          @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_employee")
+
+  @@index([department_id], map: "idx_mail_list_department")
+  @@index([department_id, create_at(sort: Desc)], map: "idx_mail_list_department_create")
+  @@index([department_id, create_at(sort: Desc)], map: "idx_mail_list_department_create_at")
+  @@index([id], map: "idx_mail_list_id")
+}

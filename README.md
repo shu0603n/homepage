@@ -49,3 +49,11 @@ npm run lint
 ## 公開（AWS Amplify）
 
 `amplify.yml` の設定で `npm ci` → `npm run build` を実行します。セキュリティ用のレスポンスヘッダーは `customHttp.yml` で設定しています。
+
+## ログイン・スタッフ登録・案件一覧
+
+- 認証は AWS Cognito（メールアドレス＋パスワード）。ログイン後は署名つき Cookie（30 日）で保持します。設定は `.env`（`.env.example` 参照）。
+- `/register/`（スタッフ登録）→ DB の `staff` に保存し、Cognito にアカウントを作成。`/login/`、`/forgot-password/`（確認コードでリセット）、`/mypage/`。
+- `/jobs/`（案件一覧・ログイン必須）、`/jobs/<id>/`（詳細と応募）、`/jobs/recruit/<id>/`（人材紹介の案件）。応募は `application` に保存し、`SMTP_*` が設定されていれば通知メールを送ります。
+- DB は next-app と同じもの（`postgres`）。構造は next-app 側で管理するため、このリポジトリからマイグレーションは実行しません（`prisma/schema.prisma` は必要なモデルだけ取り込み）。
+- **公式LINE から開く場合：** LIFF アプリのエンドポイント URL を `/jobs/` にし、`.env` に `LIFF_ID` / `NEXT_PUBLIC_LIFF_ID` を設定すると、LINE と連携済み（`staff.line_user_id`）のスタッフは自動でログインされます。未ログインなら `/login/` で `src/components/auth/LineAutoLogin.tsx` が処理します。LINE 側を設定するまでは無効です。
