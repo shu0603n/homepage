@@ -1,3 +1,0 @@
-ErrorDocument 404 /404.html
-DirectoryIndex index.html
-AddType video/mp4 .mov

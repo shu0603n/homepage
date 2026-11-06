@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://emorislink.co.jp/sitemap.xml
