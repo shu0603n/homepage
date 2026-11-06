@@ -8,6 +8,9 @@ npm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 .vercel
-.env
-.env*.local
 .claude/
+
+# 環境変数（秘密情報を含むためコミットしない）
+.env
+.env.local
+.env.*.local
