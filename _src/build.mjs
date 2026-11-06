@@ -43,8 +43,8 @@ const RECRUIT = [
 
 // ナビゲーション定義：[セクションキー, 英語, 日本語, トップのパス, 子ページ[[パス, 名前]]]
 const NAV = [
-  ['service', 'Service', '事業内容', 'service/', SERVICES.map(([s, ja]) => [`service/${s}/`, ja])],
   ['company', 'Company', '企業情報', 'company/', COMPANY.map(([s, ja]) => [`company/${s}/`, ja])],
+  ['service', 'Service', '事業内容', 'service/', SERVICES.map(([s, ja]) => [`service/${s}/`, ja])],
   ['recruit', 'Recruit', '採用情報', 'recruit/', RECRUIT.map(([s, ja]) => [`${s}/`, ja])],
 ];
 
@@ -132,7 +132,7 @@ function footer(r) {
 <section class="contact-cta" aria-labelledby="contact-cta-title">
   <!-- 背景画像：assets/img/contact-bg.jpg（同じ名前で上書きすれば差し替わる。推奨 2400×1350px／16:9） -->
   <div class="contact-cta__media" aria-hidden="true">
-    <img class="contact-cta__bg" src="${r}assets/img/contact-bg.jpg" alt="" width="1672" height="941" loading="lazy">
+    <img class="contact-cta__bg" src="${r}assets/img/contact-bg.jpg" alt="" width="1671" height="941" loading="lazy">
   </div>
   <div class="contact-cta__inner">
     <div class="contact-cta__text">
@@ -181,7 +181,7 @@ function footer(r) {
 <aside class="promo" aria-label="キャンペーン・お知らせ">
   <div class="promo__item promo__item--agent" data-key="emorislink-promo-agent-closed">
     <button class="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-agent">
-      <span class="promo__tab-text">無料会員登録</span>
+      <span class="promo__tab-text">正社員求人情報</span>
       <i class="bi bi-chevron-left" aria-hidden="true"></i>
     </button>
     <div class="promo__panel" id="promo-panel-agent" hidden>

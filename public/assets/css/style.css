@@ -817,16 +817,31 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
 
 /* 企業情報：サイドナビ */
 .with-side { display: grid; grid-template-columns: 1fr 260px; gap: clamp(32px, 6vw, 80px); align-items: start; }
-.side-nav { position: sticky; top: calc(var(--header-h) + 20px); padding: 24px; border-radius: var(--r); background: var(--bg-soft); }
-.side-nav__title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; font-family: var(--f-en); font-weight: 600; font-size: 22px; color: var(--navy-dd); }
-.side-nav__title small { font-family: var(--f-base); font-size: 12px; color: var(--sub); }
-.side-nav ul { list-style: none; }
-.side-nav li a { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 12px; font-size: 14px; }
-.side-nav li a::after { content: "→"; font-family: var(--f-en); color: var(--teal); }
-.side-nav li a:hover { background: #fff; }
-.side-nav li a[aria-current="page"] { background: var(--navy); color: #fff; font-weight: 700; }
-.side-nav li a[aria-current="page"]::after { color: #fff; }
-@media (max-width: 900px) { .with-side { grid-template-columns: 1fr; } .side-nav { position: static; } }
+/* 企業情報の子ページのサイドバー：白いカード＋番号付きの項目。今いるページは左端の虹色バーで示す */
+.side-nav { position: sticky; top: calc(var(--header-h) + 24px); overflow: hidden; border-radius: var(--r-l); background: #fff; box-shadow: 0 20px 44px -30px rgba(0, 54, 81, .45), inset 0 0 0 1px var(--line); }
+.side-nav::before { content: ""; display: block; height: 4px; background: var(--grad); }
+.side-nav__title { display: flex; flex-direction: column; gap: 2px; padding: 22px 24px 18px; border-bottom: 1px solid var(--line); font-family: var(--f-head); font-size: 18px; font-weight: 900; color: var(--navy-dd); transition: color .3s; }
+.side-nav__title small { font-family: var(--f-en); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--teal); }
+.side-nav__title:hover { color: var(--teal); }
+.side-nav ul { list-style: none; margin: 0; padding: 8px 0 10px; counter-reset: side; }
+.side-nav li a { position: relative; display: flex; align-items: center; gap: 14px; padding: 13px 24px; font-size: 14px; font-weight: 500; color: var(--navy-dd); counter-increment: side; transition: background-color .3s, color .3s; }
+.side-nav li a::before { content: counter(side, decimal-leading-zero); flex: 0 0 auto; width: 20px; font-family: var(--f-en); font-size: 12px; font-weight: 600; color: #9fb4bf; transition: color .3s; }
+.side-nav li a::after { content: "→"; margin-left: auto; font-family: var(--f-en); color: var(--teal); opacity: 0; transform: translateX(-6px); transition: opacity .3s, transform .3s var(--ease); }
+.side-nav li a:hover { background: var(--bg-soft); color: var(--navy); }
+.side-nav li a:hover::before { color: var(--teal); }
+.side-nav li a:hover::after { opacity: 1; transform: none; }
+/* 今いるページ：左端に縦の虹色バー（4px）＋右へ薄くなる淡いティールの背景 */
+.side-nav li a[aria-current="page"] { background: linear-gradient(180deg, var(--pink), var(--orange) 35%, var(--green) 65%, var(--blue)) left center / 4px 100% no-repeat, linear-gradient(90deg, var(--teal-soft), rgba(228, 244, 245, 0)); font-weight: 700; color: var(--navy-dd); }
+.side-nav li a[aria-current="page"]::before { color: var(--teal); }
+.side-nav li a[aria-current="page"]::after { opacity: 1; transform: none; }
+@media (max-width: 900px) {
+  .with-side { grid-template-columns: 1fr; }
+  .side-nav { position: static; }
+  /* スマホ・タブレット：2列のタイルにする */
+  .side-nav ul { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 14px; }
+  .side-nav li a { padding: 12px 14px; border-radius: 12px; background: var(--bg-soft); }
+  .side-nav li a::after { display: none; }
+}
 
 .page-catch { font-size: clamp(24px, 3.2vw, 40px); font-weight: 900; line-height: 1.55; color: var(--navy-dd); margin-bottom: 40px; }
 .page-figure { margin: 0 0 48px; border-radius: var(--r-l); overflow: hidden; }
@@ -840,7 +855,8 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
 .info-table th, .info-table td { padding: 22px 24px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 .info-table tr:last-child th, .info-table tr:last-child td { border-bottom: 0; }
 .info-table th { width: 28%; background: var(--bg-soft); color: var(--navy); font-weight: 700; white-space: nowrap; }
-.info-table img { display: inline-block; height: 28px; width: auto; vertical-align: middle; }
+.info-table img { display: inline-block; height: 1.3em; width: auto; margin: 0 .15em 0 .3em; vertical-align: -.28em; }
+.info-table .nw { white-space: nowrap; }
 @media (max-width: 640px) {
   .info-table th, .info-table td { display: block; width: 100%; }
   .info-table th { border-bottom: 0; padding-bottom: 10px; }
@@ -1361,5 +1377,6 @@ html:not(.js) .contact-cta__line > span, html:not(.js) .contact-cta__lead, html:
   .agent__features li { justify-content: flex-start; }
   .agent__features li + li { border-left: 0; padding-top: 10px; border-top: 1px solid #c9d8e4; }
   .agent__features br { display: none; }
-  .agent__cta { width: 100%; }
+  .agent__cta { width: 100%; gap: 10px; padding: 20px 22px 18px; font-size: 16px; letter-spacing: .02em; }
+  .agent__cta-label { white-space: nowrap; }
 }
