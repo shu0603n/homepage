@@ -1,4 +1,5 @@
-# AWS Amplify Hosting のビルド設定（Next.js）
+# AWS Amplify Hosting のビルド設定（Next.js SSR）
+# 環境変数は Amplify コンソール（または CLI）で設定する。サーバー側の実行時に読めるよう、ビルド時に .env.production へ書き出す
 version: 1
 frontend:
   phases:
@@ -7,6 +8,7 @@ frontend:
         - npm ci
     build:
       commands:
+        - env | grep -E '^(DATABASE_URL|JWT_SECRET|COGNITO_|REGION|ACCESS_KEY_ID|SECRET_ACCESS_KEY|SES_SMTP_|MAIL_FROM|NEXT_PUBLIC_|LIFF_ID|APPLICATION_NOTIFY_TO)' >> .env.production || true
         - npm run build
   artifacts:
     baseDirectory: .next

@@ -18,9 +18,17 @@ function requireEnv(name: "COGNITO_USER_POOL_ID" | "COGNITO_CLIENT_ID"): string 
   return value;
 }
 
+// 認証情報は .env の REGION / ACCESS_KEY_ID / SECRET_ACCESS_KEY を使う
+// （Amplify は AWS_ で始まる環境変数を設定できないため、AWS_ を付けない名前にしている）。
+// 未設定のときは SDK の標準の取得方法（実行ロールなど）に任せる。
 let client: CognitoIdentityProviderClient | undefined;
 function getClient(): CognitoIdentityProviderClient {
-  client ??= new CognitoIdentityProviderClient({ region: process.env.AWS_REGION });
+  const accessKeyId = process.env.ACCESS_KEY_ID;
+  const secretAccessKey = process.env.SECRET_ACCESS_KEY;
+  client ??= new CognitoIdentityProviderClient({
+    region: process.env.REGION || process.env.AWS_REGION || "ap-northeast-1",
+    ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
+  });
   return client;
 }
 
