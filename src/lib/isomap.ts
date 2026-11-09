@@ -53,6 +53,26 @@ function house(x: number, y: number, color: string) {
   <polygon points="${pts([P(x + w / 2, y, h + 1.5), P(x + w / 2, y + d, h + 1.5), P(x + w, y + d, h + 0.6), P(x + w, y, h + 0.6)])}" fill="${color}"/>`;
 }
 
+// ---------- 看板の広告面（会社ロゴ） ----------
+// 看板の正面は x 方向に斜めに傾いた面なので、白い広告面とロゴ画像を同じ傾きにゆがめて貼る。
+// 虹色の面は細い枠として残す。x0〜x0+w が面の横幅、z0〜z0+h が面の高さ（y は面の位置）
+const AD_LOGO = { src: '/assets/img/ad-emoris-agent.jpg', w: 388, h: 420 }; // 広告の画像（白背景）。差し替えたら w・h も画像に合わせる
+function billboardAd(x0: number, y: number, w: number, z0: number, h: number) {
+  const m = 0.1; // 虹色の枠の太さ（グリッド単位）
+  const panel = [P(x0 + m, y, z0 + h - m), P(x0 + w - m, y, z0 + h - m), P(x0 + w - m, y, z0 + m), P(x0 + m, y, z0 + m)];
+  // 画像は白い面の中に、縦横比を保ったまま入る最大の大きさで中央に置く（少し余白を残す）
+  const pad = 0.06;
+  const boxW = w - 2 * m - 2 * pad, boxH = h - 2 * m - 2 * pad; // 置ける範囲（グリッド。z 方向も 1 グリッド = S px）
+  const k = Math.min(boxW / AD_LOGO.w, boxH / AD_LOGO.h);
+  const lw = AD_LOGO.w * k, lh = AD_LOGO.h * k;
+  const zTop = z0 + h / 2 + lh / 2;
+  const [ex, ey] = P(x0 + w / 2 - lw / 2, y, zTop);
+  // 画像の横方向を x 軸の向き（右下がり）に、縦方向を真下に合わせる行列
+  const a = (COS * S * lw) / AD_LOGO.w, b = (SIN * S * lw) / AD_LOGO.w, d = (S * lh) / AD_LOGO.h;
+  return `<polygon points="${pts(panel)}" fill="#fff"/>`
+    + `<image href="${AD_LOGO.src}" width="${AD_LOGO.w}" height="${AD_LOGO.h}" transform="matrix(${a.toFixed(5)} ${b.toFixed(5)} 0 ${d.toFixed(5)} ${ex.toFixed(1)} ${ey.toFixed(1)})"/>`;
+}
+
 // ---------- 動くもの（車・人） ----------
 // 原点 (0,0) を中心にした小さな直方体（車の部品用）。w は x 方向、d は y 方向、z0 は地面からの浮き
 function localBox(cx: number, cy: number, w: number, d: number, h: number, [top, left, right]: readonly string[], z0 = 0) {
@@ -123,11 +143,11 @@ function movers() {
 // 地図上のピン（HTML のボタンとして重ねる）
 export const PINS = [
   { id: 'hq', no: '01', x: 3.5, y: 13.2, z: 7.4, color: '#004968', title: '本社（札幌・大通）', en: 'Head Office', text: '札幌・大通に本社を構え、地域に根ざしたサービスを提供しています。地下鉄 大通駅から徒歩5分。', href: 'company/access/', link: 'アクセスを見る' },
-  { id: 'staffing', no: '02', x: 3.5, y: 3, z: 4.6, color: '#ff6fb1', title: '人材派遣・業務委託', en: 'Staffing / Outsourcing', text: '工場・製造、倉庫・物流、オフィスワークまで。即戦力人材の派遣や業務のお任せで、現場の安定運営を支えます。', href: 'service/staffing/', link: '人材派遣を見る' },
+  { id: 'staffing', no: '02', x: 3.5, y: 3, z: 3.3, color: '#ff6fb1', title: '人材派遣・業務委託', en: 'Staffing / Outsourcing', text: '工場・製造、倉庫・物流、オフィスワークまで。即戦力人材の派遣や業務のお任せで、現場の安定運営を支えます。', href: 'service/staffing/', link: '人材派遣を見る' },
   { id: 'recruitment', no: '03', x: 11, y: 3.4, z: 9.2, color: '#ffb36b', title: '人材紹介・紹介予定派遣', en: 'Recruitment', text: 'スキルだけでなく、企業文化や成長ビジョンとの適合性まで見極めた人材をご紹介します。', href: 'service/recruitment/', link: '人材紹介を見る' },
-  { id: 'ses', no: '04', x: 18.5, y: 3.5, z: 6.6, color: '#3aafb9', title: 'システムエンジニアリング', en: 'System Engineering', text: '経験豊富なエンジニアがプロジェクトに参画し、開発・運用・改善までをサポートします。', href: 'service/ses/', link: 'SESを見る' },
-  { id: 'dev', no: '05', x: 18.5, y: 13.5, z: 5.4, color: '#1fa0d8', title: 'システム開発', en: 'System Development', text: '企画・設計から開発・運用まで一貫対応。業務に密着したシステムで企業の成長を支えます。', href: 'service/system-development/', link: 'システム開発を見る' },
-  { id: 'web', no: '06', x: 10.5, y: 13.5, z: 6.4, color: '#8fd65a', title: 'WEBデザイン・マーケティング', en: 'Web Design / Marketing', text: '伝わるデザインと成果につながる導線設計で、Webからの集客と情報発信を支援します。', href: 'service/web-design/', link: 'WEBデザインを見る' },
+  { id: 'ses', no: '04', x: 18.525, y: 3.325, z: 7, color: '#3aafb9', title: 'システムエンジニアリング', en: 'System Engineering', text: '経験豊富なエンジニアがプロジェクトに参画し、開発・運用・改善までをサポートします。', href: 'service/ses/', link: 'SESを見る' },
+  { id: 'dev', no: '05', x: 18.7, y: 13.7, z: 4.53, color: '#1fa0d8', title: 'システム開発', en: 'System Development', text: '企画・設計から開発・運用まで一貫対応。業務に密着したシステムで企業の成長を支えます。', href: 'service/system-development/', link: 'システム開発を見る' },
+  { id: 'web', no: '06', x: 10.8, y: 13.5, z: 5.8, color: '#8fd65a', title: 'WEBデザイン・マーケティング', en: 'Web Design / Marketing', text: '伝わるデザインと成果につながる導線設計で、Webからの集客と情報発信を支援します。', href: 'service/web-design/', link: 'WEBデザインを見る' },
   { id: 'seekers', no: '07', x: 22.6, y: 15.6, z: 3.6, color: '#7a6cf0', title: 'お仕事をお探しの方', en: 'For Job Seekers', text: 'あなたのご希望や働き方に合わせて、お仕事探しをサポートします。まずはお気軽にご相談ください。', href: 'job-seekers/', link: '相談・応募する' },
 ];
 
@@ -188,8 +208,8 @@ export function isoMap() {
     box(2.2, 12.1, 3, 2.6, 0.3, ['#ffffff', '#e6eef2', '#cfdde4'], 6.6),
     `<g class="map-logo"><rect x="${(lx - 10).toFixed(1)}" y="${(ly - 22).toFixed(1)}" width="20" height="20" rx="5" transform="rotate(45 ${lx.toFixed(1)} ${(ly - 12).toFixed(1)})" fill="url(#mapGrad)"/></g>`);
 
-  // Webスタジオ（ビルボード付き）
-  add(9.2, 12.4, 12.2, 15.2, box(9.2, 12.4, 3, 2.8, 3.4, ['#eefae7', '#d1efc2', '#b4e29f'], 0.6), windows(9.2, 12.4, 3, 2.8, 3.4, '#ffffff', 0.6), box(9.6, 13.4, 2.4, 0.2, 1.6, ['#fff', 'url(#mapGrad)', '#c7d3d9'], 4.2));
+  // Webスタジオ（ビルボード付き）。看板の正面（y=13.6 の面、x=9.6〜12.0・高さ z=4.2〜5.8）に会社ロゴを載せる
+  add(9.2, 12.4, 12.2, 15.2, box(9.2, 12.4, 3, 2.8, 3.4, ['#eefae7', '#d1efc2', '#b4e29f'], 0.6), windows(9.2, 12.4, 3, 2.8, 3.4, '#ffffff', 0.6), box(9.6, 13.4, 2.4, 0.2, 1.6, ['#fff', 'url(#mapGrad)', '#c7d3d9'], 4.2), billboardAd(9.6, 13.6, 2.4, 4.2, 1.6));
 
   // 開発ラボ（システム開発）＋屋上のドーム
   const [dx, dy] = P(18.7, 13.7, 3.8);
@@ -221,7 +241,10 @@ export function isoMap() {
   const rest = objs.slice().sort((a, b) => a.x1 + a.y1 - (b.x1 + b.y1));
   while (rest.length) {
     const i = rest.findIndex((o) => !rest.some((p) => p !== o && behind(p, o)));
-    parts.push(rest.splice(i < 0 ? 0 : i, 1)[0].svg);
+    const o = rest.splice(i < 0 ? 0 : i, 1)[0];
+    // 出現時の演出用：地面の手前の角（W, D）からの距離。角に近いものから順に建ち上がる（site.css の .map-obj）
+    const dist = (W - o.x1) + (D - o.y1);
+    parts.push(`<g class="map-obj" style="--d:${dist.toFixed(1)}">${o.svg}</g>`);
   }
 
   // 本社から各拠点へのつながり
