@@ -36,9 +36,25 @@ export function initSite() {
 
   // ---------- スクロール連動（ヘッダー・進捗・パララックス） ----------
   // 透明ヘッダーの状態でメガメニューを開いている間は、ヘッダーも白にしてメニューと一体に見せる
+  // メニューのリンクを押したら、移動先のページでメニューが開いたまま残らないように閉じる。
+  // ヘッダーはページ移動で作り直されないため、押したリンクのフォーカスとマウスの位置がそのまま残ってしまう。
+  // 閉じた状態（nav-suppress）は、マウスがメニューの項目から外れるまで続ける
+  listen(document, 'click', (e) => {
+    const a = e.target instanceof Element ? e.target.closest('.gnav a') : null;
+    if (!a) return;
+    body.classList.add('nav-suppress');
+    body.classList.remove('drop-open');
+    a.blur();
+  });
+  listen(document, 'pointermove', (e) => {
+    if (body.classList.contains('nav-suppress') && !(e.target instanceof Element && e.target.closest('.gnav__item'))) {
+      body.classList.remove('nav-suppress');
+    }
+  }, { passive: true });
+
   document.querySelectorAll('.gnav__item').forEach((item) => {
     if (!item.querySelector('.gnav__drop')) return;
-    const open = () => body.classList.add('drop-open');
+    const open = () => { if (!body.classList.contains('nav-suppress')) body.classList.add('drop-open'); };
     const close = () => { if (!item.matches(':hover, :focus-within')) body.classList.remove('drop-open'); };
     listen(item, 'mouseenter', open);
     listen(item, 'mouseleave', close);
@@ -514,7 +530,7 @@ export function initSite() {
   });
 
   // ---------- 右端のタブ（EMORIS AGENT／入社祝い金）。押すとバナーが開く ----------
-  // 入社祝い金は、初めての方に少しスクロールした時点で一度だけ開いて見せる。×で閉じたらブラウザに記憶し、以降はタブだけ
+  // どちらのバナーも、タブを押したときだけ開く（自動では開かない）
   const promo = document.querySelector('.promo');
   if (promo) {
     const items = [...promo.querySelectorAll('.promo__item')].map((item) => {
@@ -542,15 +558,6 @@ export function initSite() {
       listen(it.item.querySelector('.promo__close'), 'click', () => { it.store.set(); it.setOpen(false); it.tab.focus(); });
     });
     listen(document, 'keydown', (e) => { if (e.key === 'Escape') items.forEach((it) => it.setOpen(false)); });
-    const auto = items.find((it) => 'autoOpen' in it.item.dataset);
-    if (auto && !auto.store.get()) {
-      const firstOpen = () => {
-        if (window.scrollY < 300) return;
-        window.removeEventListener('scroll', firstOpen);
-        if (items.every((it) => it.panel.hidden)) openOnly(auto);
-      };
-      listen(window, 'scroll', firstOpen, { passive: true });
-    }
     // ページ下部のお問い合わせ欄の付近では隠す
     const ctaBlock = document.querySelector('.contact-cta');
     if (ctaBlock && 'IntersectionObserver' in window) {

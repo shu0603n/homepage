@@ -179,7 +179,7 @@ export function Footer() {
             </button>
           </div>
         </div>
-        <div className="promo__item promo__item--bonus" data-key="emorislink-promo-closed" data-auto-open>
+        <div className="promo__item promo__item--bonus" data-key="emorislink-promo-closed">
           <button className="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-bonus">
             <span className="promo__tab-text">
               入社祝い金<b>20</b>万円

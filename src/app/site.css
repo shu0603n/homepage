@@ -208,6 +208,9 @@ button { font: inherit; }
   opacity: 0; visibility: hidden; transform: translateY(-6px); transition: .35s var(--ease);
 }
 .gnav__item:hover .gnav__drop, .gnav__item:focus-within .gnav__drop { opacity: 1; visibility: visible; transform: none; }
+/* メニューのリンクを押した直後は、マウスが項目から外れるまで閉じたままにする（behavior.ts の nav-suppress） */
+.nav-suppress .gnav__drop { opacity: 0 !important; visibility: hidden !important; transform: translateY(-6px) !important; transition: none !important; }
+.nav-suppress .gnav__item .ico-chev { transform: none; }
 .gnav__drop-head { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
 .gnav__drop-en { font-family: var(--f-en); font-weight: 700; font-size: 44px; line-height: 1; color: var(--navy-dd); }
 .gnav__drop-head a { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--navy); border-bottom: 1.5px solid currentColor; }
