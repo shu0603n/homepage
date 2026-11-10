@@ -558,6 +558,12 @@ export function initSite() {
       listen(it.item.querySelector('.promo__close'), 'click', () => { it.store.set(); it.setOpen(false); it.tab.focus(); });
     });
     listen(document, 'keydown', (e) => { if (e.key === 'Escape') items.forEach((it) => it.setOpen(false)); });
+    // バナーの外側（スマホでは暗くした部分）を押したら閉じる。タブとバナー本体は対象外
+    listen(document, 'click', (e) => {
+      if (items.every((it) => it.panel.hidden)) return;
+      if (e.target instanceof Element && e.target.closest('.promo__tab, .promo__sheet')) return;
+      items.forEach((it) => it.setOpen(false));
+    });
     // ページ下部のお問い合わせ欄の付近では隠す
     const ctaBlock = document.querySelector('.contact-cta');
     if (ctaBlock && 'IntersectionObserver' in window) {

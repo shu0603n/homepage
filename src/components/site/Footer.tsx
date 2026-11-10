@@ -171,12 +171,14 @@ export function Footer() {
             <i className="bi bi-chevron-left" aria-hidden="true" />
           </button>
           <div className="promo__panel" id="promo-panel-agent" hidden>
-            <a className="promo__banner" href={EMORIS_AGENT_URL} target="_blank" rel="noopener">
-              <img src="/assets/img/floating-banner-agent.jpg" alt="幅広い業界・職種から、あなたに合う仕事が見つかる。EMORIS AGENT 登録・利用はすべて無料 無料で会員登録する（新しいタブで開きます）" width={800} height={418} />
-            </a>
-            <button className="promo__close" type="button" aria-label="EMORIS AGENT のバナーを閉じる">
-              <i className="bi bi-x-lg" aria-hidden="true" />
-            </button>
+            <div className="promo__sheet">
+              <a className="promo__banner" href={EMORIS_AGENT_URL} target="_blank" rel="noopener">
+                <img src="/assets/img/floating-banner-agent.jpg" alt="幅広い業界・職種から、あなたに合う仕事が見つかる。EMORIS AGENT 登録・利用はすべて無料 無料で会員登録する（新しいタブで開きます）" width={800} height={418} />
+              </a>
+              <button className="promo__close" type="button" aria-label="EMORIS AGENT のバナーを閉じる">
+                <i className="bi bi-x-lg" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
         <div className="promo__item promo__item--bonus" data-key="emorislink-promo-closed">
@@ -187,12 +189,14 @@ export function Footer() {
             <i className="bi bi-chevron-left" aria-hidden="true" />
           </button>
           <div className="promo__panel" id="promo-panel-bonus" hidden>
-            <Link className="promo__banner" href="/system-engineer/">
-              <img src="/assets/img/floating-banner.jpg" alt="公式HP経由で応募いただいた方限定 入社祝い金20万円 経験者システムエンジニア 詳細・応募はこちら" width={800} height={418} />
-            </Link>
-            <button className="promo__close" type="button" aria-label="入社祝い金のバナーを閉じる">
-              <i className="bi bi-x-lg" aria-hidden="true" />
-            </button>
+            <div className="promo__sheet">
+              <Link className="promo__banner" href="/system-engineer/">
+                <img src="/assets/img/floating-banner.jpg" alt="公式HP経由で応募いただいた方限定 入社祝い金20万円 経験者システムエンジニア 詳細・応募はこちら" width={800} height={418} />
+              </Link>
+              <button className="promo__close" type="button" aria-label="入社祝い金のバナーを閉じる">
+                <i className="bi bi-x-lg" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>

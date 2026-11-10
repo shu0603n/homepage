@@ -440,6 +440,11 @@ body:is(:has(.kv), :has(.page-hero)):not(.is-scrolled):not(.menu-open):not(.drop
   .map__list { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
   .map-card { position: relative; right: auto; bottom: auto; width: 100%; margin-top: 12px; }
 }
+/* スマホ：説明カードを地図の上に置く（地図を見てからカードを探して下へスクロールしなくて済むように） */
+@media (max-width: 767px) {
+  .map__stage { display: flex; flex-direction: column; }
+  .map-card { order: -1; margin: 0 0 28px; } /* 地図のいちばん上のピンがカードに近づきすぎないように */
+}
 @media (max-width: 640px) { .map-pin { transform: scale(.72); transform-origin: 50% 100%; animation: none; } .map__canvas { margin: 0 -12px; } }
 
 /* =========================================================
@@ -478,6 +483,18 @@ body:is(:has(.kv), :has(.page-hero)):not(.is-scrolled):not(.menu-open):not(.drop
   .fact:nth-child(3) { border-left: 0; padding-left: 0; }
   .fact:nth-child(n + 3) { border-top: 1px solid rgba(255, 255, 255, .2); }
   .licenses { grid-template-columns: 1fr; }
+}
+/* スマホ：4つの数字だけを小さめのタイルで 2×2 に残す（アイコン・注釈なし）。
+   許可番号とグループのカードは表示しない（許可番号はフッター、グループは企業情報ページにあるため） */
+@media (max-width: 767px) {
+  .licenses { display: none; }
+  .corp__head { margin-bottom: 28px; }
+  .facts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; border: 0; } /* 中身が長くても列の幅が広がってはみ出さないように */
+  .fact, .fact:first-child, .fact:nth-child(3), .fact:nth-child(n + 3) { gap: 2px; padding: 14px clamp(10px, 3.4vw, 16px); border: 0; border-radius: 14px; background: rgba(255, 255, 255, .08); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+  .fact i, .fact small { display: none; }
+  .fact__label { font-size: 12px; }
+  .fact__value { font-size: 12px; }
+  .fact__value b { margin-right: 2px; font-size: clamp(22px, 7vw, 30px); } /* 狭い画面では数字を少し小さく */
 }
 
 /* =========================================================
@@ -1284,6 +1301,7 @@ html:not(.js) .contact-cta__line > span, html:not(.js) .contact-cta__lead, html:
 .promo__panel { position: absolute; right: calc(100% + 10px); top: 0; bottom: 0; aspect-ratio: 800 / 418; }
 .promo__panel:not([hidden]) { animation: promoIn .45s var(--ease); }
 @keyframes promoIn { from { opacity: 0; transform: translateX(16px); } }
+.promo__sheet { position: relative; height: 100%; }
 .promo__banner { display: block; height: 100%; border-radius: 14px; overflow: hidden; box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .45); transition: filter .3s; }
 .promo__banner img { width: 100%; height: 100%; object-fit: cover; }
 .promo__banner:hover { filter: brightness(1.08); }
@@ -1297,13 +1315,36 @@ body:has(.kv):not(.is-scrolled) .promo { opacity: 0; pointer-events: none; trans
 .pagetop__ring { stroke: var(--teal); stroke-linecap: round; stroke-dasharray: 163.4; stroke-dashoffset: calc(163.4 * (1 - var(--p, 0))); }
 .pagetop:hover { background: var(--navy); color: #fff; }
 .is-scrolled .pagetop { opacity: 1; visibility: visible; transform: none; }
+/* スマホ：右端の縦タブをやめ、画面の一番下に2つのボタンを横並びにしたバーを固定する。
+   ボタンを押すと、暗くした画面の下からバナーが画面幅いっぱいでせり上がる（暗い部分・×・同じボタンで閉じる） */
 @media (max-width: 767px) {
-  .promo { bottom: 72px; }
-  .promo__tab { gap: 6px; width: 46px; min-height: 150px; padding: 12px 8px 10px; }
-  .promo__tab-text { font-size: 11px; letter-spacing: .1em; }
-  .promo__tab-text b { font-size: 15px; }
-  .pagetop { right: 10px; bottom: 10px; width: 46px; height: 46px; }
+  .promo { left: 0; right: 0; bottom: 0; flex-direction: row; align-items: stretch; gap: 8px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
+  /* バーの背景（すりガラス）は裏の層に置く。.promo 自体に backdrop-filter を付けると、
+     中の position: fixed（バナーの暗い背景）がバーの中に閉じ込められてしまうため */
+  .promo::before { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 -10px 26px -18px rgba(0, 30, 45, .45); }
+  .promo.is-hidden, body:has(.kv):not(.is-scrolled) .promo { opacity: 0; transform: translateY(100%); }
+  .promo__item { position: static; flex: 1; min-width: 0; }
+  .promo__tab { flex-direction: row; gap: 6px; width: 100%; min-height: 0; height: 46px; padding: 0 10px; border-radius: 12px; box-shadow: none; }
+  .promo__tab-text { writing-mode: horizontal-tb; font-size: 13px; letter-spacing: .04em; white-space: nowrap; }
+  .promo__tab-text b { font-size: 16px; text-combine-upright: none; }
+  .promo__tab .bi { transform: rotate(90deg); } /* ＜ を ∧（上向き）にして「上に開く」ことを示す */
+  .promo__item.is-open .promo__tab .bi { transform: rotate(-90deg); }
+  /* バナーは画面全体を暗くした上に、下のバーのすぐ上へ出す */
+  .promo__panel { position: fixed; inset: 0; z-index: 1; display: flex; align-items: flex-end; justify-content: center; aspect-ratio: auto; padding: 16px 14px calc(74px + env(safe-area-inset-bottom)); background: rgba(0, 20, 30, .55); }
+  .promo__panel[hidden] { display: none; } /* 上の display: flex が hidden より優先されないように */
+  .promo__panel:not([hidden]) { animation: promoFade .25s ease; }
+  .promo__sheet { width: 100%; max-width: 480px; height: auto; animation: promoUp .45s var(--ease); }
+  .promo__banner { height: auto; border-radius: 16px; box-shadow: 0 24px 50px -20px rgba(0, 0, 0, .6); }
+  .promo__banner img { height: auto; }
+  /* 「タップで詳細へ」の案内 */
+  .promo__sheet::after { content: "画像をタップすると詳細ページへ移動します"; display: block; margin-top: 10px; text-align: center; font-size: 12px; font-weight: 700; color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, .4); }
+  .promo__close { top: -14px; right: -6px; width: 36px; height: 36px; font-size: 14px; }
+  .pagetop { right: 10px; bottom: calc(72px + env(safe-area-inset-bottom)); width: 46px; height: 46px; }
+  /* バナーを開いている間は、ページ上部へ戻るボタンを隠す（バナーに重なるため） */
+  body:has(.promo__panel:not([hidden])) .pagetop { opacity: 0; visibility: hidden; }
 }
+@keyframes promoFade { from { opacity: 0; } }
+@keyframes promoUp { from { opacity: 0; transform: translateY(40px); } }
 
 /* =========================================================
    下層ページの装飾（見出しの通し番号・模様・カードのアクセント）
