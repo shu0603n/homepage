@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Marquee } from "@/components/site/Marquee";
 import { PageShell } from "@/components/site/PageShell";
 import { buildMetadata } from "@/lib/metadata";
 
@@ -25,23 +26,7 @@ export const metadata: Metadata = buildMetadata("coordinator/", meta);
 export default function CoordinatorPage() {
   return (
     <PageShell route="coordinator/" meta={meta}>
-      <div className="marquee" aria-label="募集のポイント">
-        <div className="marquee__track">
-          <span>未経験OK</span>
-          <span>土日祝休み</span>
-          <span>20〜30代が活躍</span>
-          <span>残業少なめ（20h以下）</span>
-          <span>年間休日125日</span>
-          <span>転勤なし</span>
-          {" "}
-          <span aria-hidden="true">未経験OK</span>
-          <span aria-hidden="true">土日祝休み</span>
-          <span aria-hidden="true">20〜30代が活躍</span>
-          <span aria-hidden="true">残業少なめ（20h以下）</span>
-          <span aria-hidden="true">年間休日125日</span>
-          <span aria-hidden="true">転勤なし</span>
-        </div>
-      </div>
+      <Marquee items={["未経験OK","土日祝休み","20〜30代が活躍","残業少なめ（20h以下）","年間休日125日","転勤なし"]} />
       <section className="section section--gray">
         <div className="container">
           <div className="kpis">

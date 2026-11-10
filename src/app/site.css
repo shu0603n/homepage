@@ -1018,7 +1018,10 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
 .pdf-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--navy); border-bottom: 1.5px solid currentColor; }
 
 .marquee { overflow: hidden; background: var(--grad-cool); color: #fff; padding: 18px 0; }
-.marquee__track { display: flex; width: max-content; animation: marquee 40s linear infinite; }
+/* 並びを4回続けて半分（2回分）を流すので、速さは以前（1回分を40秒）と同じ */
+.marquee__track { display: flex; width: max-content; animation: marquee 80s linear infinite; }
+/* 動きを減らす設定でも、ご要望によりゆっくり流し続ける（写真帯 .life-strip と同じ扱い） */
+@media (prefers-reduced-motion: reduce) { .marquee__track { animation-duration: 80s !important; animation-iteration-count: infinite !important; } }
 .marquee__track span { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 40px; padding: 0 20px; font-family: var(--f-head); font-weight: 700; white-space: nowrap; }
 .marquee__track span::after { content: ""; width: 10px; height: 10px; border-radius: 28%; transform: rotate(45deg); background: #fff; opacity: .6; }
 @keyframes marquee { to { transform: translateX(-50%); } }
@@ -1027,6 +1030,7 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
 .kpi { padding: 34px 16px; text-align: center; border-radius: var(--r-l); background: #fff; box-shadow: var(--shadow); }
 .kpi__num { font-family: var(--f-en); font-weight: 600; font-size: clamp(40px, 5vw, 64px); line-height: 1.1; background: var(--grad-cool); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .kpi__num small { font-family: var(--f-head); font-size: .32em; margin-left: 4px; }
+.kpi__num b { font-weight: inherit; font-variant-numeric: tabular-nums; }
 .kpi__label { margin-top: 8px; font-size: 14px; color: var(--sub); }
 @media (max-width: 860px) { .kpis { grid-template-columns: 1fr 1fr; } }
 

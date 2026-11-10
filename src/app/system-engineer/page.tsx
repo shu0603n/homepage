@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Marquee } from "@/components/site/Marquee";
 import { PageShell } from "@/components/site/PageShell";
 import { buildMetadata } from "@/lib/metadata";
 
@@ -25,54 +26,34 @@ export const metadata: Metadata = buildMetadata("system-engineer/", meta);
 export default function SystemEngineerPage() {
   return (
     <PageShell route="system-engineer/" meta={meta}>
-      <div className="marquee" aria-label="募集のポイント">
-        <div className="marquee__track">
-          <span>案件選択 自由</span>
-          <span>前給保証制度あり</span>
-          <span>月平均残業 5時間以内</span>
-          <span>フルリモート相談可</span>
-          <span>年間休日 125日</span>
-          <span>産休・育休実績あり</span>
-          <span>大通駅 徒歩5分</span>
-          <span>学歴不問</span>
-          {" "}
-          <span aria-hidden="true">案件選択 自由</span>
-          <span aria-hidden="true">前給保証制度あり</span>
-          <span aria-hidden="true">月平均残業 5時間以内</span>
-          <span aria-hidden="true">フルリモート相談可</span>
-          <span aria-hidden="true">年間休日 125日</span>
-          <span aria-hidden="true">産休・育休実績あり</span>
-          <span aria-hidden="true">大通駅 徒歩5分</span>
-          <span aria-hidden="true">学歴不問</span>
-        </div>
-      </div>
+      <Marquee items={["案件選択 自由","前給保証制度あり","月平均残業 5時間以内","フルリモート相談可","年間休日 125日","産休・育休実績あり","大通駅 徒歩5分","学歴不問"]} />
       <section className="section section--gray">
         <div className="container">
-          <div className="kpis">
+          <div className="kpis" data-count-group>
             <div className="kpi fade">
               <div className="kpi__num">
-                ¥80
+                ¥<b data-count="80">80</b>
                 <small>万</small>
               </div>
               <div className="kpi__label">初年度 年収UP実績あり</div>
             </div>
             <div className="kpi fade">
               <div className="kpi__num">
-                5
+                <b data-count="5">5</b>
                 <small>h</small>
               </div>
               <div className="kpi__label">月平均残業時間</div>
             </div>
             <div className="kpi fade">
               <div className="kpi__num">
-                125
+                <b data-count="125">125</b>
                 <small>日</small>
               </div>
               <div className="kpi__label">年間休日</div>
             </div>
             <div className="kpi fade">
               <div className="kpi__num">
-                100
+                <b data-count="100">100</b>
                 <small>%</small>
               </div>
               <div className="kpi__label">案件選択の自由度</div>
