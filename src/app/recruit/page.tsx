@@ -22,13 +22,10 @@ export default function RecruitPage() {
       <section className="section">
         <div className="container recruit-intro fade">
           <p>
-            決まりきったレールより、まだ形のない地図のほうが面白い。
-            <br />
-            正解をなぞるのではなく、自分たちで正解をつくっていく。
-            <br />
-            うまくいく保証はないけれど、うまくいった時の景色はきっと特別だ。
-            <br />
-            そんな挑戦を、一緒に楽しめる仲間を探しています。
+            <span className="recruit-intro__line">決まりきったレールより、まだ形のない地図のほうが面白い。</span>
+            <span className="recruit-intro__line">正解をなぞるのではなく、自分たちで正解をつくっていく。</span>
+            <span className="recruit-intro__line">うまくいく保証はないけれど、うまくいった時の景色はきっと特別だ。</span>
+            <span className="recruit-intro__line">そんな挑戦を、一緒に楽しめる仲間を探しています。</span>
           </p>
         </div>
       </section>
