@@ -29,31 +29,31 @@ export default function CoordinatorPage() {
       <Marquee items={["未経験OK","土日祝休み","20〜30代が活躍","残業少なめ（20h以下）","年間休日125日","転勤なし"]} />
       <section className="section section--gray">
         <div className="container">
-          <div className="kpis">
+          <div className="kpis" data-count-group>
             <div className="kpi fade">
-              <div className="kpi__num">
-                300〜390
+              <div className="kpi__num kpi__num--range">
+                <b data-count="300">300</b>〜<b data-count="390">390</b>
                 <small>万</small>
               </div>
               <div className="kpi__label">想定年収</div>
             </div>
             <div className="kpi fade">
-              <div className="kpi__num">
-                23〜30
+              <div className="kpi__num kpi__num--range">
+                <b data-count="23">23</b>〜<b data-count="30">30</b>
                 <small>万</small>
               </div>
               <div className="kpi__label">月給</div>
             </div>
             <div className="kpi fade">
               <div className="kpi__num">
-                125
+                <b data-count="125">125</b>
                 <small>日</small>
               </div>
               <div className="kpi__label">年間休日</div>
             </div>
             <div className="kpi fade">
               <div className="kpi__num">
-                20
+                <b data-count="20">20</b>
                 <small>h以下</small>
               </div>
               <div className="kpi__label">月平均残業</div>
@@ -102,22 +102,26 @@ export default function CoordinatorPage() {
             <span className="en">Salary &amp; Benefits</span>
           </div>
           <h2 className="catch fade">未経験からでも安心してスタートできる給与体系</h2>
-          <div className="salary">
+          <div className="salary salary--single">
             <div className="salary__main fade">
-              <span className="label-en">Monthly Salary</span>
-              <p className="salary__amount">23万円 〜 30万円</p>
+              <div className="salary__pair">
+                <div>
+                  <span className="label-en">Monthly Salary</span>
+                  <p className="salary__caption">月給</p>
+                  <p className="salary__amount">23万円 〜 30万円</p>
+                </div>
+                <div>
+                  <span className="label-en">Annual Income</span>
+                  <p className="salary__caption">想定年収</p>
+                  <p className="salary__amount">300万円 〜 390万円</p>
+                </div>
+              </div>
               <p className="note">
                 ※経験・スキルにより決定
                 <br />
                 ※試用期間2ヶ月（条件同一）
               </p>
             </div>
-            <ul className="salary__cases fade">
-              <li>
-                <span>想定年収</span>
-                <strong>300万円〜390万円</strong>
-              </li>
-            </ul>
           </div>
           <ul className="tag-list fade">
             <li>昇給 年1回</li>

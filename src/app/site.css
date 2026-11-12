@@ -207,6 +207,9 @@ button { font: inherit; }
   background: #fff; border-top: 1px solid var(--line); box-shadow: 0 40px 60px -40px rgba(0, 54, 81, .4);
   opacity: 0; visibility: hidden; transform: translateY(-6px); transition: .35s var(--ease);
 }
+/* 隣のメニューへ移ったとき（behavior.ts の drop-switch）は、前のメニューを消すのも次を出すのも一瞬で行う */
+/* （メニュー全体から外れたときは、これまでどおりふわっと消える） */
+.drop-switch .gnav__item:hover .gnav__drop, .gnav__list:has(.gnav__item:hover) .gnav__item:not(:hover) .gnav__drop { transition: none; }
 .gnav__item:hover .gnav__drop, .gnav__item:focus-within .gnav__drop { opacity: 1; visibility: visible; transform: none; }
 /* メニューのリンクを押した直後は、マウスが項目から外れるまで閉じたままにする（behavior.ts の nav-suppress） */
 .nav-suppress .gnav__drop { opacity: 0 !important; visibility: hidden !important; transform: translateY(-6px) !important; transition: none !important; }
@@ -1056,6 +1059,7 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
 .kpi__num { font-family: var(--f-en); font-weight: 600; font-size: clamp(40px, 5vw, 64px); line-height: 1.1; background: var(--grad-cool); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .kpi__num small { font-family: var(--f-head); font-size: .32em; margin-left: 4px; }
 .kpi__num b { font-weight: inherit; font-variant-numeric: tabular-nums; }
+.kpi__num--range { font-size: clamp(30px, 3.4vw, 50px); white-space: nowrap; }
 .kpi__label { margin-top: 8px; font-size: 14px; color: var(--sub); }
 @media (max-width: 860px) { .kpis { grid-template-columns: 1fr 1fr; } }
 
@@ -1080,6 +1084,16 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
 .salary__cases li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 22px 26px; border-radius: var(--r); background: #fff; box-shadow: var(--shadow-s); }
 .salary__cases li span { font-size: 14px; color: var(--sub); }
 .salary__cases li strong { font-family: var(--f-head); font-size: 22px; color: var(--navy); }
+/* 月給と想定年収を1枚のカードに横並びでまとめる形（人材コーディネーターのページ） */
+.salary--single { grid-template-columns: 1fr; }
+.salary__pair { display: grid; grid-template-columns: 1fr 1fr; }
+.salary__pair > div + div { padding-left: clamp(24px, 4vw, 56px); margin-left: clamp(24px, 4vw, 56px); border-left: 1px solid rgba(255, 255, 255, .28); }
+.salary__caption { margin: 2px 0 4px; font-size: 14px; font-weight: 700; color: rgba(255, 255, 255, .85); }
+.salary--single .note { margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, .2); }
+@media (max-width: 767px) {
+  .salary__pair { grid-template-columns: 1fr; }
+  .salary__pair > div + div { padding: 20px 0 0; margin: 20px 0 0; border-left: 0; border-top: 1px solid rgba(255, 255, 255, .28); }
+}
 .guarantee { display: flex; gap: 20px; align-items: center; margin-top: 20px; padding: 26px 30px; border-radius: var(--r); background: #fff; box-shadow: inset 0 0 0 2px var(--teal); }
 .guarantee .bi { font-size: 36px; color: var(--teal); }
 .guarantee h3 { font-size: 18px; color: var(--navy-dd); }
@@ -1120,8 +1134,9 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
 .flow { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 16px; list-style: none; }
 .flow li { position: relative; padding: 32px 20px; border-radius: var(--r); background: #fff; color: var(--ink); text-align: center; }
 .flow li:not(:last-child)::after { content: "→"; position: absolute; right: -14px; top: 50%; z-index: 1; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--teal); color: #fff; font-family: var(--f-en); font-size: 12px; transform: translateY(-50%); }
-.flow__num { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 30%; transform: rotate(45deg); background: var(--grad); color: #fff; font-family: var(--f-en); font-weight: 700; }
-.flow__num { line-height: 1; }
+/* 番号のひし形：回転させるのは背景（::before）だけにして、数字はまっすぐ立てる */
+.flow__num { position: relative; isolation: isolate; display: inline-grid; place-items: center; width: 44px; height: 44px; color: #fff; font-family: var(--f-en); font-weight: 700; line-height: 1; }
+.flow__num::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 30%; transform: rotate(45deg); background: var(--grad); }
 .flow h3 { font-size: 17px; color: var(--navy-dd); margin: 16px 0 6px; }
 .flow p { font-size: 13px; color: var(--sub); margin: 0; }
 @media (max-width: 860px) {

@@ -52,10 +52,26 @@ export function initSite() {
     }
   }, { passive: true });
 
+  // 隣のメニューへ移るとき：メニュー（.gnav__drop）は切り替えを一瞬で行い（drop-switch）、
+  // ヘッダーの白も少し待ってから外す。こうしないと、2枚が半透明で重なったり、ヘッダーが一瞬透明に戻ったりして、
+  // 後ろの暗いヒーロー写真が透けて見える
+  let closeTimer = 0;
   document.querySelectorAll('.gnav__item').forEach((item) => {
     if (!item.querySelector('.gnav__drop')) return;
-    const open = () => { if (!body.classList.contains('nav-suppress')) body.classList.add('drop-open'); };
-    const close = () => { if (!item.matches(':hover, :focus-within')) body.classList.remove('drop-open'); };
+    const open = () => {
+      if (body.classList.contains('nav-suppress')) return;
+      clearTimeout(closeTimer);
+      if (body.classList.contains('drop-open')) body.classList.add('drop-switch'); // 別のメニューが開いていた → 切り替え
+      body.classList.add('drop-open');
+    };
+    const close = () => {
+      if (item.matches(':hover, :focus-within')) return;
+      clearTimeout(closeTimer);
+      closeTimer = setTimeout(() => {
+        if (document.querySelector('.gnav__item:hover, .gnav__item:focus-within')) return;
+        body.classList.remove('drop-open', 'drop-switch');
+      }, 160);
+    };
     listen(item, 'mouseenter', open);
     listen(item, 'mouseleave', close);
     listen(item, 'focusin', open);
@@ -187,16 +203,15 @@ export function initSite() {
       if (e.key === 'ArrowLeft') { e.preventDefault(); prev(true); }
     });
 
-    // マウスを乗せている間・フォーカス中は自動送りを止める
+    // キーボードで操作している間だけ自動送りを止める（マウスを乗せても止めない：ご要望）。
+    // マウスで矢印を押したときのフォーカスでは止めないよう、:focus-visible（キーボード操作時）のときに限る
     const pause = (on) => {
       carousel.classList.toggle('is-paused', on);
       if (on) clearInterval(auto);
       else startAuto();
     };
-    listen(section, 'pointerenter', (e) => { if (e.pointerType === 'mouse') pause(true); });
-    listen(section, 'pointerleave', (e) => { if (e.pointerType === 'mouse') pause(false); });
-    listen(section, 'focusin', () => pause(true));
-    listen(section, 'focusout', (e) => { if (!section.contains(e.relatedTarget)) pause(false); });
+    listen(section, 'focusin', (e) => { if (e.target instanceof Element && e.target.matches(':focus-visible')) pause(true); });
+    listen(section, 'focusout', (e) => { if (carousel.classList.contains('is-paused') && !section.contains(e.relatedTarget)) pause(false); });
 
     // スワイプ・ドラッグで移動
     let startX = 0, startY = 0, dragging = false, moved = false;
