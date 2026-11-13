@@ -1482,6 +1482,13 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
 
 /* ---------- ログイン・スタッフ登録 ---------- */
 .form--auth { max-width: 640px; }
+/* ログイン画面の「LINE でログイン」（ボタンの見た目は .line-step__btn と共通） */
+.line-login { max-width: 640px; margin: 0 auto 36px; text-align: center; }
+.line-login .line-step__btn { min-width: min(100%, 360px); }
+.line-login__note { margin: 14px 0 0; font-size: 13px; color: var(--sub); }
+.line-login__or { display: flex; align-items: center; gap: 16px; margin: 36px 0 0; font-size: 13px; font-weight: 700; color: var(--navy); }
+.line-login__or::before, .line-login__or::after { content: ""; flex: 1; height: 1px; background: #c3d2da; }
+.line-login__error { max-width: 640px; margin: 0 auto 28px; }
 .form--wide { max-width: 960px; }
 .form__group { margin: 44px 0 4px; padding-bottom: 10px; border-bottom: 2px solid var(--navy); font-family: var(--f-head); font-size: 18px; font-weight: 700; color: var(--navy-dd); }
 .form__group:first-child { margin-top: 0; }
