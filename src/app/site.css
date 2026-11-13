@@ -1561,3 +1561,35 @@ body:is(:has(.kv), :has(.page-hero)):not(.is-scrolled):not(.menu-open):not(.drop
 body:is(:has(.kv), :has(.page-hero)):not(.is-scrolled):not(.menu-open):not(.drop-open) .header__icon:hover { background: #fff; color: var(--navy-dd); }
 .header__actions { align-items: center; }
 .menu__auth { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* =========================================================
+   スタッフ登録完了・マイページ：LINE 公式アカウントの友だち追加の案内
+   ========================================================= */
+.register-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 clamp(36px, 5vw, 56px); padding: 0; list-style: none; counter-reset: none; }
+.register-steps li { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 10px; border-radius: 999px; background: var(--bg-soft); font-size: 14px; font-weight: 700; color: var(--sub); text-align: center; }
+.register-steps li span { display: grid; place-items: center; flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: #fff; font-family: var(--f-en); font-size: 13px; color: var(--sub); }
+.register-steps li.is-done { background: var(--teal-soft); color: var(--navy); }
+.register-steps li.is-done span { background: var(--teal); color: #fff; }
+.register-steps li.is-current { background: #06c755; color: #fff; box-shadow: 0 10px 24px -12px rgba(6, 199, 85, .7); }
+.register-steps li.is-current span { color: #06c755; }
+
+.line-step { padding: clamp(28px, 4vw, 48px); border-radius: var(--r-l); background: #fff; box-shadow: var(--shadow), inset 0 0 0 2px #06c755; text-align: center; }
+.line-step__label { margin-bottom: 6px; font-family: var(--f-en); font-size: 13px; font-weight: 700; letter-spacing: .18em; color: #06c755; }
+.line-step__title { margin-bottom: 14px; font-size: clamp(19px, 2.2vw, 24px); font-weight: 900; color: var(--navy-dd); }
+.line-step__text { margin: 0 auto 26px; max-width: 640px; color: var(--sub); }
+.line-step__btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; white-space: nowrap; min-width: min(100%, 340px); padding: 18px 32px; border-radius: 999px; background: #06c755; color: #fff; font-family: var(--f-head); font-size: 17px; font-weight: 900; letter-spacing: .04em; box-shadow: 0 14px 28px -14px rgba(6, 199, 85, .8); transition: transform .3s var(--ease), background-color .3s; }
+.line-step__btn .bi { font-size: 24px; }
+.line-step__btn:hover { color: #fff; background: #05b04b; transform: translateY(-2px); }
+.line-step__note { margin: 16px 0 0; font-size: 12px; color: var(--sub); }
+.line-step--compact { padding: clamp(22px, 3vw, 32px); }
+.line-step--compact .line-step__title { font-size: 18px; }
+.line-step--compact .line-step__text { margin-bottom: 20px; font-size: 14px; }
+.line-step--done { box-shadow: var(--shadow); }
+.line-step__badge { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 6px 16px; border-radius: 999px; background: #e7f9ee; font-weight: 700; color: #058a3d; }
+.line-step--done .line-step__text { margin-bottom: 0; }
+@media (max-width: 560px) {
+  .register-steps { grid-template-columns: 1fr; }
+  .register-steps li { justify-content: flex-start; padding: 10px 16px; }
+  .line-step__btn { width: 100%; gap: 8px; padding: 16px 14px; font-size: 16px; } /* スマホでもボタンの文字を1行に */
+  .line-step__btn .bi { font-size: 20px; }
+}

@@ -8,7 +8,7 @@ frontend:
         - npm ci
     build:
       commands:
-        - env | grep -E '^(DATABASE_URL|JWT_SECRET|COGNITO_|REGION|ACCESS_KEY_ID|SECRET_ACCESS_KEY|SES_SMTP_|MAIL_FROM|NEXT_PUBLIC_|LIFF_ID|APPLICATION_NOTIFY_TO)' >> .env.production || true
+        - env | grep -E '^(DATABASE_URL|JWT_SECRET|COGNITO_|REGION|ACCESS_KEY_ID|SECRET_ACCESS_KEY|SES_SMTP_|MAIL_FROM|NEXT_PUBLIC_|LIFF_ID|APPLICATION_NOTIFY_TO|LINE_FRIEND_TRACK_URL)' >> .env.production || true
         - npm run build
   artifacts:
     baseDirectory: .next

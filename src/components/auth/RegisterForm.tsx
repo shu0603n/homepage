@@ -27,7 +27,8 @@ export function RegisterForm({ privacy }: { privacy: ReactNode }) {
       consent2: fd.get("consent2") === "on",
     });
     if (result.ok) {
-      window.location.assign("/mypage/?registered=1");
+      // 登録完了ページで、LINE 公式アカウントの友だち追加へ案内する（next-app の staff-register と同じ流れ）
+      window.location.assign("/register/complete/");
       return;
     }
     setMessage(result.message);
