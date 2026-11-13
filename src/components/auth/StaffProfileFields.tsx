@@ -18,6 +18,40 @@ import {
 
 const EMPTY_HISTORY: WorkHistory = { company: "", employment_type: "", period: "", job_type: "", content: "" };
 
+// 職種の入力：候補から選ぶプルダウン。「その他」を選んだときだけ、下に自由入力の欄を出す。
+// （以前の datalist はスマホではプルダウンにならず、ただの文字入力欄に見えていたため）
+// 候補にない値（以前に自由入力した職種）は、「その他」を選んだ状態で入力欄に表示する。
+// name を渡すと、送信用の値を hidden で持つ（プルダウンと入力欄には name を付けない）
+const OTHER = "その他";
+function JobTypeSelect({ id, name, options, value, onChange }: { id: string; name?: string; options: readonly string[]; value: string; onChange: (v: string) => void }) {
+  const known = options.includes(value) && value !== OTHER;
+  const selected = value === "" ? "" : known ? value : OTHER;
+  const freeText = known || value === OTHER ? "" : value;
+  return (
+    <>
+      <select id={id} value={selected} onChange={(e) => onChange(e.target.value)}>
+        <option value="">未選択</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+      {selected === OTHER && (
+        <input
+          type="text"
+          className="form__other"
+          aria-label="職種（その他）"
+          placeholder="職種をご入力ください（任意）"
+          value={freeText}
+          onChange={(e) => onChange(e.target.value.trim() ? e.target.value : OTHER)}
+        />
+      )}
+      {name && <input type="hidden" name={name} value={value} />}
+    </>
+  );
+}
+
 export function Row({ label, htmlFor, required, children }: { label: string; htmlFor?: string; required?: boolean; children: ReactNode }) {
   const mark = required && <span className="req">必須</span>;
   return (
@@ -66,6 +100,7 @@ export function StaffProfileFields({ defaults = {}, leading, afterKana }: { defa
   // 新規登録では「受け付ける」が初期値。編集時は保存されている値を表示する
   const acceptFulltime = defaults.accept_fulltime_job ?? true;
   const [days, setDays] = useState<string[]>(defaults.weekend_days ?? []);
+  const [desiredJob, setDesiredJob] = useState(defaults.desired_job_type ?? "");
   const [histories, setHistories] = useState<WorkHistory[]>(defaults.work_histories ?? []);
   const [historyCount, setHistoryCount] = useState(historyCountLabel(defaults.work_histories?.length ?? 0));
 
@@ -151,12 +186,7 @@ export function StaffProfileFields({ defaults = {}, leading, afterKana }: { defa
         <input id="r-start" type="date" name="desired_start_date" defaultValue={defaults.desired_start_date} />
       </Row>
       <Row label="希望職種" htmlFor="r-job">
-        <input id="r-job" type="text" name="desired_job_type" list="r-job-list" defaultValue={defaults.desired_job_type} />
-        <datalist id="r-job-list">
-          {JOB_TYPE_OPTIONS.map((o) => (
-            <option key={o} value={o} />
-          ))}
-        </datalist>
+        <JobTypeSelect id="r-job" name="desired_job_type" options={JOB_TYPE_OPTIONS} value={desiredJob} onChange={setDesiredJob} />
       </Row>
 
       <h2 className="form__group">職務履歴</h2>
@@ -195,18 +225,13 @@ export function StaffProfileFields({ defaults = {}, leading, afterKana }: { defa
             <input id={`h-period-${i}`} type="text" value={h.period} placeholder="例：2020/01〜2022/03" onChange={(e) => updateHistory(i, "period", e.target.value)} />
           </Row>
           <Row label="職種" htmlFor={`h-job-${i}`}>
-            <input id={`h-job-${i}`} type="text" list="h-job-list" value={h.job_type} onChange={(e) => updateHistory(i, "job_type", e.target.value)} />
+            <JobTypeSelect id={`h-job-${i}`} options={WORK_JOB_TYPE_OPTIONS} value={h.job_type} onChange={(v) => updateHistory(i, "job_type", v)} />
           </Row>
           <Row label="業務内容" htmlFor={`h-content-${i}`}>
             <textarea id={`h-content-${i}`} rows={3} value={h.content} onChange={(e) => updateHistory(i, "content", e.target.value)} />
           </Row>
         </div>
       ))}
-      <datalist id="h-job-list">
-        {WORK_JOB_TYPE_OPTIONS.map((o) => (
-          <option key={o} value={o} />
-        ))}
-      </datalist>
       {historyCount !== "" && historyCount !== "なし" && histories.length < MAX_HISTORIES && (
         <p>
           <button type="button" className="auth-links__btn" onClick={() => setHistories((prev) => [...prev, { ...EMPTY_HISTORY }])}>
