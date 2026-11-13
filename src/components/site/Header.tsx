@@ -68,8 +68,8 @@ export function Header() {
             </ul>
           </nav>
           <div className="header__actions">
-            <Link className="header__sub" href="/job-seekers/">
-              お仕事をお探しの方
+            <Link className="header__sub" href="/register/">
+              スタッフ登録はこちら
             </Link>
             <Link className="header__cta" href="/contact/">
               お問い合わせ

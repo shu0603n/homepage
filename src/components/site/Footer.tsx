@@ -94,7 +94,7 @@ export function Footer() {
                   <Arrow />
                 </span>
               </Link>
-              <Link className="cta-card" href="/job-seekers/">
+              <Link className="cta-card" href="/register/">
                 <span className="cta-card__en">For Job Seekers</span>
                 <strong className="cta-card__title">お仕事をお探しの方</strong>
                 <span className="cta-card__text">お仕事探し・ご応募・キャリアのご相談</span>
@@ -149,7 +149,7 @@ export function Footer() {
               href="/contact/"
               items={[
                 ["/for-employers/", "企業担当者様"],
-                ["/job-seekers/", "お仕事をお探しの方"],
+                ["/register/", "お仕事をお探しの方"],
                 [EMORIS_AGENT_URL, "EMORIS AGENT"],
               ]}
             />
@@ -177,7 +177,7 @@ export function Footer() {
               </a>
               <button className="promo__close" type="button" aria-label="EMORIS AGENT のバナーを閉じる">
                 <i className="bi bi-x-lg" aria-hidden="true" />
-              </button>
+              </button>
             </div>
           </div>
         </div>
@@ -195,7 +195,7 @@ export function Footer() {
               </Link>
               <button className="promo__close" type="button" aria-label="入社祝い金のバナーを閉じる">
                 <i className="bi bi-x-lg" aria-hidden="true" />
-              </button>
+              </button>
             </div>
           </div>
         </div>
