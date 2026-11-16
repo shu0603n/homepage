@@ -164,10 +164,32 @@ export function Footer() {
         </p>
       </footer>
 
+      {/* 右端のタブ（PC）／画面下のバー（スマホ）。PC では3つのタブのうち1つだけが伸びて文字を見せ、数秒ごとに順番に入れ替わる（lib/behavior.ts） */}
       <aside className="promo" aria-label="キャンペーン・お知らせ">
+        {/* 派遣求人：バナーから案件一覧（ログインが必要）へ。PC のみ（スマホの下のバーは2つのまま） */}
+        <div className="promo__item promo__item--haken" data-key="emorislink-promo-haken-closed">
+          <button className="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-haken">
+            <span className="promo__tab-label">
+              <span className="promo__tab-text">派遣求人を見る</span>
+            </span>
+            <i className="bi bi-chevron-left" aria-hidden="true" />
+          </button>
+          <div className="promo__panel" id="promo-panel-haken" hidden>
+            <div className="promo__sheet">
+              <Link className="promo__banner" href="/jobs/">
+                <img src="/assets/img/floating-banner-haken.jpg" alt="あなたに合う派遣求人をチェック 派遣求人を見る 勤務地・職種・条件から探せる 未経験OK・高時給・駅チカ求人 詳細はこちら" width={1200} height={627} />
+              </Link>
+              <button className="promo__close" type="button" aria-label="派遣求人のバナーを閉じる">
+                <i className="bi bi-x-lg" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
         <div className="promo__item promo__item--agent" data-key="emorislink-promo-agent-closed">
           <button className="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-agent">
-            <span className="promo__tab-text">正社員求人情報</span>
+            <span className="promo__tab-label">
+              <span className="promo__tab-text">正社員求人情報</span>
+            </span>
             <i className="bi bi-chevron-left" aria-hidden="true" />
           </button>
           <div className="promo__panel" id="promo-panel-agent" hidden>
@@ -183,8 +205,10 @@ export function Footer() {
         </div>
         <div className="promo__item promo__item--bonus" data-key="emorislink-promo-closed">
           <button className="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-bonus">
-            <span className="promo__tab-text">
-              入社祝い金<b>20</b>万円
+            <span className="promo__tab-label">
+              <span className="promo__tab-text">
+                入社祝い金<b>20</b>万円
+              </span>
             </span>
             <i className="bi bi-chevron-left" aria-hidden="true" />
           </button>

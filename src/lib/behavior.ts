@@ -544,11 +544,11 @@ export function initSite() {
     }).observe(video);
   });
 
-  // ---------- 右端のタブ（EMORIS AGENT／入社祝い金）。押すとバナーが開く ----------
-  // どちらのバナーも、タブを押したときだけ開く（自動では開かない）
+  // ---------- 右端のタブ（派遣求人／EMORIS AGENT／入社祝い金）。押すとバナーが開く ----------
+  // どのバナーも、タブを押したときだけ開く（自動では開かない）
   const promo = document.querySelector('.promo');
   if (promo) {
-    const items = [...promo.querySelectorAll('.promo__item')].map((item) => {
+    const items = [...promo.querySelectorAll('.promo__item')].filter((item) => item.querySelector('.promo__panel')).map((item) => {
       const tab = item.querySelector('.promo__tab');
       const panel = item.querySelector('.promo__panel');
       const label = tab.querySelector('.promo__tab-text').textContent;
@@ -579,6 +579,31 @@ export function initSite() {
       if (e.target instanceof Element && e.target.closest('.promo__tab, .promo__sheet')) return;
       items.forEach((it) => it.setOpen(false));
     });
+    // PC：3つのタブのうち1つだけを伸ばして文字を見せ、ROTATE_MS ごとに次のタブへ入れ替える（伸びるタブは常に1つ）。
+    // マウスを乗せたタブはその場で伸び、乗せている間とバナーを開いている間は入れ替えを止める
+    const tabs = [...promo.querySelectorAll('.promo__item')];
+    const ROTATE_MS = 4000;
+    let active = 0;
+    let paused = false;
+    const setActive = (i) => {
+      active = (i + tabs.length) % tabs.length;
+      tabs.forEach((t, n) => t.classList.toggle('is-active', n === active));
+    };
+    setActive(0);
+    const timer = window.setInterval(() => {
+      if (paused || document.hidden || items.some((it) => !it.panel.hidden)) return;
+      setActive(active + 1);
+    }, ROTATE_MS);
+    cleanups.push(() => window.clearInterval(timer));
+    tabs.forEach((t, n) => {
+      listen(t, 'mouseenter', () => setActive(n));
+      listen(t, 'focusin', () => setActive(n));
+    });
+    listen(promo, 'mouseenter', () => { paused = true; });
+    listen(promo, 'mouseleave', () => { paused = false; });
+    // バナーを開いたタブを伸ばしておく
+    items.forEach((it) => listen(it.tab, 'click', () => { if (!it.panel.hidden) setActive(tabs.indexOf(it.item)); }));
+
     // ページ下部のお問い合わせ欄の付近では隠す
     const ctaBlock = document.querySelector('.contact-cta');
     if (ctaBlock && 'IntersectionObserver' in window) {

@@ -1319,19 +1319,31 @@ html:not(.js) .contact-cta__line > span, html:not(.js) .contact-cta__lead, html:
 @media (max-width: 640px) { .footer__nav { grid-template-columns: 1fr 1fr; } }
 
 /* 右端の縦タブ（上：EMORIS AGENT／下：入社祝い金）。押すと、そのタブの左に同じ高さのバナーが開く */
-.promo { position: fixed; right: 0; bottom: 96px; z-index: 90; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; transition: opacity .4s, transform .45s var(--ease); }
+/* --promo-open：開いている（伸びている）タブの高さ。どのタブも同じ高さで、横に出るバナー画像の高さもこれにそろえる */
+.promo { --promo-open: 190px; --promo-closed: 56px; position: fixed; right: 0; bottom: 96px; z-index: 90; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; transition: opacity .4s, transform .45s var(--ease); }
 .promo.is-hidden { opacity: 0; pointer-events: none; transform: translateX(20px); }
 .promo__item { position: relative; }
 /* 2本のタブは同じ高さ。バナーの高さ＝タブの高さなので、バナーも2枚とも同じサイズになる */
-.promo__tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 52px; min-height: 184px; padding: 16px 9px 14px; border: 0; border-radius: 14px 0 0 14px; background: var(--navy); color: #fff; cursor: pointer; box-shadow: 0 10px 26px -12px rgba(0, 30, 45, .55); transition: background .3s, padding .3s var(--ease); }
+.promo__tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; width: 52px; height: var(--promo-closed); padding: 0 9px; overflow: hidden; border: 0; border-radius: 14px 0 0 14px; background: var(--navy); color: #fff; cursor: pointer; box-shadow: 0 10px 26px -12px rgba(0, 30, 45, .55); transition: background .3s, height .55s var(--ease); }
+.promo__item.is-active .promo__tab { height: var(--promo-open); }
 .promo__tab:hover { background: var(--navy-dd); }
 .promo__item--agent .promo__tab { background: #e4336f; }
 .promo__item--agent .promo__tab:hover { background: #c71f58; }
+.promo__item--haken .promo__tab { background: #0f9488; color: #fff; }
+.promo__item--haken .promo__tab:hover { background: #0b766c; color: #fff; }
+/* PC：伸びているタブ（.is-active）だけ文字を見せる。ほかのタブは矢印だけの短いタブに縮む（高さは grid の 0fr ⇔ 1fr で滑らかに変える） */
+/* 縦書きの文字は折り返さない（伸びる途中で列が増減して文字がガタつくのを防ぐ）。
+   文字は、縮むときはすぐ消し、伸びるときはタブがほぼ伸び切ってから出す */
+/* 縦書きの文字は折り返さない（伸びる途中で列が増減して文字がガタつくのを防ぐ）。
+   縮んでいるタブでは文字の場所を取らず（max-height: 0）、伸びるときはタブがほぼ伸び切ってから文字を出す */
+.promo__tab-label { display: block; max-height: 0; opacity: 0; transition: opacity .15s ease, max-height 0s linear .55s; } /* 縮み終わるまで文字の場所を残し、矢印が跳ねないように */
+.promo__tab-label > .promo__tab-text { display: block; white-space: nowrap; }
+.promo__item.is-active .promo__tab-label { max-height: calc(var(--promo-open) - 60px); margin-bottom: 10px; opacity: 1; transition: opacity .3s ease .4s, max-height 0s; }
 .promo__tab-text { writing-mode: vertical-rl; font-family: var(--f-head); font-size: 13px; font-weight: 700; letter-spacing: .14em; }
 .promo__tab-text b { font-family: var(--f-en); font-size: 17px; letter-spacing: 0; color: #ffd66b; text-combine-upright: all; }
 .promo__tab .bi { font-size: 12px; transition: transform .3s var(--ease); }
 .promo__item.is-open .promo__tab .bi { transform: rotate(180deg); }
-.promo__panel { position: absolute; right: calc(100% + 10px); top: 0; bottom: 0; aspect-ratio: 800 / 418; }
+.promo__panel { position: absolute; right: calc(100% + 10px); top: 0; height: var(--promo-open); aspect-ratio: 800 / 418; } /* 開いているタブと同じ高さ */
 .promo__panel:not([hidden]) { animation: promoIn .45s var(--ease); }
 @keyframes promoIn { from { opacity: 0; transform: translateX(16px); } }
 .promo__sheet { position: relative; height: 100%; }
@@ -1357,6 +1369,9 @@ body:has(.kv):not(.is-scrolled) .promo { opacity: 0; pointer-events: none; trans
   .promo::before { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 -10px 26px -18px rgba(0, 30, 45, .45); }
   .promo.is-hidden, body:has(.kv):not(.is-scrolled) .promo { opacity: 0; transform: translateY(100%); }
   .promo__item { position: static; flex: 1; min-width: 0; }
+  .promo__item--haken { display: none; } /* スマホの下のバーは2つのまま */
+  .promo__tab-label, .promo__item.is-active .promo__tab-label { max-height: none; opacity: 1; margin: 0; }
+  .promo__item.is-active .promo__tab { height: 46px; }
   .promo__tab { flex-direction: row; gap: 6px; width: 100%; min-height: 0; height: 46px; padding: 0 10px; border-radius: 12px; box-shadow: none; }
   .promo__tab-text { writing-mode: horizontal-tb; font-size: 13px; letter-spacing: .04em; white-space: nowrap; }
   .promo__tab-text b { font-size: 16px; text-combine-upright: none; }
