@@ -1173,6 +1173,11 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
   border: 1.5px solid #c3d2da; border-radius: 14px; background: #fff;
   transition: border-color .25s, background .25s, box-shadow .25s;
 }
+/* 入力欄が入っている列が、中身の幅で広がらないように（グリッドの列は既定で中身より狭くならない） */
+.form__row > div { min-width: 0; }
+/* iPhone の Safari は日付欄に独自の最小幅と中央寄せを持たせるため、値を入れると枠がはみ出す。ほかの欄と同じ幅・左寄せにする */
+.form input[type="date"] { display: block; min-width: 0; max-width: 100%; min-height: 54px; -webkit-appearance: none; appearance: none; text-align: left; }
+.form input[type="date"]::-webkit-date-and-time-value { margin: 0; text-align: left; }
 .form input:not([type="radio"]):not([type="checkbox"]):hover, .form select:hover, .form textarea:hover { border-color: #93abb8; }
 .form ::placeholder { color: #a3b3bc; }
 .form textarea { min-height: 200px; resize: vertical; }
@@ -1324,6 +1329,7 @@ html:not(.js) .contact-cta__line > span, html:not(.js) .contact-cta__lead, html:
 .promo.is-hidden { opacity: 0; pointer-events: none; transform: translateX(20px); }
 .promo__item { position: relative; }
 .promo__track { display: contents; } /* PC では包みが無いのと同じ（スマホではカルーセルの帯） */
+.promo__item--clone { display: none; } /* カルーセルのループ用の写し（スマホだけで使う） */
 /* 2本のタブは同じ高さ。バナーの高さ＝タブの高さなので、バナーも2枚とも同じサイズになる */
 .promo__tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; width: 52px; height: var(--promo-closed); padding: 0 9px; overflow: hidden; border: 0; border-radius: 14px 0 0 14px; background: var(--navy); color: #fff; cursor: pointer; box-shadow: 0 10px 26px -12px rgba(0, 30, 45, .55); transition: background .3s, height .55s var(--ease); }
 .promo__item.is-active .promo__tab { height: var(--promo-open); }
@@ -1367,17 +1373,19 @@ body:has(.kv):not(.is-scrolled) .promo { opacity: 0; pointer-events: none; trans
 @media (max-width: 767px) {
   .promo { left: 0; right: 0; bottom: 0; display: block; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
   /* 横スクロールの帯。.promo 自体をスクロールさせると、裏の背景（::before）が一緒に流れてしまうため、内側の帯をスクロールさせる */
-  .promo__track { display: flex; gap: 8px; padding: 0 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 12px; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .promo__track { display: flex; gap: 8px; margin: 0 12px; padding: 0; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .promo__track::-webkit-scrollbar { display: none; }
   /* バーの背景（すりガラス）は裏の層に置く。.promo 自体に backdrop-filter を付けると、
      中の position: fixed（バナーの暗い背景）がバーの中に閉じ込められてしまうため */
   .promo::before { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 -10px 26px -18px rgba(0, 30, 45, .45); }
   .promo.is-hidden, body:has(.kv):not(.is-scrolled) .promo { opacity: 0; transform: translateY(100%); }
-  .promo__item { position: static; flex: 0 0 calc(100% - 64px); min-width: 0; scroll-snap-align: start; }
+  /* ボタンを2つずつ、半分の幅で見せる */
+  .promo__item { position: static; flex: 0 0 calc((100% - 8px) / 2); min-width: 0; scroll-snap-align: start; }
+  .promo__item--clone { display: block; }
   .promo__tab-label, .promo__item.is-active .promo__tab-label { max-height: none; opacity: 1; margin: 0; }
   .promo__item.is-active .promo__tab { height: 46px; }
   .promo__tab { flex-direction: row; gap: 6px; width: 100%; min-height: 0; height: 46px; padding: 0 10px; border-radius: 12px; box-shadow: none; }
-  .promo__tab-text { writing-mode: horizontal-tb; font-size: 13px; letter-spacing: .04em; white-space: nowrap; }
+  .promo__tab-text { writing-mode: horizontal-tb; font-size: 13px; letter-spacing: .02em; white-space: nowrap; }
   .promo__tab-text b { font-size: 16px; text-combine-upright: none; }
   .promo__tab .bi { transform: rotate(90deg); } /* ＜ を ∧（上向き）にして「上に開く」ことを示す */
   .promo__item.is-open .promo__tab .bi { transform: rotate(-90deg); }

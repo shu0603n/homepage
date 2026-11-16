@@ -585,24 +585,45 @@ export function initSite() {
     const ROTATE_MS = 4000;
     let active = 0;
     let paused = false;
-    // スマホ：同じ順番で、下のバーのカルーセルを次のボタンへスライドさせる（指で触っている間は送らない）
+    const setActive = (i) => {
+      active = (i + tabs.length) % tabs.length;
+      tabs.forEach((t, n) => t.classList.toggle('is-active', n === active));
+    };
+    setActive(0);
+
+    // スマホ：下のバーは、ボタンを2つずつ半分の幅で見せるカルーセル。ROTATE_MS ごとに1つ分ずつ左へ送る
+    //   [1][2] → [2][3] → [3][1] → [1][2] …（3つ目は順番が来るまで見えない）
+    // 切れ目なくループさせるため、帯の後ろに 1・2 番目のボタンの写し（タブだけ。押すと元のタブを押したのと同じ）を足し、
+    // 写しの [1][2] まで送り切ったら、見た目が同じ先頭の [1][2] へ瞬時に戻す
     const track = promo.querySelector('.promo__track');
     const mobile = window.matchMedia('(max-width: 767px)');
     let touching = false;
+    let slide = 0;
+    if (track && tabs.length > 2) {
+      tabs.slice(0, 2).forEach((item) => {
+        const clone = document.createElement('div');
+        clone.className = `${item.className.replace(/is-w+/g, '')} promo__item--clone`;
+        clone.setAttribute('aria-hidden', 'true');
+        const tab = item.querySelector('.promo__tab').cloneNode(true);
+        tab.removeAttribute('aria-controls');
+        tab.setAttribute('tabindex', '-1');
+        clone.append(tab);
+        track.append(clone);
+        listen(tab, 'click', (e) => { e.preventDefault(); item.querySelector('.promo__tab').click(); });
+      });
+      cleanups.push(() => track.querySelectorAll('.promo__item--clone').forEach((c) => c.remove()));
+    }
+    const step = () => (tabs.length > 1 ? tabs[1].offsetLeft - tabs[0].offsetLeft : 0);
     const slideTo = (n) => {
       if (!track || !mobile.matches) return;
-      const left = tabs[n].offsetLeft - tabs[0].offsetLeft;
-      track.scrollTo({ left, behavior: 'smooth' });
+      slide = n;
+      track.scrollTo({ left: n * step(), behavior: 'smooth' });
     };
-    const setActive = (i, slide = true) => {
-      active = (i + tabs.length) % tabs.length;
-      tabs.forEach((t, n) => t.classList.toggle('is-active', n === active));
-      if (slide) slideTo(active);
-    };
-    setActive(0, false);
+
     const timer = window.setInterval(() => {
       if (paused || touching || document.hidden || items.some((it) => !it.panel.hidden)) return;
       setActive(active + 1);
+      slideTo(slide + 1);
     }, ROTATE_MS);
     cleanups.push(() => window.clearInterval(timer));
     tabs.forEach((t, n) => {
@@ -610,16 +631,20 @@ export function initSite() {
       listen(t, 'focusin', () => setActive(n));
     });
     if (track) {
-      // 指でスワイプしたら、その位置のボタンを「いまのボタン」にする。触っている間と、離してしばらくは自動で送らない
+      // 指でスワイプしたら、その位置から続ける。触っている間と、離してしばらくは自動で送らない
       let resume = 0;
       listen(track, 'touchstart', () => { touching = true; window.clearTimeout(resume); }, { passive: true });
       listen(track, 'touchend', () => { resume = window.setTimeout(() => { touching = false; }, 6000); }, { passive: true });
       cleanups.push(() => window.clearTimeout(resume));
       listen(track, 'scroll', () => {
         if (!mobile.matches) return;
-        const step = tabs.length > 1 ? tabs[1].offsetLeft - tabs[0].offsetLeft : 1;
-        const n = Math.round(track.scrollLeft / step);
-        if (n !== active && n >= 0 && n < tabs.length) setActive(n, false);
+        const w = step();
+        if (!w) return;
+        // 写しの [1][2]（＝ボタン3つ分送った位置）まで来たら、先頭の [1][2] へ瞬時に戻す
+        if (track.scrollLeft >= tabs.length * w - 1) {
+          track.scrollTo({ left: track.scrollLeft - tabs.length * w, behavior: 'instant' });
+        }
+        slide = Math.round(track.scrollLeft / w);
       }, { passive: true });
     }
     listen(promo, 'mouseenter', () => { paused = true; });
