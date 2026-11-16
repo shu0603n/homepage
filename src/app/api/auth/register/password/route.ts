@@ -6,12 +6,15 @@ import { createSession } from "@/lib/auth/session";
 import { findStaffById, isLoginBlocked } from "@/lib/auth/staff";
 import { passwordProblem } from "@/lib/auth/validation";
 
-// スタッフ登録（2/2）：メールのリンクから開いた画面で決めたパスワードで、ログイン用アカウントを作り、ログイン状態にする
+// スタッフ登録（2/2）：メールのリンクから開いた画面で決めたパスワードで、ログイン用アカウントを作り、ログイン状態にする。
+// 社内システムで登録済みのスタッフが「パスワード設定のご案内」から開いた画面（/password-setup/set/）でも使う
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return jsonError("不正なリクエストです。", 403);
 
   const body = (await readJson(request)) as { token?: unknown; password?: unknown } | null;
-  const link = await readPasswordToken(typeof body?.token === "string" ? body.token : undefined, "set-password");
+  // スタッフ登録後のパスワード設定と、登録済みスタッフのご利用開始（activate）で共通
+  const token = typeof body?.token === "string" ? body.token : undefined;
+  const link = (await readPasswordToken(token, "set-password")) ?? (await readPasswordToken(token, "activate"));
   if (!link) return jsonError("リンクの有効期限が切れているか、正しくありません。ログイン画面の「パスワードをお忘れの方」から、もう一度メールをお送りください。", 400);
   const problem = passwordProblem(body?.password);
   if (problem) return jsonError(problem, 400);

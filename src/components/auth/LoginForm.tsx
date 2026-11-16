@@ -59,6 +59,13 @@ export function LoginForm({ next }: { next: string }) {
           <Link href="/register/">はじめての方（スタッフ登録）</Link>
         </li>
       </ul>
+      {/* 社内システムで登録済みで、まだホームページのパスワードを持っていないスタッフ向け */}
+      <p className="login-setup">
+        スタッフ登録済みで、はじめてログインする方は
+        <br className="sp-only" />
+        <Link href="/password-setup/">こちらからパスワードを設定</Link>
+        してください。
+      </p>
     </form>
   );
 }

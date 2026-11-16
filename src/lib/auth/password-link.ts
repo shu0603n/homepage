@@ -8,14 +8,16 @@ import { SITE } from "@/lib/site";
 // メールで送る「パスワード設定リンク」（確認コードは使わない。50代の方も多いため、リンクを押すだけで済むようにする）。
 //   - set-password  ：スタッフ登録のあと、初めてパスワードを決める（ログイン用アカウントを作る）
 //   - reset-password：パスワードを忘れたときに、新しいパスワードを決める
+//   - activate      ：社内システムで登録済みのスタッフが、ホームページのマイページを使い始めるためにパスワードを決める
 // リンクには「用途・スタッフ ID・メールアドレス・発行日時・有効期限」を署名して入れる（改ざんすると無効。サーバー側に状態は持たない）。
 // 一度パスワードを設定すると、ログイン用アカウントの最終更新日時がリンクの発行日時より新しくなるので、同じリンクはもう使えない
 
-export type LinkPurpose = "set-password" | "reset-password";
+export type LinkPurpose = "set-password" | "reset-password" | "activate";
 
 const LINK: Record<LinkPurpose, { path: string; hours: number }> = {
   "set-password": { path: "/register/password/", hours: 48 }, // すぐに開けなくても間に合うよう長め
   "reset-password": { path: "/reset-password/", hours: 24 },
+  activate: { path: "/password-setup/set/", hours: 72 }, // 案内を見てから手続きするまで日が空くこともあるため長め
 };
 
 export const LINK_HOURS = LINK["set-password"].hours;
@@ -101,6 +103,43 @@ async function sendResetLinkMail(to: string, name: string | null, url: string): 
       ...FOOTER,
     ].join("\n"),
   });
+}
+
+async function sendActivateLinkMail(to: string, name: string | null, url: string): Promise<void> {
+  await sendMail({
+    to,
+    subject: "【株式会社エモリスリンク】マイページ ご利用開始（パスワード設定）のご案内",
+    text: [
+      `${name ? `${name} 様` : "ご登録者様"}`,
+      "",
+      "いつも株式会社エモリスリンクをご利用いただき、ありがとうございます。",
+      "",
+      "下のリンクを開いて、ホームページのマイページにログインするためのパスワードを設定してください。",
+      "パスワードを設定すると、マイページで登録情報の確認・変更や、お仕事の検索・応募ができるようになります。",
+      "",
+      url,
+      "",
+      `※ リンクの有効期限は${LINK.activate.hours}時間です。一度パスワードを設定すると、このリンクは使えなくなります。`,
+      "※ 期限が切れた場合は、ホームページの「パスワード設定のご案内」から、もう一度お手続きください。",
+      "※ このメールに心当たりがない場合は、何もせずに破棄してください。",
+      "",
+      ...FOOTER,
+    ].join("\n"),
+  });
+}
+
+// 既に登録済みのスタッフ向け「パスワード設定のご案内」：まだパスワードがない方には設定リンクを、
+// 既にパスワードがある方には再設定リンクを送る。登録がない・ログインできない状態のアドレスには何も送らない
+export async function sendActivationLink(request: Request, mail: string): Promise<"activate" | "reset" | "none"> {
+  const staff = await findStaffByMail(mail);
+  if (!staff || isLoginBlocked(staff)) return "none";
+  const name = staff.name ?? null;
+  if ((await userLastModified(mail)) === null) {
+    await sendActivateLinkMail(mail, name, await createPasswordLink(request, "activate", staff.id, mail));
+    return "activate";
+  }
+  await sendResetLinkMail(mail, name, await createPasswordLink(request, "reset-password", staff.id, mail));
+  return "reset";
 }
 
 // 「パスワードをお忘れの方」：登録状況に合わせて、パスワード設定リンク（未設定の方）か再設定リンクを送る。

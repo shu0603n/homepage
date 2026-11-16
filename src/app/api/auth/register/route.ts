@@ -11,7 +11,7 @@ import { isMailConfigured } from "@/lib/mail";
 // ログイン用アカウントは、リンクを開いてパスワードを決めたときに作る（register/password/route.ts）。
 // メールアドレスが本人のものと確認できるまで、ログインはできない
 const DUPLICATE_MESSAGE =
-  "既にご登録いただいているメールアドレスです。ログイン画面からログインしてください。パスワードをお忘れの場合や、まだ設定していない場合は「パスワードをお忘れの方」からお手続きいただけます。";
+  "既にご登録いただいているメールアドレスです。ログイン画面からログインしてください（パスワードをまだ設定していない方は「はじめてログインする方」、お忘れの方は「パスワードをお忘れの方」からお手続きいただけます）。";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return jsonError("不正なリクエストです。", 403);

@@ -1530,6 +1530,8 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
 .history-card__head { display: flex; align-items: center; justify-content: space-between; padding-top: 16px; }
 .auth-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 28px; margin: 28px 0 0; padding: 0; list-style: none; font-size: 14px; }
 .auth-links a, .auth-links__btn { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
+.login-setup { margin: 20px 0 0; padding: 14px 16px; border-radius: var(--r-s); background: var(--bg-soft); font-size: 14px; line-height: 1.8; text-align: center; }
+.login-setup a { font-weight: 700; color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
 .auth-links__btn { padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
 .menu__auth { position: relative; z-index: 1; max-width: 900px; margin: 24px auto 0; }
 .menu__auth .btn { min-width: 200px; padding: 13px 26px; }
