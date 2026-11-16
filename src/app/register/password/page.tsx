@@ -17,7 +17,7 @@ export const metadata: Metadata = { ...buildMetadata("register/password/", meta)
 
 export default async function RegisterPasswordPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const { token } = await searchParams;
-  const link = await readPasswordToken(token);
+  const link = await readPasswordToken(token, "set-password");
 
   return (
     <PageShell route="register/password/" meta={meta}>
@@ -29,7 +29,7 @@ export default async function RegisterPasswordPage({ searchParams }: { searchPar
                 <p className="lead">ログイン用のパスワードを決めてください。</p>
                 <p>パスワードを設定すると、スタッフ登録が完了します。</p>
               </div>
-              <PasswordSetForm token={token} email={link.mail} />
+              <PasswordSetForm token={token} email={link.mail} endpoint="/api/auth/register/password/" next="/register/complete/" submitLabel="パスワードを設定して登録を完了する" />
             </>
           ) : (
             <div className="form form--auth">

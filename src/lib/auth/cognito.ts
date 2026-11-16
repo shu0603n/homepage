@@ -6,8 +6,6 @@ import {
   AdminSetUserPasswordCommand,
   AdminUpdateUserAttributesCommand,
   CognitoIdentityProviderClient,
-  ConfirmForgotPasswordCommand,
-  ForgotPasswordCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 // Cognito ユーザープール（メールアドレスを username にする設定）。
@@ -169,29 +167,14 @@ export async function deleteUser(email: string): Promise<void> {
   await getClient().send(new AdminDeleteUserCommand({ UserPoolId: requireEnv("COGNITO_USER_POOL_ID"), Username: email }));
 }
 
-// パスワードリセット：登録メールアドレスへ確認コードを送る
-export async function startPasswordReset(email: string): Promise<void> {
+// ログイン用アカウントの最終更新日時（パスワード設定・メール変更などで更新される）。アカウントがなければ null。
+// メールのパスワード設定リンクを「一度使ったら無効」にするために使う
+export async function userLastModified(email: string): Promise<Date | null> {
   try {
-    await getClient().send(new ForgotPasswordCommand({ ClientId: requireEnv("COGNITO_CLIENT_ID"), Username: email }));
+    const user = await getClient().send(new AdminGetUserCommand({ UserPoolId: requireEnv("COGNITO_USER_POOL_ID"), Username: email }));
+    return user.UserLastModifiedDate ?? new Date(0);
   } catch (error) {
-    // コードを送れない（未登録・メール未確認など）場合も「ユーザーなし」として扱い、呼び出し側は成功と同じ応答にする
-    if (errorName(error) === "InvalidParameterException") throw new CognitoAuthError("user_not_found");
-    throw toAuthError(error);
-  }
-}
-
-// パスワードリセット：確認コードと新しいパスワードで更新する
-export async function confirmPasswordReset(email: string, code: string, newPassword: string): Promise<void> {
-  try {
-    await getClient().send(
-      new ConfirmForgotPasswordCommand({
-        ClientId: requireEnv("COGNITO_CLIENT_ID"),
-        Username: email,
-        ConfirmationCode: code,
-        Password: newPassword,
-      }),
-    );
-  } catch (error) {
+    if (errorName(error) === "UserNotFoundException") return null;
     throw toAuthError(error);
   }
 }

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     // next-app の登録フォームと同じく、メールが重複していても毎回新しいスタッフ行を作る（重複の整理は社内システム側で行う）
     const staffId = await createStaff(input);
     createdStaffId = staffId;
-    await sendPasswordLinkMail(input.mail, input.name ?? null, await createPasswordLink(request, staffId, input.mail));
+    await sendPasswordLinkMail(input.mail, input.name ?? null, await createPasswordLink(request, "set-password", staffId, input.mail));
     return NextResponse.json({ ok: true });
   } catch (error) {
     // 案内メールを送れなかったときは、今回作ったスタッフ情報も取り消す（登録をやり直せるように）

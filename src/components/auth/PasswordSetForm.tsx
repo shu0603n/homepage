@@ -3,8 +3,11 @@
 import { useState, type FormEvent } from "react";
 import { postJson } from "@/components/auth/api";
 
-// スタッフ登録：メールのリンクから開いた画面で、ログイン用パスワードを決める。設定できたら登録完了ページへ
-export function PasswordSetForm({ token, email }: { token: string; email: string }) {
+// メールのリンクから開いた画面で、パスワードを決める（スタッフ登録のパスワード設定と、パスワード再設定で共通）。
+// 設定できたらログイン状態になるので、next のページへ移る
+type Props = { token: string; email: string; endpoint: string; next: string; submitLabel: string; label?: string };
+
+export function PasswordSetForm({ token, email, endpoint, next, submitLabel, label = "パスワード" }: Props) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
@@ -18,10 +21,9 @@ export function PasswordSetForm({ token, email }: { token: string; email: string
     if (password !== String(fd.get("password2") ?? "")) return setMessage("確認用のパスワードが一致しません。");
     setBusy(true);
     setMessage("");
-    const result = await postJson("/api/auth/register/password/", { token, password });
+    const result = await postJson(endpoint, { token, password });
     if (result.ok) {
-      // 登録完了ページで、LINE 公式アカウントの友だち追加へ案内する
-      window.location.assign("/register/complete/");
+      window.location.assign(next);
       return;
     }
     setMessage(result.message);
@@ -45,7 +47,7 @@ export function PasswordSetForm({ token, email }: { token: string; email: string
       </div>
       <div className="form__row">
         <label className="form__label" htmlFor="set-password">
-          パスワード
+          {label}
         </label>
         <div>
           <input {...fieldProps} key={`pw-${show}`} id="set-password" name="password" value={pw} onChange={(e) => setPw(e.target.value)} minLength={8} required />
@@ -54,7 +56,7 @@ export function PasswordSetForm({ token, email }: { token: string; email: string
       </div>
       <div className="form__row">
         <label className="form__label" htmlFor="set-password2">
-          パスワード（確認）
+          {label}（確認）
         </label>
         <div>
           <input {...fieldProps} key={`pw2-${show}`} id="set-password2" name="password2" value={pw2} onChange={(e) => setPw2(e.target.value)} minLength={8} required />
@@ -69,7 +71,7 @@ export function PasswordSetForm({ token, email }: { token: string; email: string
       </p>
       <div className="form__actions">
         <button className="btn" type="submit" disabled={busy}>
-          {busy ? "設定中…" : "パスワードを設定して登録を完了する"}
+          {busy ? "設定中…" : submitLabel}
         </button>
       </div>
       {message && (
