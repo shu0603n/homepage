@@ -34,6 +34,25 @@ export function initSite() {
   // 画像の読み込み完了は待たず、HTML を読み終えた時点ですぐ始める
   requestAnimationFrame(() => root.classList.add('is-loaded'));
 
+  // ---------- 下層ページ上部の写真：スクロールに合わせて、ページより遅く動かして奥行きを出す ----------
+  const heroMedia = document.querySelector('.page-hero__media');
+  if (heroMedia) {
+    const hero = heroMedia.parentElement;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const y = window.scrollY;
+      if (y > hero.offsetHeight) return; // 写真が画面の外に出たら動かさない
+      heroMedia.style.transform = `translate3d(0, ${Math.round(y * 0.35)}px, 0)`;
+    };
+    listen(window, 'scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }, { passive: true });
+    update();
+  }
+
   // ---------- スクロール連動（ヘッダー・進捗・パララックス） ----------
   // 透明ヘッダーの状態でメガメニューを開いている間は、ヘッダーも白にしてメニューと一体に見せる
   // メニューのリンクを押したら、移動先のページでメニューが開いたまま残らないように閉じる。

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Celebration } from "@/components/auth/Celebration";
 import { LineFriendStep } from "@/components/auth/LineFriendStep";
 import { PageShell } from "@/components/site/PageShell";
 import { getSession } from "@/lib/auth/session";
@@ -27,6 +28,8 @@ export default async function RegisterCompletePage() {
 
   return (
     <PageShell route="register/complete/" meta={meta}>
+      {/* 登録完了のお祝い（紙吹雪）。数秒で消え、画面の操作は邪魔しない */}
+      <Celebration />
       <section className="section">
         <div className="container container--narrow">
           <ol className="register-steps" aria-label="ご登録の流れ">

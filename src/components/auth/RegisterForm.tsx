@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { postJson } from "@/components/auth/api";
+import { Celebration } from "@/components/auth/Celebration";
 import { LineFriendStep } from "@/components/auth/LineFriendStep";
+import { RegisterProgress } from "@/components/auth/RegisterProgress";
 import { readProfileFields, Row, StaffProfileFields } from "@/components/auth/StaffProfileFields";
 
 // スタッフ登録フォーム（next-app の staff-register と同じ項目）。
@@ -15,6 +17,7 @@ import { readProfileFields, Row, StaffProfileFields } from "@/components/auth/St
 export function RegisterForm({ privacy, variant = "web" }: { privacy: ReactNode; variant?: "web" | "visit" }) {
   const visit = variant === "visit";
   const [lineUrl, setLineUrl] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null); // ご案内メールを送ったメールアドレス
@@ -63,6 +66,7 @@ export function RegisterForm({ privacy, variant = "web" }: { privacy: ReactNode;
   if (sentTo && visit) {
     return (
       <div id="register-form" className="register-visit-done">
+        <Celebration />
         <div className="form form--auth register-sent">
           <p className="register-sent__icon" aria-hidden="true">
             <i className="bi bi-check-circle" />
@@ -104,7 +108,7 @@ export function RegisterForm({ privacy, variant = "web" }: { privacy: ReactNode;
 
   return (
     <div id="register-form">
-      <form className="form form--wide" onSubmit={onSubmit}>
+      <form ref={formRef} className="form form--wide" onSubmit={onSubmit}>
         {message && (
           <p className="form__status is-ng" role="alert">
             {message}
@@ -165,6 +169,7 @@ export function RegisterForm({ privacy, variant = "web" }: { privacy: ReactNode;
           </ul>
         )}
       </form>
+      <RegisterProgress formRef={formRef} />
     </div>
   );
 }
