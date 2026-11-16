@@ -585,13 +585,23 @@ export function initSite() {
     const ROTATE_MS = 4000;
     let active = 0;
     let paused = false;
-    const setActive = (i) => {
+    // スマホ：同じ順番で、下のバーのカルーセルを次のボタンへスライドさせる（指で触っている間は送らない）
+    const track = promo.querySelector('.promo__track');
+    const mobile = window.matchMedia('(max-width: 767px)');
+    let touching = false;
+    const slideTo = (n) => {
+      if (!track || !mobile.matches) return;
+      const left = tabs[n].offsetLeft - tabs[0].offsetLeft;
+      track.scrollTo({ left, behavior: 'smooth' });
+    };
+    const setActive = (i, slide = true) => {
       active = (i + tabs.length) % tabs.length;
       tabs.forEach((t, n) => t.classList.toggle('is-active', n === active));
+      if (slide) slideTo(active);
     };
-    setActive(0);
+    setActive(0, false);
     const timer = window.setInterval(() => {
-      if (paused || document.hidden || items.some((it) => !it.panel.hidden)) return;
+      if (paused || touching || document.hidden || items.some((it) => !it.panel.hidden)) return;
       setActive(active + 1);
     }, ROTATE_MS);
     cleanups.push(() => window.clearInterval(timer));
@@ -599,6 +609,19 @@ export function initSite() {
       listen(t, 'mouseenter', () => setActive(n));
       listen(t, 'focusin', () => setActive(n));
     });
+    if (track) {
+      // 指でスワイプしたら、その位置のボタンを「いまのボタン」にする。触っている間と、離してしばらくは自動で送らない
+      let resume = 0;
+      listen(track, 'touchstart', () => { touching = true; window.clearTimeout(resume); }, { passive: true });
+      listen(track, 'touchend', () => { resume = window.setTimeout(() => { touching = false; }, 6000); }, { passive: true });
+      cleanups.push(() => window.clearTimeout(resume));
+      listen(track, 'scroll', () => {
+        if (!mobile.matches) return;
+        const step = tabs.length > 1 ? tabs[1].offsetLeft - tabs[0].offsetLeft : 1;
+        const n = Math.round(track.scrollLeft / step);
+        if (n !== active && n >= 0 && n < tabs.length) setActive(n, false);
+      }, { passive: true });
+    }
     listen(promo, 'mouseenter', () => { paused = true; });
     listen(promo, 'mouseleave', () => { paused = false; });
     // バナーを開いたタブを伸ばしておく

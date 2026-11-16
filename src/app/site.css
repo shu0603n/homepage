@@ -1323,6 +1323,7 @@ html:not(.js) .contact-cta__line > span, html:not(.js) .contact-cta__lead, html:
 .promo { --promo-open: 190px; --promo-closed: 56px; position: fixed; right: 0; bottom: 96px; z-index: 90; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; transition: opacity .4s, transform .45s var(--ease); }
 .promo.is-hidden { opacity: 0; pointer-events: none; transform: translateX(20px); }
 .promo__item { position: relative; }
+.promo__track { display: contents; } /* PC では包みが無いのと同じ（スマホではカルーセルの帯） */
 /* 2本のタブは同じ高さ。バナーの高さ＝タブの高さなので、バナーも2枚とも同じサイズになる */
 .promo__tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; width: 52px; height: var(--promo-closed); padding: 0 9px; overflow: hidden; border: 0; border-radius: 14px 0 0 14px; background: var(--navy); color: #fff; cursor: pointer; box-shadow: 0 10px 26px -12px rgba(0, 30, 45, .55); transition: background .3s, height .55s var(--ease); }
 .promo__item.is-active .promo__tab { height: var(--promo-open); }
@@ -1360,16 +1361,19 @@ body:has(.kv):not(.is-scrolled) .promo { opacity: 0; pointer-events: none; trans
 .pagetop__ring { stroke: var(--teal); stroke-linecap: round; stroke-dasharray: 163.4; stroke-dashoffset: calc(163.4 * (1 - var(--p, 0))); }
 .pagetop:hover { background: var(--navy); color: #fff; }
 .is-scrolled .pagetop { opacity: 1; visibility: visible; transform: none; }
-/* スマホ：右端の縦タブをやめ、画面の一番下に2つのボタンを横並びにしたバーを固定する。
+/* スマホ：右端の縦タブをやめ、画面の一番下にボタンのバーを固定する。ボタンは3つあるので、横にスライドするカルーセルにする
+   （1つを大きく見せ、次のボタンの端をのぞかせる。数秒ごとに自動で次へ送り、指でスワイプもできる）。
    ボタンを押すと、暗くした画面の下からバナーが画面幅いっぱいでせり上がる（暗い部分・×・同じボタンで閉じる） */
 @media (max-width: 767px) {
-  .promo { left: 0; right: 0; bottom: 0; flex-direction: row; align-items: stretch; gap: 8px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
+  .promo { left: 0; right: 0; bottom: 0; display: block; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
+  /* 横スクロールの帯。.promo 自体をスクロールさせると、裏の背景（::before）が一緒に流れてしまうため、内側の帯をスクロールさせる */
+  .promo__track { display: flex; gap: 8px; padding: 0 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 12px; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .promo__track::-webkit-scrollbar { display: none; }
   /* バーの背景（すりガラス）は裏の層に置く。.promo 自体に backdrop-filter を付けると、
      中の position: fixed（バナーの暗い背景）がバーの中に閉じ込められてしまうため */
   .promo::before { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 -10px 26px -18px rgba(0, 30, 45, .45); }
   .promo.is-hidden, body:has(.kv):not(.is-scrolled) .promo { opacity: 0; transform: translateY(100%); }
-  .promo__item { position: static; flex: 1; min-width: 0; }
-  .promo__item--haken { display: none; } /* スマホの下のバーは2つのまま */
+  .promo__item { position: static; flex: 0 0 calc(100% - 64px); min-width: 0; scroll-snap-align: start; }
   .promo__tab-label, .promo__item.is-active .promo__tab-label { max-height: none; opacity: 1; margin: 0; }
   .promo__item.is-active .promo__tab { height: 46px; }
   .promo__tab { flex-direction: row; gap: 6px; width: 100%; min-height: 0; height: 46px; padding: 0 10px; border-radius: 12px; box-shadow: none; }
@@ -1378,7 +1382,7 @@ body:has(.kv):not(.is-scrolled) .promo { opacity: 0; pointer-events: none; trans
   .promo__tab .bi { transform: rotate(90deg); } /* ＜ を ∧（上向き）にして「上に開く」ことを示す */
   .promo__item.is-open .promo__tab .bi { transform: rotate(-90deg); }
   /* バナーは画面全体を暗くした上に、下のバーのすぐ上へ出す */
-  .promo__panel { position: fixed; inset: 0; z-index: 1; display: flex; align-items: flex-end; justify-content: center; aspect-ratio: auto; padding: 16px 14px calc(74px + env(safe-area-inset-bottom)); background: rgba(0, 20, 30, .55); }
+  .promo__panel { position: fixed; inset: 0; height: auto; z-index: 1; display: flex; align-items: flex-end; justify-content: center; aspect-ratio: auto; padding: 16px 14px calc(74px + env(safe-area-inset-bottom)); background: rgba(0, 20, 30, .55); }
   .promo__panel[hidden] { display: none; } /* 上の display: flex が hidden より優先されないように */
   .promo__panel:not([hidden]) { animation: promoFade .25s ease; }
   .promo__sheet { width: 100%; max-width: 480px; height: auto; animation: promoUp .45s var(--ease); }
