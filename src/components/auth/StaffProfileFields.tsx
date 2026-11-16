@@ -23,7 +23,19 @@ const EMPTY_HISTORY: WorkHistory = { company: "", employment_type: "", period: "
 // 候補にない値（以前に自由入力した職種）は、「その他」を選んだ状態で入力欄に表示する。
 // name を渡すと、送信用の値を hidden で持つ（プルダウンと入力欄には name を付けない）
 const OTHER = "その他";
-function JobTypeSelect({ id, name, options, value, onChange }: { id: string; name?: string; options: readonly string[]; value: string; onChange: (v: string) => void }) {
+function JobTypeSelect({
+  id,
+  name,
+  options,
+  value,
+  onChange,
+}: {
+  id: string;
+  name?: string;
+  options: readonly string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const known = options.includes(value) && value !== OTHER;
   const selected = value === "" ? "" : known ? value : OTHER;
   const freeText = known || value === OTHER ? "" : value;
@@ -95,8 +107,11 @@ function historyCountLabel(n: number): string {
 }
 
 // スタッフ登録とマイページの編集で共通の入力項目（基本情報・希望条件・職務履歴）。
-// 勤務可能曜日と職歴は、hidden の weekend_holiday（カンマ区切り）と work_histories（JSON）として送信される
-export function StaffProfileFields({ defaults = {}, leading, afterKana }: { defaults?: Defaults; leading?: ReactNode; afterKana?: ReactNode }) {
+// 勤務可能曜日と職歴は、hidden の weekend_holiday（カンマ区切り）と work_histories（JSON）として送信される。
+// basicOnly：基本情報だけを出す（来社登録 /register/visit/ 用。希望条件・職務履歴は来社時に担当者が伺う）
+type FieldsProps = { defaults?: Defaults; leading?: ReactNode; afterKana?: ReactNode; basicOnly?: boolean };
+
+export function StaffProfileFields({ defaults = {}, leading, afterKana, basicOnly = false }: FieldsProps) {
   // 新規登録では「受け付ける」が初期値。編集時は保存されている値を表示する
   const acceptFulltime = defaults.accept_fulltime_job ?? true;
   const [days, setDays] = useState<string[]>(defaults.weekend_days ?? []);
@@ -150,7 +165,15 @@ export function StaffProfileFields({ defaults = {}, leading, afterKana }: { defa
         <input id="r-birthday" type="date" name="birthday" autoComplete="bday" defaultValue={defaults.birthday} />
       </Row>
       <Row label="郵便番号" htmlFor="r-postal">
-        <input id="r-postal" type="text" name="postal_code" autoComplete="postal-code" inputMode="numeric" placeholder="例：123-4567" defaultValue={defaults.postal_code} />
+        <input
+          id="r-postal"
+          type="text"
+          name="postal_code"
+          autoComplete="postal-code"
+          inputMode="numeric"
+          placeholder="例：123-4567"
+          defaultValue={defaults.postal_code}
+        />
       </Row>
       <Row label="都道府県" htmlFor="r-pref">
         <Select id="r-pref" name="prefecture" options={PREFECTURE_OPTIONS} label="都道府県" defaultValue={defaults.prefecture ?? ""} />
@@ -159,85 +182,106 @@ export function StaffProfileFields({ defaults = {}, leading, afterKana }: { defa
         <input id="r-address" type="text" name="address" autoComplete="street-address" defaultValue={defaults.address} />
       </Row>
 
-      <h2 className="form__group">希望条件</h2>
-      <Row label="最低ご希望時給（円）" htmlFor="r-wage">
-        <input id="r-wage" type="number" name="min_hourly_wage" min={0} inputMode="numeric" placeholder="例：1300" defaultValue={defaults.min_hourly_wage} />
-      </Row>
-      <Row label="勤務可能時間帯" htmlFor="r-slot">
-        <input id="r-slot" type="text" name="time_slot" placeholder="例：9〜18" defaultValue={defaults.time_slot} />
-      </Row>
-      <Row label="勤務可能週日数" htmlFor="r-weekly">
-        <Select id="r-weekly" name="weekly_preference" options={WEEKLY_OPTIONS} label="勤務可能週日数" defaultValue={defaults.weekly_preference ?? ""} />
-      </Row>
-      <Row label="勤務可能曜日">
-        <fieldset className="choices">
-          {DAYS_OF_WEEK.map((d) => (
-            <label key={d}>
-              <input type="checkbox" checked={days.includes(d)} onChange={() => toggleDay(d)} />
-              {d}
-            </label>
-          ))}
-        </fieldset>
-      </Row>
-      <Row label="勤務可能期間" htmlFor="r-period">
-        <Select id="r-period" name="period" options={PERIOD_OPTIONS} label="勤務可能期間" defaultValue={defaults.period ?? ""} />
-      </Row>
-      <Row label="勤務開始希望日" htmlFor="r-start">
-        <input id="r-start" type="date" name="desired_start_date" defaultValue={defaults.desired_start_date} />
-      </Row>
-      <Row label="希望職種" htmlFor="r-job">
-        <JobTypeSelect id="r-job" name="desired_job_type" options={JOB_TYPE_OPTIONS} value={desiredJob} onChange={setDesiredJob} />
-      </Row>
-
-      <h2 className="form__group">職務履歴</h2>
-      <Row label="職務履歴は何社ございますか？" htmlFor="r-hcount">
-        <select id="r-hcount" value={historyCount} onChange={(e) => changeCount(e.target.value)}>
-          <option value="">未選択</option>
-          {HISTORY_COUNT_OPTIONS.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
-      </Row>
-      {histories.map((h, i) => (
-        <div className="history-card" key={i}>
-          <div className="history-card__head">
-            <strong>職歴 {i + 1}</strong>
-            <button type="button" className="auth-links__btn" onClick={() => setHistories((prev) => prev.filter((_, idx) => idx !== i))}>
-              削除
-            </button>
-          </div>
-          <Row label="会社名" htmlFor={`h-company-${i}`}>
-            <input id={`h-company-${i}`} type="text" value={h.company} onChange={(e) => updateHistory(i, "company", e.target.value)} />
+      {!basicOnly && (
+        <>
+          <h2 className="form__group">希望条件</h2>
+          <Row label="最低ご希望時給（円）" htmlFor="r-wage">
+            <input
+              id="r-wage"
+              type="number"
+              name="min_hourly_wage"
+              min={0}
+              inputMode="numeric"
+              placeholder="例：1300"
+              defaultValue={defaults.min_hourly_wage}
+            />
           </Row>
-          <Row label="雇用形態" htmlFor={`h-type-${i}`}>
-            <select id={`h-type-${i}`} value={h.employment_type} onChange={(e) => updateHistory(i, "employment_type", e.target.value)}>
+          <Row label="勤務可能時間帯" htmlFor="r-slot">
+            <input id="r-slot" type="text" name="time_slot" placeholder="例：9〜18" defaultValue={defaults.time_slot} />
+          </Row>
+          <Row label="勤務可能週日数" htmlFor="r-weekly">
+            <Select id="r-weekly" name="weekly_preference" options={WEEKLY_OPTIONS} label="勤務可能週日数" defaultValue={defaults.weekly_preference ?? ""} />
+          </Row>
+          <Row label="勤務可能曜日">
+            <fieldset className="choices">
+              {DAYS_OF_WEEK.map((d) => (
+                <label key={d}>
+                  <input type="checkbox" checked={days.includes(d)} onChange={() => toggleDay(d)} />
+                  {d}
+                </label>
+              ))}
+            </fieldset>
+          </Row>
+          <Row label="勤務可能期間" htmlFor="r-period">
+            <Select id="r-period" name="period" options={PERIOD_OPTIONS} label="勤務可能期間" defaultValue={defaults.period ?? ""} />
+          </Row>
+          <Row label="勤務開始希望日" htmlFor="r-start">
+            <input id="r-start" type="date" name="desired_start_date" defaultValue={defaults.desired_start_date} />
+          </Row>
+          <Row label="希望職種" htmlFor="r-job">
+            <JobTypeSelect id="r-job" name="desired_job_type" options={JOB_TYPE_OPTIONS} value={desiredJob} onChange={setDesiredJob} />
+          </Row>
+
+          <h2 className="form__group">職務履歴</h2>
+          <Row label="職務履歴は何社ございますか？" htmlFor="r-hcount">
+            <select id="r-hcount" value={historyCount} onChange={(e) => changeCount(e.target.value)}>
               <option value="">未選択</option>
-              {(h.employment_type && !EMPLOYMENT_TYPE_OPTIONS.includes(h.employment_type) ? [h.employment_type, ...EMPLOYMENT_TYPE_OPTIONS] : EMPLOYMENT_TYPE_OPTIONS).map((o) => (
+              {HISTORY_COUNT_OPTIONS.map((o) => (
                 <option key={o} value={o}>
                   {o}
                 </option>
               ))}
             </select>
           </Row>
-          <Row label="就業期間" htmlFor={`h-period-${i}`}>
-            <input id={`h-period-${i}`} type="text" value={h.period} placeholder="例：2020/01〜2022/03" onChange={(e) => updateHistory(i, "period", e.target.value)} />
-          </Row>
-          <Row label="職種" htmlFor={`h-job-${i}`}>
-            <JobTypeSelect id={`h-job-${i}`} options={WORK_JOB_TYPE_OPTIONS} value={h.job_type} onChange={(v) => updateHistory(i, "job_type", v)} />
-          </Row>
-          <Row label="業務内容" htmlFor={`h-content-${i}`}>
-            <textarea id={`h-content-${i}`} rows={3} value={h.content} onChange={(e) => updateHistory(i, "content", e.target.value)} />
-          </Row>
-        </div>
-      ))}
-      {historyCount !== "" && historyCount !== "なし" && histories.length < MAX_HISTORIES && (
-        <p>
-          <button type="button" className="auth-links__btn" onClick={() => setHistories((prev) => [...prev, { ...EMPTY_HISTORY }])}>
-            ＋ 職歴を追加
-          </button>
-        </p>
+          {histories.map((h, i) => (
+            <div className="history-card" key={i}>
+              <div className="history-card__head">
+                <strong>職歴 {i + 1}</strong>
+                <button type="button" className="auth-links__btn" onClick={() => setHistories((prev) => prev.filter((_, idx) => idx !== i))}>
+                  削除
+                </button>
+              </div>
+              <Row label="会社名" htmlFor={`h-company-${i}`}>
+                <input id={`h-company-${i}`} type="text" value={h.company} onChange={(e) => updateHistory(i, "company", e.target.value)} />
+              </Row>
+              <Row label="雇用形態" htmlFor={`h-type-${i}`}>
+                <select id={`h-type-${i}`} value={h.employment_type} onChange={(e) => updateHistory(i, "employment_type", e.target.value)}>
+                  <option value="">未選択</option>
+                  {(h.employment_type && !EMPLOYMENT_TYPE_OPTIONS.includes(h.employment_type)
+                    ? [h.employment_type, ...EMPLOYMENT_TYPE_OPTIONS]
+                    : EMPLOYMENT_TYPE_OPTIONS
+                  ).map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </Row>
+              <Row label="就業期間" htmlFor={`h-period-${i}`}>
+                <input
+                  id={`h-period-${i}`}
+                  type="text"
+                  value={h.period}
+                  placeholder="例：2020/01〜2022/03"
+                  onChange={(e) => updateHistory(i, "period", e.target.value)}
+                />
+              </Row>
+              <Row label="職種" htmlFor={`h-job-${i}`}>
+                <JobTypeSelect id={`h-job-${i}`} options={WORK_JOB_TYPE_OPTIONS} value={h.job_type} onChange={(v) => updateHistory(i, "job_type", v)} />
+              </Row>
+              <Row label="業務内容" htmlFor={`h-content-${i}`}>
+                <textarea id={`h-content-${i}`} rows={3} value={h.content} onChange={(e) => updateHistory(i, "content", e.target.value)} />
+              </Row>
+            </div>
+          ))}
+          {historyCount !== "" && historyCount !== "なし" && histories.length < MAX_HISTORIES && (
+            <p>
+              <button type="button" className="auth-links__btn" onClick={() => setHistories((prev) => [...prev, { ...EMPTY_HISTORY }])}>
+                ＋ 職歴を追加
+              </button>
+            </p>
+          )}
+        </>
       )}
     </>
   );

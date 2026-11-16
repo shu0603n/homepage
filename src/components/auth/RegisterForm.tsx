@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { postJson } from "@/components/auth/api";
+import { LineFriendStep } from "@/components/auth/LineFriendStep";
 import { readProfileFields, Row, StaffProfileFields } from "@/components/auth/StaffProfileFields";
 
 // スタッフ登録フォーム（next-app の staff-register と同じ項目）。
 // 1. 入力内容を送ると、スタッフ情報が保存され、入力したメールアドレス宛に「パスワード設定のご案内」メールが届く
 // 2. メールのリンクを開いてパスワードを決めると登録完了（/register/password/）。メールアドレスが本人のものか確かめるため
-export function RegisterForm({ privacy }: { privacy: ReactNode }) {
+//
+// variant="visit"：来社登録（/register/visit/）。基本情報だけの短いフォームで、登録方法は「来社」。
+// パスワード設定のご案内メールは同じく送り、登録後はその場で LINE 友だち追加（来社用の流入経路）を案内する
+export function RegisterForm({ privacy, variant = "web" }: { privacy: ReactNode; variant?: "web" | "visit" }) {
+  const visit = variant === "visit";
+  const [lineUrl, setLineUrl] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null); // ご案内メールを送ったメールアドレス
@@ -38,7 +44,7 @@ export function RegisterForm({ privacy }: { privacy: ReactNode }) {
 
     setBusy(true);
     setMessage("");
-    const result = await postJson("/api/auth/register/", {
+    const result = await postJson(visit ? "/api/auth/register/visit/" : "/api/auth/register/", {
       ...readProfileFields(fd),
       referrer: get("referrer"),
       mail: get("mail"),
@@ -46,9 +52,33 @@ export function RegisterForm({ privacy }: { privacy: ReactNode }) {
       consent2: fd.get("consent2") === "on",
     });
     setBusy(false);
-    if (result.ok) return setSentTo(get("mail"));
+    if (result.ok) {
+      if (typeof result.data.lineUrl === "string") setLineUrl(result.data.lineUrl);
+      return setSentTo(get("mail"));
+    }
     setMessage(result.message);
     scrollToTop();
+  }
+
+  if (sentTo && visit) {
+    return (
+      <div id="register-form" className="register-visit-done">
+        <div className="form form--auth register-sent">
+          <p className="register-sent__icon" aria-hidden="true">
+            <i className="bi bi-check-circle" />
+          </p>
+          <h2 className="register-sent__title">ご登録ありがとうございました</h2>
+          <p className="register-sent__mail">{sentTo}</p>
+          <p className="register-sent__note">
+            上のメールアドレスに「パスワード設定のご案内」メールをお送りしました。
+            <br />
+            後ほど、メールに記載のリンクからログイン用のパスワードを設定してください（リンクの有効期限は48時間です）。
+            <br />※ 期限が切れた場合は、ログイン画面の「はじめてログインする方」からお手続きいただけます。
+          </p>
+        </div>
+        {lineUrl && <LineFriendStep href={lineUrl} linked={false} />}
+      </div>
+    );
   }
 
   if (sentTo) {
@@ -82,10 +112,13 @@ export function RegisterForm({ privacy }: { privacy: ReactNode }) {
         )}
 
         <StaffProfileFields
+          basicOnly={visit}
           leading={
-            <Row label="紹介者" htmlFor="r-referrer">
-              <input id="r-referrer" type="text" name="referrer" placeholder="紹介者がいる場合はお名前をご入力ください" />
-            </Row>
+            visit ? undefined : (
+              <Row label="紹介者" htmlFor="r-referrer">
+                <input id="r-referrer" type="text" name="referrer" placeholder="紹介者がいる場合はお名前をご入力ください" />
+              </Row>
+            )
           }
           afterKana={
             <>
@@ -124,11 +157,13 @@ export function RegisterForm({ privacy }: { privacy: ReactNode }) {
             {busy ? "送信中…" : "登録する"}
           </button>
         </div>
-        <ul className="auth-links">
-          <li>
-            <Link href="/login/">すでに登録済みの方はログイン</Link>
-          </li>
-        </ul>
+        {!visit && (
+          <ul className="auth-links">
+            <li>
+              <Link href="/login/">すでに登録済みの方はログイン</Link>
+            </li>
+          </ul>
+        )}
       </form>
     </div>
   );

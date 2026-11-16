@@ -1523,6 +1523,7 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
 .register-sent__steps li + li { margin-top: 14px; }
 .register-sent__steps li::before { content: counter(sent); position: absolute; top: 0; left: 0; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--navy); font-family: var(--f-en); font-size: 15px; font-weight: 700; color: #fff; }
 .register-sent__note { margin: 28px 0 0; font-size: 13px; line-height: 1.9; text-align: left; color: var(--sub); }
+.register-visit-done { display: grid; gap: 32px; max-width: 960px; margin: 0 auto; }
 .password-set__mail { margin: 0; padding: 12px 0; font-size: 16px; font-weight: 700; color: var(--navy); word-break: break-all; }
 .password-set__show { margin: 20px 0 0; font-size: 14px; }
 .password-set__show label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }

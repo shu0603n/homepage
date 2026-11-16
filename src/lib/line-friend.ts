@@ -10,11 +10,15 @@
 // 分けて集計したいときは、line-recruit-hub の「流入経路」で新しいリンクを作ってその URL を設定する）。
 // 未設定のあいだは next-app と同じリンクを使う。
 
+// 来社登録（/register/visit/）は、next-app の来社登録フォームと同じく別のリンクにして、流入経路を分けて集計する
+// （LINE_FRIEND_VISIT_TRACK_URL で差し替え可）
 const DEFAULT_TRACK_URL = "https://line-recruit-hub.vercel.app/track/27dc72af";
+const DEFAULT_VISIT_TRACK_URL = "https://line-recruit-hub.vercel.app/track/2b1c82c3";
 
-// サーバー側でだけ呼ぶこと（スタッフ ID はログイン中の本人のセッションから渡す）
-export function lineFriendUrl(staffId: number): string {
-  const url = new URL(process.env.LINE_FRIEND_TRACK_URL || DEFAULT_TRACK_URL);
+// サーバー側でだけ呼ぶこと（スタッフ ID はログイン中の本人のセッション、または今登録したスタッフから渡す）
+export function lineFriendUrl(staffId: number, source: "web" | "visit" = "web"): string {
+  const base = source === "visit" ? process.env.LINE_FRIEND_VISIT_TRACK_URL || DEFAULT_VISIT_TRACK_URL : process.env.LINE_FRIEND_TRACK_URL || DEFAULT_TRACK_URL;
+  const url = new URL(base);
   url.searchParams.set("externalRef", String(staffId));
   return url.toString();
 }

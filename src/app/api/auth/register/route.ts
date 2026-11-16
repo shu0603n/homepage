@@ -1,45 +1,6 @@
-import { NextResponse } from "next/server";
-import { CognitoAuthError } from "@/lib/auth/cognito";
-import { AUTH_MESSAGES, isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
-import { createPasswordLink, sendPasswordLinkMail } from "@/lib/auth/password-link";
-import { createStaff, deleteStaff, DuplicateStaffMailError, findStaffByMail } from "@/lib/auth/staff";
-import { parseRegistration } from "@/lib/auth/validation";
-import { reserveSend } from "@/lib/auth/verify-code";
-import { isMailConfigured } from "@/lib/mail";
+import { handleStaffRegistration } from "@/lib/auth/register";
 
-// スタッフ登録（1/2）：入力内容を DB の staff に保存し、入力されたメールアドレス宛に「パスワード設定リンク」を送る。
-// ログイン用アカウントは、リンクを開いてパスワードを決めたときに作る（register/password/route.ts）。
-// メールアドレスが本人のものと確認できるまで、ログインはできない
-const DUPLICATE_MESSAGE =
-  "既にご登録いただいているメールアドレスです。ログイン画面からログインしてください（パスワードをまだ設定していない方は「はじめてログインする方」、お忘れの方は「パスワードをお忘れの方」からお手続きいただけます）。";
-
+// スタッフ登録（1/2）：ホームページの登録フォーム（/register/）。処理の中身は lib/auth/register.ts
 export async function POST(request: Request) {
-  if (!isSameOrigin(request)) return jsonError("不正なリクエストです。", 403);
-
-  const parsed = parseRegistration(await readJson(request));
-  if (!parsed.ok) return jsonError(parsed.message, 400);
-  const { input } = parsed;
-  if (!isMailConfigured()) return jsonError("ただいま登録を受け付けられません。お手数ですが、お電話にてお問い合わせください。", 500);
-
-  let createdStaffId: number | null = null;
-  try {
-    // 同じメールアドレスのスタッフが既にいれば登録しない（重複登録を防ぐ）。
-    // 社内システムやホームページで登録済みの方、パスワードをまだ設定していない方も含む。
-    // パスワード未設定の方は「パスワードをお忘れの方」から設定のご案内が届き直す
-    if (await findStaffByMail(input.mail)) return jsonError(DUPLICATE_MESSAGE, 409);
-    const limited = reserveSend(input.mail);
-    if (limited) return jsonError(limited, 429);
-
-    const staffId = await createStaff(input);
-    createdStaffId = staffId;
-    await sendPasswordLinkMail(input.mail, input.name ?? null, await createPasswordLink(request, "set-password", staffId, input.mail));
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    // 案内メールを送れなかったときは、今回作ったスタッフ情報も取り消す（登録をやり直せるように）
-    if (createdStaffId !== null) await deleteStaff(createdStaffId).catch((e) => console.error("rollback failed:", e));
-    if (error instanceof DuplicateStaffMailError) return jsonError(DUPLICATE_MESSAGE, 409);
-    if (error instanceof CognitoAuthError) return jsonError(AUTH_MESSAGES[error.code], 500);
-    console.error("register failed:", error);
-    return jsonError("登録に失敗しました。メールアドレスをご確認のうえ、時間をおいて再度お試しください。", 500);
-  }
+  return handleStaffRegistration(request, "フォーム");
 }

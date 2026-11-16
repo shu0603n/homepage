@@ -67,7 +67,8 @@ export class DuplicateStaffMailError extends Error {}
 
 // スタッフを新規登録する。id は next-app と同じく「現在の最大 id + 1」（競合を避けるため直列化トランザクション）。
 // 同じメールアドレスのスタッフが既にいれば登録しない（ボタンの二度押しなどで同時に送られても、どちらか一方だけになる）
-export async function createStaff(input: StaffRegisterInput): Promise<number> {
+// method：登録方法（ホームページのフォームは「フォーム」、来社登録は「来社」。next-app と同じ値）
+export async function createStaff(input: StaffRegisterInput, method: "フォーム" | "来社" = "フォーム"): Promise<number> {
   const histories = input.work_histories.filter((h) => h.company.trim() || h.period.trim() || h.content.trim()).map(historyToText);
 
   return prisma.$transaction(
@@ -88,8 +89,8 @@ export async function createStaff(input: StaffRegisterInput): Promise<number> {
           postal_code: input.postal_code,
           prefecture: input.prefecture,
           address: input.address,
-          registration_medium: input.referrer ? `紹介（${input.referrer}）` : "フォーム",
-          registration_method: "フォーム",
+          registration_medium: method === "来社" ? null : input.referrer ? `紹介（${input.referrer}）` : "フォーム",
+          registration_method: method,
           time_slot: input.time_slot,
           weekly_preference: input.weekly_preference,
           weekend_holiday: input.weekend_holiday,
