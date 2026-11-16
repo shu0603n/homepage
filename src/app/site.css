@@ -1375,6 +1375,9 @@ body:has(.kv):not(.is-scrolled) .promo { opacity: 0; pointer-events: none; trans
   .pagetop { right: 10px; bottom: calc(72px + env(safe-area-inset-bottom)); width: 46px; height: 46px; }
   /* バナーを開いている間は、ページ上部へ戻るボタンを隠す（バナーに重なるため） */
   body:has(.promo__panel:not([hidden])) .pagetop { opacity: 0; visibility: hidden; }
+  /* スタッフ登録画面では、入力の邪魔になるため下のバーを出さない（ページ上部へ戻るボタンも下端へ戻す） */
+  body:has(#register-form) .promo { display: none; }
+  body:has(#register-form) .pagetop { bottom: calc(14px + env(safe-area-inset-bottom)); }
 }
 @keyframes promoFade { from { opacity: 0; } }
 @keyframes promoUp { from { opacity: 0; transform: translateY(40px); } }
