@@ -1199,6 +1199,11 @@ html:not(.js) .page-hero__en, html:not(.js) .page-hero__title { opacity: 1; tran
 .form__status.is-ng { background: #fdecef; color: #b02a42; }
 .hp-field { position: absolute; left: -9999px; }
 @media (max-width: 767px) { .form__row { grid-template-columns: 1fr; gap: 8px; } .form__label { padding-top: 0; } }
+/* スマホのログイン・パスワード設定など：上の説明文とフォームのあいだ、フォーム上端の余白を詰める */
+@media (max-width: 767px) {
+  .lead-block.mb-48:has(+ .form--auth, + .line-login, + .line-login__error) { margin-bottom: 24px; }
+  .form--auth > .form__row:first-child { padding-top: 4px; }
+}
 
 /* お知らせ記事 */
 .article { padding: clamp(24px, 4vw, 56px); border-radius: var(--r-l); background: #fff; box-shadow: var(--shadow); }

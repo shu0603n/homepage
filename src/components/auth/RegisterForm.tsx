@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { postJson } from "@/components/auth/api";
 import { readProfileFields, Row, StaffProfileFields } from "@/components/auth/StaffProfileFields";
 
@@ -13,8 +13,18 @@ export function RegisterForm({ privacy }: { privacy: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null); // ご案内メールを送ったメールアドレス
 
+  // 送信できたら「ご案内メールをお送りしました」の画面に切り替わるので、ページの一番上から見せる
+  // （長いフォームの一番下で押すため、そのままだとフッターのあたりが表示されてしまう）
+  useEffect(() => {
+    if (sentTo) window.scrollTo({ top: 0, behavior: "instant" });
+  }, [sentTo]);
+
+  // 入力エラーのときは、フォームの先頭（エラーメッセージ）が見える位置へ
   function scrollToTop() {
-    window.scrollTo({ top: document.getElementById("register-form")?.offsetTop ?? 0, behavior: "smooth" });
+    const form = document.getElementById("register-form");
+    const header = document.querySelector(".header")?.getBoundingClientRect().height ?? 0;
+    const top = form ? form.getBoundingClientRect().top + window.scrollY - header - 16 : 0;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -36,8 +46,8 @@ export function RegisterForm({ privacy }: { privacy: ReactNode }) {
       consent2: fd.get("consent2") === "on",
     });
     setBusy(false);
-    if (result.ok) setSentTo(get("mail"));
-    else setMessage(result.message);
+    if (result.ok) return setSentTo(get("mail"));
+    setMessage(result.message);
     scrollToTop();
   }
 
