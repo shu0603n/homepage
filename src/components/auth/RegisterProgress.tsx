@@ -4,7 +4,7 @@ import { useEffect, useState, type RefObject } from "react";
 
 // 登録フォームの「入力状況」ゲージ。画面の下に小さく固定して、必須項目がいくつ入力済みかを見せる。
 // すべて入力すると「登録ボタンへ」に変わり、押すとボタンの位置まで移動する（ボタンは光って弾む：.btn.is-ready）。
-// 登録ボタンが画面に見えている間は、ボタンに重ならないよう隠す
+// 登録ボタンを押す場面でも入力状況がわかるよう、常に表示する（ボタンが見えている間は「「登録する」を押してください」に変える）
 export function RegisterProgress({ formRef }: { formRef: RefObject<HTMLFormElement | null> }) {
   const [done, setDone] = useState(0);
   const [total, setTotal] = useState(0);
@@ -45,9 +45,14 @@ export function RegisterProgress({ formRef }: { formRef: RefObject<HTMLFormEleme
   };
 
   return (
-    <div className={`reg-progress${complete ? " is-complete" : ""}${nearSubmit ? " is-away" : ""}`} aria-hidden={nearSubmit}>
-      {complete ? (
-        <button type="button" className="reg-progress__done" onClick={goSubmit} tabIndex={nearSubmit ? -1 : 0}>
+    <div className={`reg-progress${complete ? " is-complete" : ""}`}>
+      {complete && nearSubmit ? (
+        <p className="reg-progress__done" role="status">
+          <i className="bi bi-check-circle-fill" aria-hidden="true" />
+          入力完了！「登録する」を押してください
+        </p>
+      ) : complete ? (
+        <button type="button" className="reg-progress__done" onClick={goSubmit}>
           <i className="bi bi-check-circle-fill" aria-hidden="true" />
           すべて入力できました！登録ボタンへ
           <i className="bi bi-arrow-down" aria-hidden="true" />

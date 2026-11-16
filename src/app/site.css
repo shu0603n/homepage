@@ -1559,18 +1559,18 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
 .register-sent__note { margin: 28px 0 0; font-size: 13px; line-height: 1.9; text-align: left; color: var(--sub); }
 .postal-note { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: var(--teal); }
 .postal-note.is-ng { color: #b02a42; }
-/* 登録フォームの入力状況ゲージ（画面の下に固定。登録ボタンが見えている間は隠す） */
+/* 登録フォームの入力状況ゲージ（画面の下に常に固定） */
 .reg-progress { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 80; width: min(420px, calc(100% - 32px)); transform: translateX(-50%); transition: opacity .35s, transform .45s var(--ease); }
-.reg-progress.is-away { opacity: 0; pointer-events: none; transform: translate(-50%, 20px); }
 .reg-progress__body { padding: 12px 18px 14px; border-radius: 16px; background: rgba(255, 255, 255, .96); box-shadow: 0 14px 34px -14px rgba(0, 30, 45, .45), inset 0 0 0 1px var(--line); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 .reg-progress__text { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--navy-dd); }
 .reg-progress__count strong { margin: 0 2px; font-family: var(--f-en); font-size: 20px; color: #0f9488; }
 .reg-progress__rest { font-size: 12px; color: var(--sub); }
 /* ゲージが出ている間は、ページ上部へ戻るボタンをゲージの上へ逃がす（重ならないように） */
-body:has(.reg-progress:not(.is-away)) .pagetop { bottom: calc(100px + env(safe-area-inset-bottom)) !important; }
+body:has(.reg-progress) .pagetop { bottom: calc(100px + env(safe-area-inset-bottom)) !important; }
 .reg-progress__bar { height: 8px; border-radius: 999px; background: var(--bg-soft); overflow: hidden; }
 .reg-progress__bar span { display: block; height: 100%; border-radius: inherit; background: var(--grad); transition: width .5s var(--ease); }
 .reg-progress__done { display: flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; width: 100%; padding: 15px 18px; border: 0; border-radius: 16px; background: linear-gradient(120deg, #0f9488, #1fa0d8); font: inherit; font-size: 14px; font-weight: 700; color: #fff; cursor: pointer; box-shadow: 0 14px 30px -12px rgba(15, 148, 136, .8); animation: regDoneIn .5s var(--ease) !important; }
+p.reg-progress__done { margin: 0; cursor: default; white-space: normal; font-size: 13px; text-align: center; }
 @keyframes regDoneIn { from { opacity: 0; transform: translateY(14px) scale(.96); } }
 /* すべて入力できたら、登録ボタンを光らせて弾ませる（動きを減らす設定でも動かす） */
 .form .btn.is-ready { position: relative; overflow: hidden; animation: regReady 1.8s var(--ease) infinite !important; animation-duration: 1.8s !important; animation-iteration-count: infinite !important; }
