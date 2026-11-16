@@ -8,6 +8,8 @@ export function PasswordSetForm({ token, email }: { token: string; email: string
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,7 +28,12 @@ export function PasswordSetForm({ token, email }: { token: string; email: string
     setBusy(false);
   }
 
-  const type = show ? "text" : "password";
+  // 「表示する」の切り替えは、入力欄の type を書き換えるのではなく、入力欄を作り直して行う。
+  // スマホのブラウザ（iPhone の Safari など）では、パスワード欄の type を後から text に変えても、伏せ字のまま表示されることがあるため。
+  // 入力した値は state に持っているので、作り直しても消えない
+  const fieldProps = show
+    ? ({ type: "text", autoComplete: "off", autoCapitalize: "none", autoCorrect: "off", spellCheck: false } as const)
+    : ({ type: "password", autoComplete: "new-password" } as const);
   return (
     <form className="form form--auth" onSubmit={onSubmit}>
       <div className="form__row">
@@ -41,7 +48,7 @@ export function PasswordSetForm({ token, email }: { token: string; email: string
           パスワード
         </label>
         <div>
-          <input id="set-password" type={type} name="password" autoComplete="new-password" minLength={8} required />
+          <input {...fieldProps} key={`pw-${show}`} id="set-password" name="password" value={pw} onChange={(e) => setPw(e.target.value)} minLength={8} required />
           <p className="form__help">英大文字（A〜Z）・英小文字（a〜z）・数字（0〜9）をそれぞれ1文字以上含む、8文字以上</p>
         </div>
       </div>
@@ -50,7 +57,7 @@ export function PasswordSetForm({ token, email }: { token: string; email: string
           パスワード（確認）
         </label>
         <div>
-          <input id="set-password2" type={type} name="password2" autoComplete="new-password" minLength={8} required />
+          <input {...fieldProps} key={`pw2-${show}`} id="set-password2" name="password2" value={pw2} onChange={(e) => setPw2(e.target.value)} minLength={8} required />
           <p className="form__help">確認のため、同じパスワードをもう一度入力してください。</p>
         </div>
       </div>
