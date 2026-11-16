@@ -24,7 +24,7 @@ export default async function RegisterPage() {
         <div className="container">
           <div className="lead-block fade mb-48">
             <p className="lead">お仕事をご紹介するための登録フォームです。</p>
-            <p>ご入力いただいた内容で登録され、ログイン用のアカウント（メールアドレス＋パスワード）も同時に作成されます。</p>
+            <p>ご入力のメールアドレスに「パスワード設定のご案内」メールをお送りします。メールのリンクからパスワードを設定すると、登録が完了します。</p>
           </div>
           <RegisterForm privacy={<Privacy />} />
         </div>

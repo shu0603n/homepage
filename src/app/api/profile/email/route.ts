@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { CognitoAuthError, signIn, userExists } from "@/lib/auth/cognito";
-import { generateCode, startEmailChange } from "@/lib/auth/email-change";
+import { generateCode, reserveSend, startEmailChange } from "@/lib/auth/email-change";
 import { AUTH_MESSAGES, isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { getSession } from "@/lib/auth/session";
 import { isEmail, normalizeEmail } from "@/lib/auth/validation";
@@ -27,6 +27,8 @@ export async function POST(request: Request) {
   try {
     await signIn(session.email, password); // 本人確認（現在のパスワード）
     if (await userExists(newEmail)) return jsonError("このメールアドレスは既に使われています。", 409);
+    const limited = reserveSend(newEmail);
+    if (limited) return jsonError(limited, 429);
 
     const code = generateCode();
     await startEmailChange(session.staffId, newEmail, code);

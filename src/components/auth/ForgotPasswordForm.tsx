@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { postJson } from "@/components/auth/api";
 
-type Step = "email" | "reset" | "done";
+type Step = "email" | "reset" | "link" | "done";
 
 // パスワードリセット：①メールアドレスを入力 → ②届いた確認コードと新しいパスワードを入力
 export function ForgotPasswordForm() {
@@ -22,7 +22,8 @@ export function ForgotPasswordForm() {
     setBusy(false);
     if (!result.ok) return setMessage(result.message);
     setEmail(value);
-    setStep("reset");
+    // 登録後にパスワードをまだ設定していない方には、コードではなくパスワード設定リンクを送っている
+    setStep(result.kind === "link" ? "link" : "reset");
   }
 
   async function resetPassword(e: FormEvent<HTMLFormElement>) {
@@ -46,6 +47,19 @@ export function ForgotPasswordForm() {
             ログインへ
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (step === "link") {
+    return (
+      <div className="form form--auth">
+        <p className="form__status is-ok">
+          {email} 宛に、パスワード設定のご案内メールをお送りしました。
+          <br />
+          メールに記載のリンクを開いて、パスワードを設定してください。
+        </p>
+        <p className="form__note">メールが届かない場合は、迷惑メールフォルダもご確認ください。</p>
       </div>
     );
   }

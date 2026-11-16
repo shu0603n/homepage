@@ -1489,6 +1489,20 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
 .line-login__or { display: flex; align-items: center; gap: 16px; margin: 36px 0 0; font-size: 13px; font-weight: 700; color: var(--navy); }
 .line-login__or::before, .line-login__or::after { content: ""; flex: 1; height: 1px; background: #c3d2da; }
 .line-login__error { max-width: 640px; margin: 0 auto 28px; }
+/* スタッフ登録：送信後の「ご案内メールをお送りしました」と、パスワード設定画面 */
+.register-note { margin: 36px 0 0; font-size: 14px; text-align: center; color: var(--sub); }
+.register-sent { text-align: center; }
+.register-sent__icon { margin: 0; font-size: 48px; line-height: 1; color: var(--teal); }
+.register-sent__title { margin: 12px 0 0; font-family: var(--f-head); font-size: clamp(20px, 2.4vw, 26px); font-weight: 700; color: var(--navy-dd); }
+.register-sent__mail { display: inline-block; margin: 18px 0 0; padding: 8px 20px; border-radius: 999px; background: var(--bg-soft); font-weight: 700; color: var(--navy); word-break: break-all; }
+.register-sent__steps { max-width: 480px; margin: 28px auto 0; padding: 0; list-style: none; counter-reset: sent; text-align: left; }
+.register-sent__steps li { position: relative; padding: 0 0 0 44px; font-size: 16px; line-height: 1.8; counter-increment: sent; }
+.register-sent__steps li + li { margin-top: 14px; }
+.register-sent__steps li::before { content: counter(sent); position: absolute; top: 0; left: 0; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--navy); font-family: var(--f-en); font-size: 15px; font-weight: 700; color: #fff; }
+.register-sent__note { margin: 28px 0 0; font-size: 13px; line-height: 1.9; text-align: left; color: var(--sub); }
+.password-set__mail { margin: 0; padding: 12px 0; font-size: 16px; font-weight: 700; color: var(--navy); word-break: break-all; }
+.password-set__show { margin: 20px 0 0; font-size: 14px; }
+.password-set__show label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 .form--wide { max-width: 960px; }
 .form__group { margin: 44px 0 4px; padding-bottom: 10px; border-bottom: 2px solid var(--navy); font-family: var(--f-head); font-size: 18px; font-weight: 700; color: var(--navy-dd); }
 .form__group:first-child { margin-top: 0; }

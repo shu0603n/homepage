@@ -154,6 +154,17 @@ export async function createUser(email: string, password: string): Promise<void>
   }
 }
 
+// 既にあるログイン用アカウントのパスワードを設定し直す（メールのリンクで本人確認を済ませてから呼ぶ）
+export async function setUserPassword(email: string, password: string): Promise<void> {
+  try {
+    await getClient().send(
+      new AdminSetUserPasswordCommand({ UserPoolId: requireEnv("COGNITO_USER_POOL_ID"), Username: email, Password: password, Permanent: true }),
+    );
+  } catch (error) {
+    throw toAuthError(error);
+  }
+}
+
 export async function deleteUser(email: string): Promise<void> {
   await getClient().send(new AdminDeleteUserCommand({ UserPoolId: requireEnv("COGNITO_USER_POOL_ID"), Username: email }));
 }

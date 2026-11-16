@@ -19,8 +19,9 @@ export async function POST(request: Request) {
   const code = typeof body?.code === "string" ? body.code.trim() : "";
   if (!/^\d{6}$/.test(code)) return jsonError("6桁の確認コードを入力してください。", 400);
 
-  const newEmail = await checkEmailChange(session.staffId, code);
-  if (!newEmail) return jsonError("確認コードが正しくないか、有効期限が切れています。", 400);
+  const checked = await checkEmailChange(session.staffId, code);
+  if (!checked.ok) return jsonError(checked.message, 400);
+  const newEmail = checked.newEmail;
 
   const oldEmail = session.email;
   try {

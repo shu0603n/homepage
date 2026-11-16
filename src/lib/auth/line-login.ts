@@ -1,4 +1,5 @@
 import { jwtVerify, SignJWT } from "jose";
+import { siteUrl } from "@/lib/auth/http";
 
 // ログイン画面の「LINE でログイン」（LINE ログインの Web ログイン。PC・スマホのどのブラウザでも使える）。
 // LINE Developers のプロバイダ「社内案件通知BOT」の LINE ログインチャネル「スタッフ連携」を使う。
@@ -27,10 +28,7 @@ export function isLineWebLoginEnabled(): boolean {
   return credentials() !== null;
 }
 
-// サイト内の URL を、公開 URL（NEXT_PUBLIC_APP_URL。未設定ならリクエストの URL）を基準に作る
-export function siteUrl(path: string, request: Request): URL {
-  return new URL(path, process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin);
-}
+export { siteUrl };
 
 // コールバック URL。LINE 側に登録した URL と一字一句同じである必要がある
 export function lineCallbackUrl(request: Request): string {

@@ -19,6 +19,14 @@ export function isSameOrigin(request: Request): boolean {
   }
 }
 
+// サイト内の URL を、いまアクセスされているドメインを基準に作る（Amplify の URL でも独自ドメインでも、そのまま戻れるように）。
+// NEXT_PUBLIC_APP_URL は独自ドメインへの切り替え前から本番ドメイン（旧サイト）になっているため使わない
+export function siteUrl(path: string, request: Request): URL {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const proto = request.headers.get("x-forwarded-proto") ?? new URL(request.url).protocol.replace(":", "");
+  return new URL(path, host ? `${proto.split(",")[0]}://${host.split(",")[0]}` : new URL(request.url).origin);
+}
+
 export async function readJson(request: Request): Promise<unknown> {
   try {
     return await request.json();

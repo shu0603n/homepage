@@ -16,6 +16,13 @@ export function isAcceptablePassword(value: unknown): value is string {
   return typeof value === "string" && value.length >= PASSWORD_MIN_LENGTH && value.length <= 256;
 }
 
+// ログイン用アカウント（Cognito）のパスワード条件：英大文字・英小文字・数字を含む8文字以上。合わなければ画面に出すメッセージを返す
+export function passwordProblem(value: unknown): string | null {
+  if (!isAcceptablePassword(value)) return `パスワードは${PASSWORD_MIN_LENGTH}文字以上で入力してください。`;
+  if (!/[A-Z]/.test(value) || !/[a-z]/.test(value) || !/[0-9]/.test(value)) return 'パスワードは英大文字・英小文字・数字を含めてください。';
+  return null;
+}
+
 function text(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -79,7 +86,7 @@ export function parseProfile(body: unknown): ParsedProfile {
   };
 }
 
-export type ParsedRegistration = { ok: true; input: StaffRegisterInput; password: string } | { ok: false; message: string };
+export type ParsedRegistration = { ok: true; input: StaffRegisterInput } | { ok: false; message: string };
 
 // スタッフ登録フォームの入力を検証し、DB に入れる形に整える
 export function parseRegistration(body: unknown): ParsedRegistration {
@@ -89,8 +96,7 @@ export function parseRegistration(body: unknown): ParsedRegistration {
 
   const profile = parseProfile(body);
   if (!profile.ok) return profile;
-  if (!isAcceptablePassword(b.password)) return { ok: false, message: `パスワードは${PASSWORD_MIN_LENGTH}文字以上で入力してください。` };
   if (b.consent1 !== true || b.consent2 !== true) return { ok: false, message: '個人情報の取り扱いと秘密保持への同意が必要です。' };
 
-  return { ok: true, password: b.password, input: { ...profile.input, mail, referrer: text(b.referrer, 100) } };
+  return { ok: true, input: { ...profile.input, mail, referrer: text(b.referrer, 100) } };
 }
