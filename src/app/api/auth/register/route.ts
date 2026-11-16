@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { CognitoAuthError, userExists } from "@/lib/auth/cognito";
+import { CognitoAuthError } from "@/lib/auth/cognito";
 import { AUTH_MESSAGES, isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { createPasswordLink, sendPasswordLinkMail } from "@/lib/auth/password-link";
-import { createStaff, deleteStaff, findStaffByMail } from "@/lib/auth/staff";
+import { createStaff, deleteStaff, DuplicateStaffMailError, findStaffByMail } from "@/lib/auth/staff";
 import { parseRegistration } from "@/lib/auth/validation";
 import { reserveSend } from "@/lib/auth/verify-code";
 import { isMailConfigured } from "@/lib/mail";
@@ -10,6 +10,9 @@ import { isMailConfigured } from "@/lib/mail";
 // スタッフ登録（1/2）：入力内容を DB の staff に保存し、入力されたメールアドレス宛に「パスワード設定リンク」を送る。
 // ログイン用アカウントは、リンクを開いてパスワードを決めたときに作る（register/password/route.ts）。
 // メールアドレスが本人のものと確認できるまで、ログインはできない
+const DUPLICATE_MESSAGE =
+  "既にご登録いただいているメールアドレスです。ログイン画面からログインしてください。パスワードをお忘れの場合や、まだ設定していない場合は「パスワードをお忘れの方」からお手続きいただけます。";
+
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return jsonError("不正なリクエストです。", 403);
 
@@ -20,14 +23,13 @@ export async function POST(request: Request) {
 
   let createdStaffId: number | null = null;
   try {
-    // 登録済み（ログイン用アカウントとスタッフ情報の両方がある）なら、ログインへ案内する
-    if ((await userExists(input.mail)) && (await findStaffByMail(input.mail))) {
-      return jsonError("このメールアドレスは既に登録されています。ログイン画面からログインしてください（パスワードをお忘れの場合は「パスワードをお忘れの方」から再設定できます）。", 409);
-    }
+    // 同じメールアドレスのスタッフが既にいれば登録しない（重複登録を防ぐ）。
+    // 社内システムやホームページで登録済みの方、パスワードをまだ設定していない方も含む。
+    // パスワード未設定の方は「パスワードをお忘れの方」から設定のご案内が届き直す
+    if (await findStaffByMail(input.mail)) return jsonError(DUPLICATE_MESSAGE, 409);
     const limited = reserveSend(input.mail);
     if (limited) return jsonError(limited, 429);
 
-    // next-app の登録フォームと同じく、メールが重複していても毎回新しいスタッフ行を作る（重複の整理は社内システム側で行う）
     const staffId = await createStaff(input);
     createdStaffId = staffId;
     await sendPasswordLinkMail(input.mail, input.name ?? null, await createPasswordLink(request, "set-password", staffId, input.mail));
@@ -35,6 +37,7 @@ export async function POST(request: Request) {
   } catch (error) {
     // 案内メールを送れなかったときは、今回作ったスタッフ情報も取り消す（登録をやり直せるように）
     if (createdStaffId !== null) await deleteStaff(createdStaffId).catch((e) => console.error("rollback failed:", e));
+    if (error instanceof DuplicateStaffMailError) return jsonError(DUPLICATE_MESSAGE, 409);
     if (error instanceof CognitoAuthError) return jsonError(AUTH_MESSAGES[error.code], 500);
     console.error("register failed:", error);
     return jsonError("登録に失敗しました。メールアドレスをご確認のうえ、時間をおいて再度お試しください。", 500);

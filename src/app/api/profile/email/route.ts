@@ -3,6 +3,7 @@ import { CognitoAuthError, signIn, userExists } from "@/lib/auth/cognito";
 import { generateCode, reserveSend, startEmailChange } from "@/lib/auth/email-change";
 import { AUTH_MESSAGES, isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { getSession } from "@/lib/auth/session";
+import { findStaffByMail } from "@/lib/auth/staff";
 import { isEmail, normalizeEmail } from "@/lib/auth/validation";
 import { isMailConfigured, sendMail } from "@/lib/mail";
 
@@ -27,6 +28,8 @@ export async function POST(request: Request) {
   try {
     await signIn(session.email, password); // 本人確認（現在のパスワード）
     if (await userExists(newEmail)) return jsonError("このメールアドレスは既に使われています。", 409);
+    // 別のスタッフが既に使っているメールアドレスには変更できない（重複を防ぐ）
+    if (await findStaffByMail(newEmail)) return jsonError("このメールアドレスは既に使われています。", 409);
     const limited = reserveSend(newEmail);
     if (limited) return jsonError(limited, 429);
 

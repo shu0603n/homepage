@@ -62,12 +62,18 @@ function historyToText(h: WorkHistory): string {
   return `【会社名】${h.company}　【雇用形態】${h.employment_type}　【就業期間】${h.period}　【職種】${h.job_type}　【業務内容】${h.content}`;
 }
 
-// スタッフを新規登録する。id は next-app と同じく「現在の最大 id + 1」（競合を避けるため直列化トランザクション）
+// 同じメールアドレスのスタッフが既にいるため登録できない
+export class DuplicateStaffMailError extends Error {}
+
+// スタッフを新規登録する。id は next-app と同じく「現在の最大 id + 1」（競合を避けるため直列化トランザクション）。
+// 同じメールアドレスのスタッフが既にいれば登録しない（ボタンの二度押しなどで同時に送られても、どちらか一方だけになる）
 export async function createStaff(input: StaffRegisterInput): Promise<number> {
   const histories = input.work_histories.filter((h) => h.company.trim() || h.period.trim() || h.content.trim()).map(historyToText);
 
   return prisma.$transaction(
     async (tx) => {
+      const existing = await tx.staff.findFirst({ where: { mail: { equals: input.mail, mode: "insensitive" } }, select: { id: true } });
+      if (existing) throw new DuplicateStaffMailError();
       const { _max } = await tx.staff.aggregate({ _max: { id: true } });
       const id = (_max.id ?? 0) + 1;
       await tx.staff.create({
