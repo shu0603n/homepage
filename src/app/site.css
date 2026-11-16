@@ -189,7 +189,7 @@ button { font: inherit; }
 .is-scrolled .header { box-shadow: 0 10px 30px -18px rgba(0, 54, 81, .35); }
 .is-hidden-header .header { transform: translateY(-100%); }
 .header__inner { display: flex; align-items: center; gap: clamp(12px, 2vw, 28px); height: var(--header-h); max-width: 1480px; margin: 0 auto; padding: 0 clamp(16px, 2.6vw, 40px); }
-.header__logo { flex: 0 0 auto; width: clamp(160px, 14vw, 200px); }
+.header__logo { flex: 0 1 auto; width: clamp(160px, 14vw, 200px); min-width: 0; }
 .header__logo img { width: 100%; }
 .gnav { margin-left: auto; height: 100%; }
 .gnav__list { display: flex; height: 100%; list-style: none; }
@@ -229,19 +229,33 @@ button { font: inherit; }
 .header__cta:hover .ico-arrow { transform: translateX(3px); }
 .progress { display: none; }
 
-.menu-btn { display: none; position: relative; width: 48px; height: 48px; border: 0; border-radius: 50%; background: var(--navy); cursor: pointer; }
+.menu-btn { display: none; position: relative; flex: 0 0 48px; width: 48px; height: 48px; border: 0; border-radius: 50%; background: var(--navy); cursor: pointer; }
 .menu-btn span { position: absolute; left: 15px; right: 15px; height: 2px; border-radius: 2px; background: #fff; transition: transform .4s var(--ease), top .4s var(--ease); }
 .menu-btn span:nth-child(1) { top: 19px; }
 .menu-btn span:nth-child(2) { top: 27px; }
 .menu-open .menu-btn span:nth-child(1) { top: 23px; transform: rotate(45deg); }
 .menu-open .menu-btn span:nth-child(2) { top: 23px; transform: rotate(-45deg); }
+/* スマホ・タブレットのヘッダーの「スタッフ登録」（メニューボタンの左） */
+.header__sp-register { display: none; flex: 0 0 auto; align-items: center; gap: 6px; height: 40px; padding: 0 16px; border-radius: 999px; background: #0f9488; font-family: var(--f-head); font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; box-shadow: 0 8px 18px -10px rgba(15, 148, 136, .9); transition: background .3s; }
+.header__sp-register:hover { background: #0b766c; color: #fff; }
+.header__sp-register .bi { font-size: 15px; }
 @media (max-width: 1180px) {
   .gnav, .header__actions { display: none; }
+  .header__sp-register { display: inline-flex; margin-left: auto; }
   .menu-btn { display: block; margin-left: auto; }
+  .header__sp-register + .menu-btn { margin-left: 8px; }
 }
+@media (max-width: 360px) { .header__sp-register { padding: 0 12px; font-size: 12px; } .header__sp-register .bi { display: none; } }
 
 .menu { position: fixed; inset: 0; z-index: 105; overflow-y: auto; padding: calc(var(--header-h) + 24px) var(--gutter) 48px; background: var(--bg-soft); }
 .menu .blobs span { opacity: .6; }
+/* メニューの一番上のスタッフ登録カード */
+.menu__register { position: relative; z-index: 1; display: grid; gap: 4px; max-width: 900px; margin: 0 auto 20px; padding: 20px 64px 20px 22px; border-radius: var(--r); background: linear-gradient(120deg, #0f9488 0%, #1fa0d8 100%); color: #fff; box-shadow: 0 18px 36px -18px rgba(15, 148, 136, .8); }
+.menu__register:hover { color: #fff; }
+.menu__register-label { font-size: 12px; font-weight: 700; letter-spacing: .08em; opacity: .9; }
+.menu__register-title { font-family: var(--f-head); font-size: 22px; font-weight: 900; }
+.menu__register-text { font-size: 12px; line-height: 1.7; opacity: .92; }
+.menu__register-arrow { position: absolute; top: 50%; right: 18px; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #fff; color: #0f9488; transform: translateY(-50%); }
 .menu__nav { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 40px; max-width: 900px; margin: 0 auto; }
 .menu__group { padding: 16px 0; border-bottom: 1px solid rgba(0, 54, 81, .12); opacity: 0; transform: translateY(20px); }
 .menu-open .menu__group { animation: menuIn .6s var(--ease) forwards; animation-delay: calc(var(--i) * 70ms + 100ms); }

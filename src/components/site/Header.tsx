@@ -80,6 +80,13 @@ export function Header() {
             </Link>
             <AuthIconLink loggedIn={loggedIn} />
           </div>
+          {/* スマホ・タブレット：メニューボタンの左に「スタッフ登録」を常に出す（PC の「スタッフ登録はこちら」は幅が狭いと隠れるため） */}
+          {!loggedIn && (
+            <Link className="header__sp-register" href="/register/">
+              <i className="bi bi-person-plus-fill" aria-hidden="true" />
+              スタッフ登録
+            </Link>
+          )}
           <button className="menu-btn" type="button" aria-label="メニューを開く" aria-expanded="false" aria-controls="drawer">
             <span />
             <span />
@@ -93,6 +100,17 @@ export function Header() {
           <span />
           <span />
         </div>
+        {/* メニューを開いて最初に目に入る位置に、スタッフ登録への大きなボタンを置く */}
+        {!loggedIn && (
+          <Link className="menu__register" href="/register/">
+            <span className="menu__register-label">お仕事をお探しの方</span>
+            <strong className="menu__register-title">スタッフ登録はこちら</strong>
+            <span className="menu__register-text">登録は無料です。登録すると、お仕事のご紹介や LINE でのご案内が受けられます。</span>
+            <span className="menu__register-arrow" aria-hidden="true">
+              <Arrow />
+            </span>
+          </Link>
+        )}
         <nav className="menu__nav" aria-label="スマートフォン用メニュー">
           {menuGroups.map((g, i) => (
             <div key={g.key} className="menu__group" style={{ "--i": i } as CSSProperties}>
