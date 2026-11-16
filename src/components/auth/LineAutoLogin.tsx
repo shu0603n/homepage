@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { postJson } from "@/components/auth/api";
 
-// LINE アプリ内ブラウザ（LIFF）でログイン画面が開かれたとき、LINE のアカウントで自動ログインする。
-// NEXT_PUBLIC_LIFF_ID が未設定のあいだは何もしない（LINE 側を設定したら有効になる）。
+// LINE アプリ内ブラウザ（LIFF）で開かれたとき、LINE のアカウントで自動ログインする。
+// NEXT_PUBLIC_LIFF_ID が未設定のあいだは何もしない。
+//
+// 使う場所：
+//   - 案件一覧（/jobs/）：LINE のリッチメニュー「求人検索」から LIFF で開かれる（LIFF のエンドポイント URL が /jobs/）。
+//     LIFF は「エンドポイント URL かその下のページ」でしか確実に動かないため、ログイン画面へ移す前にここで処理する。
+//     うまくいかなければ fallback（ログイン画面）へ移る
+//   - ログイン画面：LINE アプリ内で開かれていれば試す（失敗してもそのままログイン画面を使える）
 
 type Liff = {
   init: (config: { liffId: string }) => Promise<void>;
@@ -34,31 +39,54 @@ function loadLiffSdk(): Promise<Liff> {
   });
 }
 
-export function LineAutoLogin({ next }: { next: string }) {
+// /api/auth/line/ の応答をログイン画面の案内（/login/?line=…）に合わせる
+function reasonOf(status: number): string {
+  if (status === 404) return "not_linked";
+  if (status === 403) return "blocked";
+  return "failed";
+}
+
+export function LineAutoLogin({ next, fallback }: { next: string; fallback?: string }) {
   useEffect(() => {
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-    if (!liffId) return;
     let cancelled = false;
+    const giveUp = (reason?: string) => {
+      if (cancelled || !fallback) return;
+      const url = new URL(fallback, window.location.origin);
+      if (reason) url.searchParams.set("line", reason);
+      window.location.replace(url.toString());
+    };
+    if (!liffId) return giveUp();
+    // LINE 側の都合で応答がないときも、ずっと「ログインしています…」のままにしない
+    const timer = window.setTimeout(() => giveUp("failed"), 12_000);
 
     (async () => {
       try {
         const liff = await loadLiffSdk();
         await liff.init({ liffId });
-        if (cancelled || !liff.isInClient()) return; // 通常のブラウザでは自動ログインしない
-        if (!liff.isLoggedIn()) return liff.login({ redirectUri: window.location.href });
+        if (cancelled) return;
+        if (!liff.isInClient()) return giveUp(); // 通常のブラウザでは自動ログインしない
+        if (!liff.isLoggedIn()) {
+          window.clearTimeout(timer); // LINE のログイン画面へ移る
+          return liff.login({ redirectUri: window.location.href });
+        }
         const idToken = liff.getIDToken();
-        if (!idToken) return;
-        const result = await postJson("/api/auth/line/", { idToken });
-        if (result.ok && !cancelled) window.location.assign(next);
+        if (!idToken) return giveUp("failed");
+        const res = await fetch("/api/auth/line/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) });
+        if (cancelled) return;
+        if (res.ok) window.location.replace(next);
+        else giveUp(reasonOf(res.status));
       } catch (error) {
         console.error("LINE auto login skipped:", error);
+        giveUp("failed");
       }
     })();
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
-  }, [next]);
+  }, [next, fallback]);
 
   return null;
 }

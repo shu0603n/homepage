@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { LineAutoLogin } from "@/components/auth/LineAutoLogin";
 import { JobsExplorer } from "@/components/jobs/JobsExplorer";
 import { PageShell } from "@/components/site/PageShell";
 import { getSession } from "@/lib/auth/session";
@@ -15,9 +17,26 @@ const meta = {
 
 export const metadata: Metadata = { ...buildMetadata("jobs/", meta), robots: { index: false, follow: false } };
 
-// ログインしている人だけが見られる。LINE アプリ内ブラウザで開いたときも、ログイン済みならそのまま一覧が表示される
+// ログインしている人だけが見られる。LINE アプリ内ブラウザで開いたときも、ログイン済みならそのまま一覧が表示される。
+// 未ログインで LINE アプリ内（リッチメニュー「求人検索」の LIFF）から開かれたときは、ここで LINE の自動ログインを試す
 export default async function JobsPage() {
-  if (!(await getSession())) redirect("/login/?next=/jobs/");
+  if (!(await getSession())) {
+    const inLineApp = / Line\//.test((await headers()).get("user-agent") ?? "");
+    if (!inLineApp || !process.env.LIFF_ID) redirect("/login/?next=/jobs/");
+    return (
+      <PageShell route="jobs/" meta={meta}>
+        <section className="section">
+          <div className="container">
+            <p className="line-auto-login" role="status">
+              <span className="line-auto-login__spinner" aria-hidden="true" />
+              LINE でログインしています…
+            </p>
+            <LineAutoLogin next="/jobs/" fallback="/login/?next=/jobs/" />
+          </div>
+        </section>
+      </PageShell>
+    );
+  }
   const data = await getJobsData();
 
   return (

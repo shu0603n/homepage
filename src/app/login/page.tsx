@@ -61,7 +61,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
           )}
           <LoginForm next={next} />
-          <LineAutoLogin next={next} />
+          {/* LINE ログインを試して戻ってきたとき（?line=…）は、もう一度試さない */}
+          {!params.line && <LineAutoLogin next={next} />}
         </div>
       </section>
     </PageShell>
