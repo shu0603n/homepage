@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { lookupPostal, normalizePostal } from "@/lib/postal";
 import type { StaffProfile, WorkHistory } from "@/lib/auth/staff";
 import {
   DAYS_OF_WEEK,
@@ -101,6 +102,68 @@ function Select({ id, name, options, label, defaultValue }: { id: string; name: 
 
 type Defaults = Partial<Omit<StaffProfile, "mail">>;
 
+// 郵便番号・都道府県・住所。郵便番号を7桁入れると、都道府県と、確定できるところまでの住所（市区町村・町名）を自動で入れる。
+// 住所欄に自分で入力した内容は上書きしない（空欄か、前回自動で入れた内容のままのときだけ入れ替える）
+function PostalAddressFields({ defaults }: { defaults: Defaults }) {
+  const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
+  const looked = useRef<string | null>(null); // 最後に調べた郵便番号
+  const autofilled = useRef<string>(""); // 最後に自動で入れた住所
+  const pending = useRef<AbortController | null>(null);
+
+  async function onPostalInput(value: string) {
+    const code = normalizePostal(value);
+    if (!code || code === looked.current) return;
+    looked.current = code;
+    pending.current?.abort();
+    const ac = new AbortController();
+    pending.current = ac;
+    setNote({ text: "住所を検索しています…", ok: true });
+    const found = await lookupPostal(code, ac.signal);
+    if (ac.signal.aborted) return;
+    if (!found) {
+      setNote({ text: "郵便番号から住所が見つかりませんでした。都道府県と住所を入力してください。", ok: false });
+      return;
+    }
+    const pref = document.getElementById("r-pref") as HTMLSelectElement | null;
+    if (pref) pref.value = found.prefecture;
+    const address = document.getElementById("r-address") as HTMLInputElement | null;
+    if (address && (address.value.trim() === "" || address.value === autofilled.current)) {
+      address.value = found.address;
+      autofilled.current = found.address;
+    }
+    setNote({ text: found.complete ? "住所を自動で入力しました。続けて番地・建物名を入力してください。" : "住所を途中まで自動で入力しました。続きの町名・番地・建物名を入力してください。", ok: true });
+  }
+
+  return (
+    <>
+      <Row label="郵便番号" htmlFor="r-postal">
+        <input
+          id="r-postal"
+          type="text"
+          name="postal_code"
+          autoComplete="postal-code"
+          inputMode="numeric"
+          placeholder="例：123-4567"
+          defaultValue={defaults.postal_code}
+          onChange={(e) => onPostalInput(e.target.value)}
+        />
+        <p className="form__help">7桁を入力すると、都道府県と住所が自動で入ります。</p>
+        {note && (
+          <p className={`postal-note${note.ok ? "" : " is-ng"}`} role="status">
+            {note.text}
+          </p>
+        )}
+      </Row>
+      <Row label="都道府県" htmlFor="r-pref">
+        <Select id="r-pref" name="prefecture" options={PREFECTURE_OPTIONS} label="都道府県" defaultValue={defaults.prefecture ?? ""} />
+      </Row>
+      <Row label="住所" htmlFor="r-address">
+        <input id="r-address" type="text" name="address" autoComplete="street-address" placeholder="例：札幌市中央区大通西7丁目1-1" defaultValue={defaults.address} />
+      </Row>
+    </>
+  );
+}
+
 function historyCountLabel(n: number): string {
   if (n <= 0) return "";
   return n >= 3 ? "3社以上" : `${n}社`;
@@ -164,23 +227,7 @@ export function StaffProfileFields({ defaults = {}, leading, afterKana, basicOnl
       <Row label="生年月日" htmlFor="r-birthday">
         <input id="r-birthday" type="date" name="birthday" autoComplete="bday" defaultValue={defaults.birthday} />
       </Row>
-      <Row label="郵便番号" htmlFor="r-postal">
-        <input
-          id="r-postal"
-          type="text"
-          name="postal_code"
-          autoComplete="postal-code"
-          inputMode="numeric"
-          placeholder="例：123-4567"
-          defaultValue={defaults.postal_code}
-        />
-      </Row>
-      <Row label="都道府県" htmlFor="r-pref">
-        <Select id="r-pref" name="prefecture" options={PREFECTURE_OPTIONS} label="都道府県" defaultValue={defaults.prefecture ?? ""} />
-      </Row>
-      <Row label="住所" htmlFor="r-address">
-        <input id="r-address" type="text" name="address" autoComplete="street-address" defaultValue={defaults.address} />
-      </Row>
+      <PostalAddressFields defaults={defaults} />
 
       {!basicOnly && (
         <>
