@@ -68,9 +68,12 @@ export function Header() {
             </ul>
           </nav>
           <div className="header__actions">
-            <Link className="header__sub" href="/register/">
-              スタッフ登録はこちら
-            </Link>
+            {/* ログイン中（登録済み）の方には不要なので出さない */}
+            {!loggedIn && (
+              <Link className="header__sub" href="/register/">
+                スタッフ登録はこちら
+              </Link>
+            )}
             <Link className="header__cta" href="/contact/">
               お問い合わせ
               <Arrow />
