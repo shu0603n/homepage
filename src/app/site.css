@@ -1350,7 +1350,11 @@ html:not(.js) .contact-cta__line > span, html:not(.js) .contact-cta__lead, html:
 .promo__tab-text b { font-family: var(--f-en); font-size: 17px; letter-spacing: 0; color: #ffd66b; text-combine-upright: all; }
 .promo__tab .bi { font-size: 12px; transition: transform .3s var(--ease); }
 .promo__item.is-open .promo__tab .bi { transform: rotate(180deg); }
-.promo__panel { position: absolute; right: calc(100% + 10px); top: 0; height: var(--promo-open); aspect-ratio: 800 / 418; } /* 開いているタブと同じ高さ */
+/* PC：バナーは開いたタブの左横に、タブと同じ高さで出す。バナーはタブの外（.promo 直下）にあるので、
+   上から何番目のタブか（縮んだタブの高さ＋間隔）で位置を決める（開いたタブは必ず伸びている） */
+.promo__panel { position: absolute; right: calc(100% + 10px); top: 0; height: var(--promo-open); aspect-ratio: 800 / 418; }
+.promo__panel--agent { top: calc(var(--promo-closed) + 8px); }
+.promo__panel--bonus { top: calc((var(--promo-closed) + 8px) * 2); }
 .promo__panel:not([hidden]) { animation: promoIn .45s var(--ease); }
 @keyframes promoIn { from { opacity: 0; transform: translateX(16px); } }
 .promo__sheet { position: relative; height: 100%; }
@@ -1390,7 +1394,7 @@ body:has(.kv):not(.is-scrolled) .promo { opacity: 0; pointer-events: none; trans
   .promo__tab .bi { transform: rotate(90deg); } /* ＜ を ∧（上向き）にして「上に開く」ことを示す */
   .promo__item.is-open .promo__tab .bi { transform: rotate(-90deg); }
   /* バナーは画面全体を暗くした上に、下のバーのすぐ上へ出す */
-  .promo__panel { position: fixed; inset: 0; height: auto; z-index: 1; display: flex; align-items: flex-end; justify-content: center; aspect-ratio: auto; padding: 16px 14px calc(74px + env(safe-area-inset-bottom)); background: rgba(0, 20, 30, .55); }
+  .promo__panel, .promo__panel--agent, .promo__panel--bonus { position: fixed; inset: 0; height: auto; z-index: 1; display: flex; align-items: flex-end; justify-content: center; aspect-ratio: auto; padding: 16px 14px calc(74px + env(safe-area-inset-bottom)); background: rgba(0, 20, 30, .55); }
   .promo__panel[hidden] { display: none; } /* 上の display: flex が hidden より優先されないように */
   .promo__panel:not([hidden]) { animation: promoFade .25s ease; }
   .promo__sheet { width: 100%; max-width: 480px; height: auto; animation: promoUp .45s var(--ease); }

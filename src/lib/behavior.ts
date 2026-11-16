@@ -548,29 +548,25 @@ export function initSite() {
   // どのバナーも、タブを押したときだけ開く（自動では開かない）
   const promo = document.querySelector('.promo');
   if (promo) {
-    const items = [...promo.querySelectorAll('.promo__item')].filter((item) => item.querySelector('.promo__panel')).map((item) => {
+    // バナーはタブのカルーセルの外に置いてあるので、タブの aria-controls から探す
+    const items = [...promo.querySelectorAll('.promo__item')].map((item) => {
       const tab = item.querySelector('.promo__tab');
-      const panel = item.querySelector('.promo__panel');
+      const panel = document.getElementById(tab.getAttribute('aria-controls'));
       const label = tab.querySelector('.promo__tab-text').textContent;
-      const KEY = item.dataset.key;
-      const store = {
-        get: () => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } },
-        set: () => { try { localStorage.setItem(KEY, '1'); } catch { /* 保存できない環境では記憶しない */ } },
-      };
       const setOpen = (open) => {
         panel.hidden = !open;
         item.classList.toggle('is-open', open);
         tab.setAttribute('aria-expanded', String(open));
         tab.setAttribute('aria-label', `${label}のバナーを${open ? 'しまう' : '開く'}`);
       };
-      return { item, tab, panel, store, setOpen };
-    });
+      return { item, tab, panel, setOpen };
+    }).filter((it) => it.panel);
     // 片方を開くと、もう片方は閉じる
     const openOnly = (target) => items.forEach((it) => it.setOpen(it === target));
     items.forEach((it) => {
       it.setOpen(false);
       listen(it.tab, 'click', () => (it.panel.hidden ? openOnly(it) : it.setOpen(false)));
-      listen(it.item.querySelector('.promo__close'), 'click', () => { it.store.set(); it.setOpen(false); it.tab.focus(); });
+      listen(it.panel.querySelector('.promo__close'), 'click', () => { it.setOpen(false); it.tab.focus(); });
     });
     listen(document, 'keydown', (e) => { if (e.key === 'Escape') items.forEach((it) => it.setOpen(false)); });
     // バナーの外側（スマホでは暗くした部分）を押したら閉じる。タブとバナー本体は対象外
@@ -626,9 +622,11 @@ export function initSite() {
       slideTo(slide + 1);
     }, ROTATE_MS);
     cleanups.push(() => window.clearInterval(timer));
+    // バナーを開いている間は、ほかのタブにマウスを乗せても伸ばさない（PC のバナーは開いたタブの横に固定で出すため）
+    const anyOpen = () => items.some((it) => !it.panel.hidden);
     tabs.forEach((t, n) => {
-      listen(t, 'mouseenter', () => setActive(n));
-      listen(t, 'focusin', () => setActive(n));
+      listen(t, 'mouseenter', () => { if (!anyOpen()) setActive(n); });
+      listen(t, 'focusin', () => { if (!anyOpen()) setActive(n); });
     });
     if (track) {
       // 指でスワイプしたら、その位置から続ける。触っている間と、離してしばらくは自動で送らない
