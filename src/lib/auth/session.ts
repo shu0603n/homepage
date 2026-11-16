@@ -43,17 +43,29 @@ export async function createSession(session: Session): Promise<void> {
 }
 
 // Cookie の署名が正しく、かつ紐づくスタッフがまだ存在して有効な場合だけセッションとして扱う。
-// スタッフを社内システムで削除・NG/BL にしたら、発行済みのログイン状態もすぐ使えなくなる
+// スタッフを社内システムで削除・NG/BL にしたら、発行済みのログイン状態もすぐ使えなくなる。
+//
+// スタッフ ID だけで判断してはいけない：社内システムのスタッフ ID は「現在の最大 + 1」で採番されるため、
+// 最後に登録されたスタッフを削除すると、次に登録された別人に同じ ID が付く。ID だけで見ると、
+// 削除前からログインしていた人が、その別人のマイページ（個人情報）を見られてしまう。
+// そのため「ログインしたときと同じ本人か」（メールアドレス、LINE ログインなら LINE の userId）も確かめる
 export async function getSession(): Promise<Session | null> {
   const session = await readSessionCookie();
   if (!session || session.staffId === null) return null;
   try {
     const staff = await findStaffById(session.staffId);
-    return staff && !isLoginBlocked(staff) ? session : null;
+    if (!staff || isLoginBlocked(staff)) return null;
+    return isSamePerson(session, staff) ? session : null;
   } catch (error) {
     console.error("session staff check failed:", error);
     return null;
   }
+}
+
+function isSamePerson(session: Session, staff: { mail: string | null; line_user_id: string | null }): boolean {
+  if (session.via === "line") return Boolean(staff.line_user_id) && staff.line_user_id === session.sub;
+  const mail = staff.mail?.trim().toLowerCase();
+  return Boolean(mail) && mail === session.email?.trim().toLowerCase();
 }
 
 async function readSessionCookie(): Promise<Session | null> {
