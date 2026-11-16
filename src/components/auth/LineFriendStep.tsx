@@ -53,10 +53,9 @@ export function LineFriendStep({ href, linked, compact = false }: Props) {
         LINE から次のことができるようになります。
       </p>
       <Features />
-      <a className="line-step__btn" href={href} target="_blank" rel="noopener">
+      <a className="line-step__btn" href={href}>
         <i className="bi bi-line" aria-hidden="true" />
         LINE で友だち追加する
-        <span className="visually-hidden">（新しいタブで開きます）</span>
       </a>
       {!compact && <p className="line-step__note">※ LINE アプリが開き、ログインの確認が表示されることがあります。画面の案内に沿ってお進みください。</p>}
     </div>
