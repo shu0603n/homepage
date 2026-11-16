@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import type { PageMeta } from "@/lib/metadata";
 
 // 写真を全面に敷き、タイトル（英字＋日本語）とパンくずだけを重ねる。
-// 英字の見出しは1文字ずつ順番にせり上がる。写真はスクロールに合わせてゆっくり動き、奥行きを出す（lib/behavior.ts）
+// 英字の見出しは1文字ずつ順番にせり上がる（ページを開くたび・移るたびに。lib/behavior.ts が .is-in を付ける）
 export function PageHero({ hero }: { hero: NonNullable<PageMeta["hero"]> }) {
   const crumbs: ReadonlyArray<readonly [string, string]> = [["", "HOME"], ...(hero.crumbs ?? [])];
   const Title = hero.noH1 ? "p" : "h1";

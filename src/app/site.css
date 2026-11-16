@@ -827,7 +827,7 @@ html:not(.js) .equation__word { clip-path: none; }
    ========================================================= */
 /* 写真を全面に敷き、左下にタイトル、最下部にパンくず */
 .page-hero { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; min-height: clamp(380px, 46vw, 520px); padding-top: var(--header-h); background: var(--navy-dd); color: #fff; }
-.page-hero__media { position: absolute; inset: 0; z-index: -1; will-change: transform; } /* スクロールに合わせて下へずらす（lib/behavior.ts）。上端は画面の外なので隙間は見えない */
+.page-hero__media { position: absolute; inset: 0; z-index: -1; }
 .page-hero__media img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08); animation: phZoom 2.4s cubic-bezier(.2, .6, .2, 1) forwards; }
 @keyframes phZoom { to { transform: scale(1); } }
 .page-hero__media::after { content: ""; position: absolute; inset: 0; background:
@@ -841,8 +841,8 @@ html:not(.js) .equation__word { clip-path: none; }
 .page-hero__en::before { opacity: 0; transform: rotate(45deg) scale(0); transition: opacity .5s, transform .7s var(--ease); }
 .page-hero__char { display: inline-block; opacity: 0; transform: translateY(.55em) rotate(8deg); filter: blur(6px); transition: opacity .7s var(--ease), transform .9s var(--ease), filter .7s var(--ease); transition-delay: calc(.15s + var(--ci) * 55ms); }
 .page-hero__title { opacity: 0; transform: translateY(16px); transition: opacity 1s var(--ease), transform 1.1s var(--ease); transition-delay: .5s; }
-.is-loaded .page-hero__en::before { opacity: 1; transform: rotate(45deg) scale(1); }
-.is-loaded .page-hero__char, .is-loaded .page-hero__title { opacity: 1; transform: none; filter: none; }
+.page-hero.is-in .page-hero__en::before { opacity: 1; transform: rotate(45deg) scale(1); }
+.page-hero.is-in .page-hero__char, .page-hero.is-in .page-hero__title { opacity: 1; transform: none; filter: none; }
 html:not(.js) .page-hero__en::before, html:not(.js) .page-hero__char, html:not(.js) .page-hero__title { opacity: 1; transform: none; filter: none; }
 html:not(.js) .page-hero__en::before { transform: rotate(45deg); }
 
