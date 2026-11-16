@@ -1584,6 +1584,12 @@ p.reg-progress__done { margin: 0; cursor: default; white-space: normal; font-siz
 .celebration__message { position: absolute; top: 22%; left: 50%; margin: 0; padding: 14px 28px; border-radius: 999px; background: rgba(255, 255, 255, .95); font-family: var(--f-head); font-size: clamp(18px, 2.4vw, 26px); font-weight: 900; color: var(--navy-dd); white-space: nowrap; box-shadow: 0 20px 44px -18px rgba(0, 30, 45, .55); transform: translateX(-50%); animation: celebMsg 3.6s var(--ease) forwards !important; animation-duration: 3.6s !important; }
 @keyframes celebMsg { 0% { opacity: 0; transform: translate(-50%, 20px) scale(.9); } 15%, 75% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -12px) scale(1); } }
 @media (max-width: 767px) { .celebration__message { font-size: 17px; padding: 12px 22px; } }
+/* メールアドレス（確認）の一致チェック */
+.mail-check { display: flex; align-items: center; gap: 6px; min-height: 0; margin: 6px 0 0; font-size: 13px; font-weight: 700; }
+.mail-check:empty { display: none; }
+.mail-check.is-ng { color: #b02a42; }
+.mail-check.is-ok { color: #0f9488; }
+.form input[aria-invalid="true"] { border-color: #d9506a; background: #fff6f8; }
 .register-visit-done { display: grid; gap: 32px; max-width: 960px; margin: 0 auto; }
 .password-set__mail { margin: 0; padding: 12px 0; font-size: 16px; font-weight: 700; color: var(--navy); word-break: break-all; }
 .password-set__show { margin: 20px 0 0; font-size: 14px; }

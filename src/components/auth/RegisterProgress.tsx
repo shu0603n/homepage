@@ -17,20 +17,28 @@ export function RegisterProgress({ formRef }: { formRef: RefObject<HTMLFormEleme
 
     const count = () => {
       const fields = [...form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input[required], select[required], textarea[required]")];
-      const filled = fields.filter((el) => (el instanceof HTMLInputElement && el.type === "checkbox" ? el.checked : el.value.trim() !== "")).length;
+      // 入力があって、形も正しいものだけを数える（メールアドレスの形・確認欄の一致など。checkValidity は画面には何も出さない）
+      const filled = fields.filter((el) => (el instanceof HTMLInputElement && el.type === "checkbox" ? el.checked : el.value.trim() !== "" && el.checkValidity())).length;
       setTotal(fields.length);
       setDone(filled);
       submit?.classList.toggle("is-ready", fields.length > 0 && filled === fields.length);
     };
+    // 確認欄の一致チェック（setCustomValidity）は、この数え直しより後に動くため、ひと呼吸おいてから数える
+    let timer = 0;
+    const recount = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(count, 0);
+    };
     count();
-    form.addEventListener("input", count);
-    form.addEventListener("change", count);
+    form.addEventListener("input", recount);
+    form.addEventListener("change", recount);
 
     const io = submit ? new IntersectionObserver(([en]) => setNearSubmit(en.isIntersecting), { rootMargin: "0px 0px -40px 0px" }) : null;
     if (submit) io?.observe(submit);
     return () => {
-      form.removeEventListener("input", count);
-      form.removeEventListener("change", count);
+      window.clearTimeout(timer);
+      form.removeEventListener("input", recount);
+      form.removeEventListener("change", recount);
       io?.disconnect();
     };
   }, [formRef]);

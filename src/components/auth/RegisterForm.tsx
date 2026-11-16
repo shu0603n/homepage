@@ -22,6 +22,34 @@ export function RegisterForm({ privacy, variant = "web" }: { privacy: ReactNode;
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null); // ご案内メールを送ったメールアドレス
 
+  // メールアドレスと確認欄の一致を、入力しながら確かめる。
+  // 打っている途中では「一致しません」を出さず、入力の手を止めたとき（約1秒何も打たない）か、
+  // 欄から離れた（フォーカスを外した）ときに判定を出す。「一致しました」はぴったり合った時点で出す。
+  // 一致しない間は確認欄を「未入力」扱いにする（入力状況ゲージにも反映）
+  const [mail, setMail] = useState("");
+  const [mail2, setMail2] = useState("");
+  const [settled, setSettled] = useState(false); // 入力の手が止まった（または欄から離れた）
+  const settleTimer = useRef<number | undefined>(undefined);
+  const mail2Ref = useRef<HTMLInputElement>(null);
+  const checkMail = (m: string, m2: string) => {
+    setMail(m);
+    setMail2(m2);
+    setSettled(false);
+    window.clearTimeout(settleTimer.current);
+    settleTimer.current = window.setTimeout(() => setSettled(true), 1000);
+    const same = m2.trim().toLowerCase() === m.trim().toLowerCase();
+    mail2Ref.current?.setCustomValidity(m2 && !same ? "メールアドレスが一致しません" : "");
+  };
+  useEffect(() => () => window.clearTimeout(settleTimer.current), []);
+  const setMail2Blurred = (v: boolean) => v && setSettled(true);
+  const mailMatch: "ok" | "ng" | null = !mail2.trim()
+    ? null
+    : mail2.trim().toLowerCase() === mail.trim().toLowerCase()
+      ? "ok"
+      : settled
+        ? "ng"
+        : null;
+
   // 送信できたら「ご案内メールをお送りしました」の画面に切り替わるので、ページの一番上から見せる
   // （長いフォームの一番下で押すため、そのままだとフッターのあたりが表示されてしまう）
   useEffect(() => {
@@ -127,12 +155,37 @@ export function RegisterForm({ privacy, variant = "web" }: { privacy: ReactNode;
           afterKana={
             <>
               <Row label="メールアドレス" htmlFor="r-mail" required>
-                <input id="r-mail" type="email" name="mail" autoComplete="email" required />
+                <input id="r-mail" type="email" name="mail" autoComplete="email" required onChange={(e) => checkMail(e.target.value, mail2)} />
                 <p className="form__help">ログインに使います。パスワード設定のご案内メールをこのアドレスにお送りします。</p>
               </Row>
               <Row label="メールアドレス（確認）" htmlFor="r-mail2" required>
-                <input id="r-mail2" type="email" name="mail2" autoComplete="email" required />
+                <input
+                  id="r-mail2"
+                  ref={mail2Ref}
+                  type="email"
+                  name="mail2"
+                  autoComplete="email"
+                  required
+                  aria-invalid={mailMatch === "ng"}
+                  aria-describedby="r-mail2-check"
+                  onChange={(e) => checkMail(mail, e.target.value)}
+                  onBlur={() => setMail2Blurred(true)}
+                />
                 <p className="form__help">確認のため、同じメールアドレスをもう一度入力してください。</p>
+                <p id="r-mail2-check" className={`mail-check${mailMatch ? ` is-${mailMatch}` : ""}`} aria-live="polite">
+                  {mailMatch === "ng" && (
+                    <>
+                      <i className="bi bi-exclamation-circle-fill" aria-hidden="true" />
+                      メールアドレスが一致しません
+                    </>
+                  )}
+                  {mailMatch === "ok" && (
+                    <>
+                      <i className="bi bi-check-circle-fill" aria-hidden="true" />
+                      一致しました
+                    </>
+                  )}
+                </p>
               </Row>
             </>
           }
