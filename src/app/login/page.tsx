@@ -12,7 +12,7 @@ const meta = {
   title: "ログイン",
   description: "株式会社エモリスリンクのスタッフ向けログインページです。",
   section: "contact",
-  hero: { en: "Login", ja: "ログイン", img: "hero-contact.jpg", crumbs: [["job-seekers/", "お仕事をお探しの方"]] },
+  hero: { en: "Login", ja: "ログイン", img: "hero-login.jpg", crumbs: [["job-seekers/", "お仕事をお探しの方"]] },
 } as const;
 
 export const metadata: Metadata = { ...buildMetadata("login/", meta), robots: { index: false, follow: false } };

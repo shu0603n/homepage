@@ -10,7 +10,7 @@ const meta = {
   title: "スタッフ登録",
   description: "株式会社エモリスリンクのスタッフ登録フォームです。登録するとマイページにログインできます。",
   section: "contact",
-  hero: { en: "Register", ja: "スタッフ登録", img: "hero-contact.jpg", crumbs: [["job-seekers/", "お仕事をお探しの方"]] },
+  hero: { en: "Register", ja: "スタッフ登録", img: "hero-register.jpg", crumbs: [["job-seekers/", "お仕事をお探しの方"]] },
 } as const;
 
 export const metadata: Metadata = { ...buildMetadata("register/", meta), robots: { index: false, follow: false } };

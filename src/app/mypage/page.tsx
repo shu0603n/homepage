@@ -13,7 +13,7 @@ const meta = {
   title: "マイページ",
   description: "株式会社エモリスリンクのスタッフ向けマイページです。",
   section: "contact",
-  hero: { en: "My Page", ja: "マイページ", img: "hero-contact.jpg" },
+  hero: { en: "My Page", ja: "マイページ", img: "hero-login.jpg" },
 } as const;
 
 export const metadata: Metadata = { ...buildMetadata("mypage/", meta), robots: { index: false, follow: false } };

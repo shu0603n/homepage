@@ -12,7 +12,7 @@ const meta = {
   title: "スタッフ登録完了",
   description: "株式会社エモリスリンクのスタッフ登録が完了しました。LINE 公式アカウントを友だち追加してください。",
   section: "contact",
-  hero: { en: "Thank You", ja: "スタッフ登録完了", img: "hero-contact.jpg", crumbs: [["job-seekers/", "お仕事をお探しの方"]] },
+  hero: { en: "Thank You", ja: "スタッフ登録完了", img: "hero-register.jpg", crumbs: [["job-seekers/", "お仕事をお探しの方"]] },
 } as const;
 
 export const metadata: Metadata = { ...buildMetadata("register/complete/", meta), robots: { index: false, follow: false } };

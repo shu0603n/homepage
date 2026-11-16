@@ -9,7 +9,7 @@ const meta = {
   title: "パスワード設定のご案内",
   description: "株式会社エモリスリンクに登録済みのスタッフの方が、マイページにログインするためのパスワードを設定するページです。",
   section: "contact",
-  hero: { en: "Password", ja: "パスワード設定のご案内", img: "hero-contact.jpg", crumbs: [["login/", "ログイン"]] },
+  hero: { en: "Password", ja: "パスワード設定のご案内", img: "hero-register.jpg", crumbs: [["login/", "ログイン"]] },
 } as const;
 
 export const metadata: Metadata = { ...buildMetadata("password-setup/", meta), robots: { index: false, follow: false } };

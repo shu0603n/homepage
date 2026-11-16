@@ -10,7 +10,7 @@ const meta = {
   title: "来社登録フォーム",
   description: "株式会社エモリスリンクの来社登録フォームです。",
   section: "contact",
-  hero: { en: "Register", ja: "来社登録フォーム", img: "hero-contact.jpg" },
+  hero: { en: "Register", ja: "来社登録フォーム", img: "hero-register.jpg" },
 } as const;
 
 export const metadata: Metadata = { ...buildMetadata("register/visit/", meta), robots: { index: false, follow: false } };

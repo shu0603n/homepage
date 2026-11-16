@@ -12,7 +12,7 @@ const meta = {
   title: "登録情報の編集",
   description: "株式会社エモリスリンクのスタッフ向け、登録情報の編集ページです。",
   section: "contact",
-  hero: { en: "Profile", ja: "登録情報の編集", img: "hero-contact.jpg", crumbs: [["mypage/", "マイページ"]] },
+  hero: { en: "Profile", ja: "登録情報の編集", img: "hero-login.jpg", crumbs: [["mypage/", "マイページ"]] },
 } as const;
 
 export const metadata: Metadata = { ...buildMetadata("mypage/profile/", meta), robots: { index: false, follow: false } };
