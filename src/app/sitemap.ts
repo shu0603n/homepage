@@ -12,6 +12,7 @@ const ROUTES = [
   "contact/",
   "for-employers/",
   "job-seekers/",
+  "register/",
   "news/",
   "news/company-established/",
 ];

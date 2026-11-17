@@ -49,9 +49,9 @@ export function reserveSend(email: string): string | null {
   const recent = (sends.get(key) ?? []).filter((t) => now - t < 3600_000);
   const last = recent[recent.length - 1];
   if (last !== undefined && now - last < RESEND_INTERVAL * 1000) {
-    return `確認コードは送信済みです。届かない場合は、${RESEND_INTERVAL}秒ほど待ってから送り直してください。`;
+    return `メールは送信済みです。届かない場合は、迷惑メールフォルダもご確認のうえ、${RESEND_INTERVAL}秒ほど待ってから送り直してください。`;
   }
-  if (recent.length >= MAX_SENDS_PER_HOUR) return "確認コードの送信回数が上限に達しました。しばらく時間をおいてからお試しください。";
+  if (recent.length >= MAX_SENDS_PER_HOUR) return "メールの送信回数が上限に達しました。しばらく時間をおいてからお試しください。";
   sends.set(key, [...recent, now]);
   return null;
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { CognitoErrorCode } from "@/lib/auth/cognito";
+import { SITE } from "@/lib/site";
 
 export function jsonError(message: string, status: number) {
   return NextResponse.json({ ok: false, message }, { status });
@@ -20,11 +21,23 @@ export function isSameOrigin(request: Request): boolean {
 }
 
 // サイト内の URL を、いまアクセスされているドメインを基準に作る（Amplify の URL でも独自ドメインでも、そのまま戻れるように）。
-// NEXT_PUBLIC_APP_URL は独自ドメインへの切り替え前から本番ドメイン（旧サイト）になっているため使わない
+// NEXT_PUBLIC_APP_URL は独自ドメインへの切り替え前から本番ドメイン（旧サイト）になっているため使わない。
+//
+// 注意：X-Forwarded-Host はアクセスする側が自由に書き換えられる（Amplify はそのまま通す）。
+// そのまま使うと、他人のメールアドレスで「パスワードをお忘れの方」を送られたとき、
+// 本人に届く再設定メールのリンク先が攻撃者のサイトになり、リンクの中身（再設定用の鍵）を盗まれてしまう。
+// そのため、このサイトのドメインとして決めたものだけを使い、それ以外は正規の URL（SITE.siteUrl）にする
+const SITE_HOSTS = new Set([new URL(SITE.siteUrl).host, "emorislink.co.jp", "main.d33wn8ifx0n6p4.amplifyapp.com"]);
+
+function isLocalHost(host: string): boolean {
+  return process.env.NODE_ENV !== "production" && /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
+}
+
 export function siteUrl(path: string, request: Request): URL {
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  const proto = request.headers.get("x-forwarded-proto") ?? new URL(request.url).protocol.replace(":", "");
-  return new URL(path, host ? `${proto.split(",")[0]}://${host.split(",")[0]}` : new URL(request.url).origin);
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").split(",")[0].trim().toLowerCase();
+  if (SITE_HOSTS.has(host)) return new URL(path, `https://${host}`);
+  if (isLocalHost(host)) return new URL(path, `http://${host}`);
+  return new URL(path, SITE.siteUrl);
 }
 
 export async function readJson(request: Request): Promise<unknown> {

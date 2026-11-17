@@ -12,7 +12,7 @@ export function PageShell({ route, meta, special, children }: { route: string; m
     : jsonLd({ route, meta, url, desc: pageDescription(meta), image: pageImage(meta), datePosted: BUILD_DATE });
   return (
     <>
-      {graph && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(graph).replace(/</g, "\u003c") }} />}
+      {graph && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(graph).replace(/</g, "\\u003c") }} />}
       {meta.hero && <PageHero hero={meta.hero} />}
       {children}
     </>
