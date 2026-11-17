@@ -1,6 +1,8 @@
 // トップページ「LINK MAP」のアイソメトリック地図（SVG）をビルド時に生成する
 // 札幌・大通公園とテレビ塔を中心に、本社から各事業へ「つながり」が伸びる街を描く
 
+import { SHOW_EMORIS_AGENT } from "@/lib/site";
+
 const S = 30; // 1グリッドの大きさ(px)
 const COS = Math.cos(Math.PI / 6);
 const SIN = 0.5;
@@ -56,7 +58,8 @@ function house(x: number, y: number, color: string) {
 // ---------- 看板の広告面（会社ロゴ） ----------
 // 看板の正面は x 方向に斜めに傾いた面なので、白い広告面とロゴ画像を同じ傾きにゆがめて貼る。
 // 虹色の面は細い枠として残す。x0〜x0+w が面の横幅、z0〜z0+h が面の高さ（y は面の位置）
-const AD_LOGO = { src: '/assets/img/ad-emoris-agent.jpg', w: 388, h: 420 }; // 広告の画像（白背景）。差し替えたら w・h も画像に合わせる
+// 広告の画像（白背景）。差し替えたら w・h も画像に合わせる。EMORIS AGENT のリリースまでは会社のマークを出す
+const AD_LOGO = SHOW_EMORIS_AGENT ? { src: '/assets/img/ad-emoris-agent.jpg', w: 388, h: 420 } : { src: '/assets/img/logo-mark.png', w: 512, h: 512 };
 function billboardAd(x0: number, y: number, w: number, z0: number, h: number) {
   const m = 0.1; // 虹色の枠の太さ（グリッド単位）
   const panel = [P(x0 + m, y, z0 + h - m), P(x0 + w - m, y, z0 + h - m), P(x0 + w - m, y, z0 + m), P(x0 + m, y, z0 + m)];

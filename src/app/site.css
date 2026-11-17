@@ -1373,6 +1373,8 @@ html:not(.js) .contact-cta__line > span, html:not(.js) .contact-cta__lead, html:
 .promo__panel { position: absolute; right: calc(100% + 10px); top: 0; height: var(--promo-open); aspect-ratio: 800 / 418; }
 .promo__panel--agent { top: calc(var(--promo-closed) + 8px); }
 .promo__panel--bonus { top: calc((var(--promo-closed) + 8px) * 2); }
+/* EMORIS AGENT のタブを隠している間（lib/site.ts の SHOW_EMORIS_AGENT）は、入社祝い金のタブが上から2番目になる */
+.promo:not(:has(.promo__item--agent)) .promo__panel--bonus { top: calc(var(--promo-closed) + 8px); }
 .promo__panel:not([hidden]) { animation: promoIn .45s var(--ease); }
 @keyframes promoIn { from { opacity: 0; transform: translateX(16px); } }
 .promo__sheet { position: relative; height: 100%; }

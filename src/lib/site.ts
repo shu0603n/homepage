@@ -26,7 +26,12 @@ export const SITE = {
 
 export const telHref = `tel:${SITE.tel.replace(/-/g, "")}`;
 
-export const EMORIS_AGENT_URL = "https://emoris-jobs.com/?utm_medium=instagram&utm_campaign=seeker-2026-11";
+// EMORIS AGENT（求人サイト）の紹介を出すか。リリースが延びたため、それまでは false で全部隠す。
+// 出すのは：お仕事をお探しの方・企業担当者様ページの紹介セクション、フッターのリンク、右端のタブ「正社員求人情報」、
+// 地図の看板の広告（false の間は会社のマーク）。リリースしたら true にする（ブランチ emoris-agent-release）
+export const SHOW_EMORIS_AGENT = false;
+
+export const EMORIS_AGENT_URL ="https://emoris-jobs.com/?utm_medium=instagram&utm_campaign=seeker-2026-11";
 
 export const SERVICES: ReadonlyArray<readonly [string, string]> = [
   ["staffing", "人材派遣"],

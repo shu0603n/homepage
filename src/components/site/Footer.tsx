@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Arrow } from "@/components/site/Arrow";
-import { COMPANY, EMORIS_AGENT_URL, RECRUIT, SERVICES, SITE, telHref } from "@/lib/site";
+import { COMPANY, EMORIS_AGENT_URL, RECRUIT, SERVICES, SHOW_EMORIS_AGENT, SITE, telHref } from "@/lib/site";
 
 const SOCIAL_ICONS: Record<string, ReactNode> = {
   instagram: (
@@ -150,7 +150,7 @@ export function Footer() {
               items={[
                 ["/for-employers/", "企業担当者様"],
                 ["/register/", "お仕事をお探しの方"],
-                [EMORIS_AGENT_URL, "EMORIS AGENT"],
+                ...(SHOW_EMORIS_AGENT ? ([[EMORIS_AGENT_URL, "EMORIS AGENT"]] as const) : []),
               ]}
             />
           </nav>
@@ -176,14 +176,17 @@ export function Footer() {
               <i className="bi bi-chevron-left" aria-hidden="true" />
             </button>
           </div>
-          <div className="promo__item promo__item--agent">
-            <button className="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-agent">
-              <span className="promo__tab-label">
-                <span className="promo__tab-text">正社員求人情報</span>
-              </span>
-              <i className="bi bi-chevron-left" aria-hidden="true" />
-            </button>
-          </div>
+          {/* EMORIS AGENT のリリースまで非表示（lib/site.ts の SHOW_EMORIS_AGENT） */}
+          {SHOW_EMORIS_AGENT && (
+            <div className="promo__item promo__item--agent">
+              <button className="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-agent">
+                <span className="promo__tab-label">
+                  <span className="promo__tab-text">正社員求人情報</span>
+                </span>
+                <i className="bi bi-chevron-left" aria-hidden="true" />
+              </button>
+            </div>
+          )}
           <div className="promo__item promo__item--bonus">
             <button className="promo__tab" type="button" aria-expanded="false" aria-controls="promo-panel-bonus">
               <span className="promo__tab-label">
@@ -205,16 +208,18 @@ export function Footer() {
             </button>
           </div>
         </div>
-        <div className="promo__panel promo__panel--agent" id="promo-panel-agent" hidden>
-          <div className="promo__sheet">
-            <a className="promo__banner" href={EMORIS_AGENT_URL} target="_blank" rel="noopener">
-              <img src="/assets/img/floating-banner-agent.jpg" alt="幅広い業界・職種から、あなたに合う仕事が見つかる。EMORIS AGENT 登録・利用はすべて無料 無料で会員登録する（新しいタブで開きます）" width={800} height={418} />
-            </a>
-            <button className="promo__close" type="button" aria-label="EMORIS AGENT のバナーを閉じる">
-              <i className="bi bi-x-lg" aria-hidden="true" />
-            </button>
+        {SHOW_EMORIS_AGENT && (
+          <div className="promo__panel promo__panel--agent" id="promo-panel-agent" hidden>
+            <div className="promo__sheet">
+              <a className="promo__banner" href={EMORIS_AGENT_URL} target="_blank" rel="noopener">
+                <img src="/assets/img/floating-banner-agent.jpg" alt="幅広い業界・職種から、あなたに合う仕事が見つかる。EMORIS AGENT 登録・利用はすべて無料 無料で会員登録する（新しいタブで開きます）" width={800} height={418} />
+              </a>
+              <button className="promo__close" type="button" aria-label="EMORIS AGENT のバナーを閉じる">
+                <i className="bi bi-x-lg" aria-hidden="true" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         <div className="promo__panel promo__panel--bonus" id="promo-panel-bonus" hidden>
           <div className="promo__sheet">
             <Link className="promo__banner" href="/system-engineer/">

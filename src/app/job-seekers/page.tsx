@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/site/PageShell";
 import { buildMetadata } from "@/lib/metadata";
-import { SITE } from "@/lib/site";
+import { SHOW_EMORIS_AGENT, SITE } from "@/lib/site";
 import { Privacy } from "@/components/partials/Privacy";
 
 const meta = {
@@ -141,6 +141,9 @@ export default function JobSeekersPage() {
           </form>
         </div>
       </section>
+      {/* EMORIS AGENT のリリースまで非表示（lib/site.ts の SHOW_EMORIS_AGENT） */}
+      {SHOW_EMORIS_AGENT && (
+        <>
       {/* 求人サイト EMORIS AGENT の紹介。画像：assets/img/agent-card.jpg（推奨 1200×628px 以上、約1.9:1 の横長） */}
       <section className="section section--gray">
         <div className="container">
@@ -194,6 +197,8 @@ export default function JobSeekersPage() {
           </div>
         </div>
       </section>
+        </>
+      )}
     </PageShell>
   );
 }
