@@ -27,6 +27,8 @@ export async function handleStaffRegistration(
   if (!isMailConfigured()) return jsonError("ただいま登録を受け付けられません。お手数ですが、お電話にてお問い合わせください。", 500);
 
   let createdStaffId: number | null = null;
+  // どこで失敗したか（サーバーのログが見られないときでも、画面のメッセージから原因を絞れるように、末尾に短い記号を出す）
+  let stage = "C"; // C：登録済みかの確認／S：スタッフ情報の保存／M：案内メールの送信
   try {
     // 同じメールアドレスのスタッフが既にいれば登録しない（重複登録を防ぐ）。
     // 社内システムやホームページで登録済みの方、パスワードをまだ設定していない方も含む
@@ -34,15 +36,17 @@ export async function handleStaffRegistration(
     const limited = reserveSend(input.mail);
     if (limited) return jsonError(limited, 429);
 
+    stage = "S";
     const staffId = await createStaff(input, method);
     createdStaffId = staffId;
+    stage = "M";
     await sendPasswordLinkMail(input.mail, input.name ?? null, await createPasswordLink(request, "set-password", staffId, input.mail));
     return NextResponse.json({ ok: true, ...(onCreated ? onCreated(staffId) : {}) });
   } catch (error) {
     // 案内メールを送れなかったときは、今回作ったスタッフ情報も取り消す（登録をやり直せるように）
     if (createdStaffId !== null) await deleteStaff(createdStaffId).catch((e) => console.error("rollback failed:", e));
     if (error instanceof DuplicateStaffMailError) return jsonError(DUPLICATE_MESSAGE, 409);
-    console.error("register failed:", error);
-    return jsonError("登録に失敗しました。メールアドレスをご確認のうえ、時間をおいて再度お試しください。", 500);
+    console.error(`register failed (${stage}):`, error);
+    return jsonError(`登録に失敗しました。メールアドレスをご確認のうえ、時間をおいて再度お試しください。（R-${stage}）`, 500);
   }
 }

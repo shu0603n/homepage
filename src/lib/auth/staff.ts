@@ -69,6 +69,30 @@ export class DuplicateStaffMailError extends Error {}
 // 同じメールアドレスのスタッフが既にいれば登録しない（ボタンの二度押しなどで同時に送られても、どちらか一方だけになる）
 // method：登録方法（ホームページのフォームは「フォーム」、来社登録は「来社」。next-app と同じ値）
 export async function createStaff(input: StaffRegisterInput, method: "フォーム" | "来社" = "フォーム"): Promise<number> {
+  // 直列化トランザクションは、同じ時間に他のシステム（next-app・Linext の一斉配信など）がスタッフ表を書き換えると
+  // 「競合」で失敗する。また next-app も同じ「最大 id + 1」で採番するため、同時に登録されると id がぶつかる。
+  // どちらも少し待ってやり直せば通るので、数回まで自動でやり直す（重複メールのときはやり直さない）
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await insertStaff(input, method);
+    } catch (error) {
+      if (attempt >= 5 || !isRetryableWriteError(error)) throw error;
+      await new Promise((r) => setTimeout(r, 100 * attempt + Math.random() * 200));
+    }
+  }
+}
+
+// やり直せば通るエラー：直列化の競合・デッドロック（P2034 / 40001 / 40P01）、id の重複（P2002 / 23505）
+function isRetryableWriteError(error: unknown): boolean {
+  if (error instanceof DuplicateStaffMailError) return false;
+  const e = error as { code?: unknown; message?: unknown; meta?: unknown } | null;
+  const code = typeof e?.code === "string" ? e.code : "";
+  if (code === "P2034" || code === "P2002" || code === "40001" || code === "40P01" || code === "23505") return true;
+  const text = `${typeof e?.message === "string" ? e.message : ""} ${JSON.stringify(e?.meta ?? "")}`;
+  return /40001|40P01|23505|could not serialize|serialization|deadlock|write conflict|unique constraint/i.test(text);
+}
+
+async function insertStaff(input: StaffRegisterInput, method: "フォーム" | "来社"): Promise<number> {
   const histories = input.work_histories.filter((h) => h.company.trim() || h.period.trim() || h.content.trim()).map(historyToText);
 
   return prisma.$transaction(
