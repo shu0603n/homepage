@@ -1,4 +1,5 @@
 import type { StaffRegisterInput, WorkHistory } from "@/lib/auth/staff";
+import { formatPhoneJP } from "@/lib/phone";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -60,6 +61,9 @@ export function parseProfile(body: unknown): ParsedProfile {
   const phone = text(b.phone_number, 100);
   if (!name) return { ok: false, message: 'お名前を入力してください。' };
   if (!phone) return { ok: false, message: '電話番号を入力してください。' };
+  // ハイフン付き（090-1234-5678 など）に揃えて保存する
+  const phoneNumber = formatPhoneJP(phone);
+  if (!phoneNumber) return { ok: false, message: '電話番号を正しく入力してください（例：090-1234-5678）。' };
 
   const wage = Number(b.min_hourly_wage);
   return {
@@ -69,7 +73,7 @@ export function parseProfile(body: unknown): ParsedProfile {
       name_k: text(b.name_k, 255),
       gender: text(b.gender, 20),
       birthday: date(b.birthday),
-      phone_number: phone,
+      phone_number: phoneNumber,
       postal_code: text(b.postal_code, 20),
       prefecture: text(b.prefecture, 10),
       address: text(b.address, 500),

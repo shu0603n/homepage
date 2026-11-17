@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
+import { formatPhoneJP } from "@/lib/phone";
 import { lookupPostal, normalizePostal } from "@/lib/postal";
 import type { StaffProfile, WorkHistory } from "@/lib/auth/staff";
 import {
@@ -101,6 +102,52 @@ function Select({ id, name, options, label, defaultValue }: { id: string; name: 
 }
 
 type Defaults = Partial<Omit<StaffProfile, "mail">>;
+
+// 電話番号。欄から離れたときに「090-1234-5678」の形（ハイフン付き）に自動で整える。
+// ハイフンなし・全角数字で入力しても大丈夫。日本の電話番号として正しくないときは、欄から離れた時点で知らせる
+// （入力状況ゲージでも、正しい番号になるまでは「未入力」扱い）
+function PhoneField({ defaultValue }: { defaultValue?: string }) {
+  const [ng, setNg] = useState(false);
+  const check = (el: HTMLInputElement) => {
+    const bad = el.value.trim() !== "" && !formatPhoneJP(el.value);
+    el.setCustomValidity(bad ? "電話番号を正しく入力してください（例：090-1234-5678）" : "");
+    return bad;
+  };
+  return (
+    <>
+      <input
+        id="r-tel"
+        type="tel"
+        name="phone_number"
+        autoComplete="tel"
+        inputMode="tel"
+        placeholder="例：090-1234-5678"
+        defaultValue={defaultValue}
+        required
+        aria-invalid={ng}
+        aria-describedby="r-tel-note"
+        onInput={(e) => {
+          // 打っている途中はエラー表示を出さない（直ったときだけ消す）
+          if (!check(e.currentTarget)) setNg(false);
+        }}
+        onBlur={(e) => {
+          const el = e.currentTarget;
+          const formatted = formatPhoneJP(el.value);
+          if (formatted && formatted !== el.value) {
+            el.value = formatted;
+            el.form?.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          setNg(check(el));
+        }}
+      />
+      <p className="form__help">ハイフンなしで入力しても、自動で「-」が付きます。</p>
+      <p id="r-tel-note" className="postal-note is-ng" aria-live="polite">
+        {ng && "電話番号を正しく入力してください（例：090-1234-5678）"}
+      </p>
+    </>
+  );
+}
+
 
 // 郵便番号・都道府県・住所。郵便番号を7桁入れると、都道府県と、確定できるところまでの住所（市区町村・町名）を自動で入れる。
 // 住所欄に自分で入力した内容は上書きしない（空欄か、前回自動で入れた内容のままのときだけ入れ替える）
@@ -207,7 +254,7 @@ export function StaffProfileFields({ defaults = {}, leading, afterKana, basicOnl
       </Row>
       {afterKana}
       <Row label="電話番号" htmlFor="r-tel" required>
-        <input id="r-tel" type="tel" name="phone_number" autoComplete="tel" placeholder="例：090-1234-5678" defaultValue={defaults.phone_number} required />
+        <PhoneField defaultValue={defaults.phone_number} />
       </Row>
       <Row label="正社員求人の紹介">
         <fieldset className="choices">
