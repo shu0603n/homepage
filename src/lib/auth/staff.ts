@@ -130,7 +130,8 @@ async function insertStaff(input: StaffRegisterInput, method: "フォーム" | "
       });
       return id;
     },
-    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    // データベースが遠い場合でも時間切れにならないよう、待ち時間を長めにする（既定は接続待ち 2 秒・処理 5 秒）
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 20_000 },
   );
 }
 

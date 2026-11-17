@@ -52,7 +52,6 @@ model staff {
   relationship              String?            @db.VarChar(100)
   remarks                   String?            @db.Text
   name_k                    String?            @db.VarChar(255)
-  entry_flag                Boolean?           @default(false)
   registration_date         DateTime?          @db.Date
   line_user_id              String?            @db.VarChar(255)
   application               application[]

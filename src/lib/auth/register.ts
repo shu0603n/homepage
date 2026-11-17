@@ -14,6 +14,16 @@ import { isMailConfigured } from "@/lib/mail";
 const DUPLICATE_MESSAGE =
   "既にご登録いただいているメールアドレスです。ログイン画面からログインしてください（パスワードをまだ設定していない方は「はじめてログインする方」、お忘れの方は「パスワードをお忘れの方」からお手続きいただけます）。";
 
+// エラーの種類を表す短い記号（Prisma の P2028、PostgreSQL の 40001、ネットワークの ETIMEDOUT など）。
+// 個人情報や接続先は含まないものだけを画面に出す。種類が分からないときはエラーの名前（TypeError など）
+function errorCode(error: unknown): string {
+  const e = error as { code?: unknown; name?: unknown; meta?: { code?: unknown; driverAdapterError?: { cause?: { kind?: unknown; originalCode?: unknown } } } } | null;
+  const parts = [e?.code, e?.meta?.code, e?.meta?.driverAdapterError?.cause?.kind, e?.meta?.driverAdapterError?.cause?.originalCode]
+    .filter((v): v is string => typeof v === "string" && /^[A-Za-z0-9_]{2,40}$/.test(v));
+  if (parts.length === 0 && typeof e?.name === "string" && /^[A-Za-z]{2,40}$/.test(e.name)) parts.push(e.name);
+  return parts.length ? `:${[...new Set(parts)].join("/")}` : "";
+}
+
 export async function handleStaffRegistration(
   request: Request,
   method: "フォーム" | "来社",
@@ -47,6 +57,6 @@ export async function handleStaffRegistration(
     if (createdStaffId !== null) await deleteStaff(createdStaffId).catch((e) => console.error("rollback failed:", e));
     if (error instanceof DuplicateStaffMailError) return jsonError(DUPLICATE_MESSAGE, 409);
     console.error(`register failed (${stage}):`, error);
-    return jsonError(`登録に失敗しました。メールアドレスをご確認のうえ、時間をおいて再度お試しください。（R-${stage}）`, 500);
+    return jsonError(`登録に失敗しました。メールアドレスをご確認のうえ、時間をおいて再度お試しください。（R-${stage}${errorCode(error)}）`, 500);
   }
 }
