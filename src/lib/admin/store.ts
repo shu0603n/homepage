@@ -76,6 +76,8 @@ export const ADMIN_TABLES_SQL = [
     detail_views INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (job_kind, job_id, day)
   )`,
+  // ホームページの応募ボタンから応募が完了した回数（2026-11-19 追加。共用の応募の表には、社内システムからの応募も入るため別に数える）
+  `ALTER TABLE hp_job_stat_daily ADD COLUMN IF NOT EXISTS applications INTEGER NOT NULL DEFAULT 0`,
 ];
 
 export type AdminRole = "super" | "staff";
@@ -91,7 +93,7 @@ async function isUpToDate(): Promise<boolean> {
       AND ((table_name = 'hp_admin_user' AND column_name = 'avatar_updated_at')
         OR (table_name = 'hp_inquiry' AND column_name = 'memo_updated_by')
         OR (table_name = 'hp_job_favorite' AND column_name = 'staff_mail')
-        OR (table_name = 'hp_job_stat_daily' AND column_name = 'detail_views'))`;
+        OR (table_name = 'hp_job_stat_daily' AND column_name = 'applications'))`;
   return rows[0]?.n === 4;
 }
 

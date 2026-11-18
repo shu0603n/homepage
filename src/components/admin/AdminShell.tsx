@@ -15,14 +15,14 @@ export type AdminNavKey = "access" | "search" | "tags" | "jobs" | "inquiries" | 
 const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group: "data" | "work"; superOnly?: boolean }[] = [
   { key: "access", href: "/admin/?tab=access", label: "アクセス状況", icon: "bi-graph-up-arrow", group: "data" },
   { key: "search", href: "/admin/?tab=search", label: "検索での見え方", icon: "bi-search", group: "data" },
-  { key: "jobs", href: "/admin/?tab=jobs", label: "案件の反応", icon: "bi-bar-chart-line", group: "data" },
   { key: "tags", href: "/admin/?tab=tags", label: "計測タグ", icon: "bi-tags", group: "data", superOnly: true },
   { key: "inquiries", href: "/admin/?tab=inquiries", label: "お問い合わせ", icon: "bi-envelope-paper", group: "work" },
+  { key: "jobs", href: "/admin/?tab=jobs", label: "案件の反応", icon: "bi-bar-chart-line", group: "work" },
 ];
-// 上から「お仕事」（お問い合わせ）→「データ」（アクセス状況など）の順。よく使うものを上に置く
+// 上から「お仕事」（お問い合わせ・案件の反応）→「アクセスデータ」（アクセス状況など）の順。よく使うものを上に置く
 const GROUPS = [
   ["work", "お仕事"],
-  ["data", "データ"],
+  ["data", "アクセスデータ"],
 ] as const;
 
 export async function AdminShell({

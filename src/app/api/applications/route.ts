@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { getSession } from "@/lib/auth/session";
 import { APPLICATION_NOTIFY_TO, isMailConfigured, sendMail } from "@/lib/mail";
+import { recordJobEvent } from "@/lib/jobs-activity";
 import { prisma } from "@/lib/prisma";
 
 const DAYS_OFF = ["月", "火", "水", "木", "金", "土", "日", "祝"];
@@ -78,6 +79,10 @@ export async function POST(request: Request) {
     await prisma.application.create({ data });
     if (projectId !== null) await prisma.project.update({ where: { id: projectId }, data: { applications: { increment: 1 } } });
     else await prisma.recruit_project.update({ where: { id: recruitProjectId! }, data: { applications: { increment: 1 } } });
+    // 管理ページ「案件の反応」用に、ホームページからの応募として数える（数えられなくても応募は成功のまま）
+    await recordJobEvent("apply", [projectId !== null ? { kind: "project", id: projectId } : { kind: "recruit", id: recruitProjectId! }]).catch((e) =>
+      console.error("apply count failed:", e),
+    );
 
     if (isMailConfigured()) {
       const lines = [

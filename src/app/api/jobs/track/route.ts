@@ -9,7 +9,7 @@ import { parseJobKey, recordJobEvent, type JobEvent, type JobKey } from "@/lib/j
 //   detail 案件の詳細ページを開いた
 // 案件一覧はログインしたスタッフだけが見られるので、ログイン中の人からの記録だけを受け付ける。
 // 画面の動きを止めないよう、うまくいかなくても常に 204（中身なし）を返す
-const EVENTS = new Set<JobEvent>(["list", "click", "detail"]);
+const EVENTS = new Set<JobEvent>(["list", "click", "detail"]); // 応募（apply）は応募の処理でだけ数える
 
 export async function POST(request: Request) {
   const done = new NextResponse(null, { status: 204 });

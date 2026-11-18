@@ -107,32 +107,39 @@ export async function JobStatsPanel({ days: daysParam }: { days?: string }) {
           {key === 'all' ? '記録を始めてからの合計' : `直近${periodLabel}`}
         </p>
         <p className="adm-summary__text">
-          案件が一覧に<strong>{fmt(total.list)}回</strong>表示され、<strong>{fmt(total.clicks)}回</strong>押されて詳細が見られました。
-          「気になる」には<strong>{fmt(total.favNew)}件</strong>入れられ、応募は<strong>{fmt(total.apps)}件</strong>でした。
+          ホームページの案件一覧で、案件が<strong>{fmt(total.list)}回</strong>表示され、<strong>{fmt(total.clicks)}回</strong>
+          押されて詳細が見られました。 「気になる」には<strong>{fmt(total.favNew)}件</strong>入れられ、ホームページからの応募は
+          <strong>{fmt(total.apps)}件</strong>でした。
         </p>
         <p className="adm-summary__update">
           <i className="bi bi-clock-history" aria-hidden="true" />
           <span>
-            更新のタイミング：スタッフが案件一覧を見たり押したりするたびに、すぐ数に加わります（同じ画面を開いている間は、案件ごとに1回だけ数えます）。記録は2026年11月19日から始めています。
+            数えているもの：すべてホームページ上の動きだけです（社内システムなど、ほかの経路での閲覧・応募は含みません）。スタッフが見たり押したりするたびに、すぐ数に加わります（同じ画面を開いている間は、案件ごとに1回だけ数えます）。記録は2026年11月19日から始めています。
           </span>
         </p>
       </section>
 
       <div className="adm-kpis">
-        <Kpi icon="bi-list-ul" label="一覧での表示" value={fmt(total.list)} unit="回" help="案件一覧の画面に、案件が表示された回数です。" />
+        <Kpi
+          icon="bi-list-ul"
+          label="一覧での表示"
+          value={fmt(total.list)}
+          unit="回"
+          help="ホームページの案件一覧の画面に、案件が表示された回数です。"
+        />
         <Kpi
           icon="bi-hand-index"
           label="クリック"
           value={fmt(total.clicks)}
           unit="回"
-          help="一覧で案件が押された回数です。表示のうち押された割合が「クリック率」です。"
+          help="ホームページの案件一覧で、案件が押された回数です。表示のうち押された割合が「クリック率」です。"
         />
         <Kpi
           icon="bi-eye"
           label="詳細の閲覧"
           value={fmt(total.detail)}
           unit="回"
-          help="案件の詳細ページが開かれた回数です（一覧から以外も含みます）。"
+          help="ホームページの案件の詳細ページが開かれた回数です（一覧から以外も含みます）。"
         />
         <Kpi
           icon="bi-heart"
@@ -141,7 +148,13 @@ export async function JobStatsPanel({ days: daysParam }: { days?: string }) {
           unit="件"
           help="いま「気になる」に入っている数です（期間に関係なく、外されたものは除きます）。"
         />
-        <Kpi icon="bi-send-check" label="応募" value={fmt(total.apps)} unit="件" help="この期間にホームページから応募された数です。" />
+        <Kpi
+          icon="bi-send-check"
+          label="ホームページからの応募"
+          value={fmt(total.apps)}
+          unit="件"
+          help="ホームページの応募ボタンから応募された数です（社内システムなど、ほかの経路からの応募は含みません）。"
+        />
       </div>
 
       <section className="adm-card adm-card--wide">
@@ -165,7 +178,7 @@ export async function JobStatsPanel({ days: daysParam }: { days?: string }) {
                   <th>クリック率</th>
                   <th>詳細の閲覧</th>
                   <th>気になる</th>
-                  <th>応募</th>
+                  <th>HPからの応募</th>
                 </tr>
               </thead>
               <tbody>

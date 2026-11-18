@@ -54,8 +54,9 @@ export async function removeFavorite(staffId: number, mail: string, job: JobKey)
 
 // ---------- 反応の記録 ----------
 
-export type JobEvent = "list" | "click" | "detail";
-const COLUMN: Record<JobEvent, string> = { list: "list_views", click: "clicks", detail: "detail_views" };
+// apply はホームページの応募ボタンから応募が完了したとき（サーバー側の応募処理から記録する。画面からは送れない）
+export type JobEvent = "list" | "click" | "detail" | "apply";
+const COLUMN: Record<JobEvent, string> = { list: "list_views", click: "clicks", detail: "detail_views", apply: "applications" };
 
 // 案件ごとに、今日（日本時間）の回数を1つ増やす。まとめて1回の問い合わせで書く
 export async function recordJobEvent(event: JobEvent, jobs: JobKey[]): Promise<void> {
@@ -84,7 +85,7 @@ export type JobStatRow = {
   detailViews: number;
   favorites: number; // いま「気になる」に入れている人数（期間に関係なく）
   favoritesInPeriod: number; // 期間中に「気になる」に入れた人数
-  applications: number; // 期間中の応募数
+  applications: number; // 期間中に、ホームページの応募ボタンから応募された数
 };
 
 export type FavoriteUser = { kind: JobKind; jobId: number; staffId: number; name: string | null; mail: string | null; tel: string | null; createdAt: Date };
@@ -95,9 +96,10 @@ export async function jobStats(days: number | null): Promise<{ rows: JobStatRow[
   const since = days ? new Date(Date.now() - days * 86_400_000) : new Date(0);
   const sinceDay = new Date(since.getTime() + 9 * 3600_000).toISOString().slice(0, 10);
 
-  const [stats, favs, users, apps] = await Promise.all([
-    prisma.$queryRaw<{ job_kind: JobKind; job_id: number; list_views: number; clicks: number; detail_views: number }[]>`
-      SELECT job_kind, job_id, sum(list_views)::int AS list_views, sum(clicks)::int AS clicks, sum(detail_views)::int AS detail_views
+  const [stats, favs, users] = await Promise.all([
+    prisma.$queryRaw<{ job_kind: JobKind; job_id: number; list_views: number; clicks: number; detail_views: number; applications: number }[]>`
+      SELECT job_kind, job_id, sum(list_views)::int AS list_views, sum(clicks)::int AS clicks, sum(detail_views)::int AS detail_views,
+        sum(applications)::int AS applications
       FROM hp_job_stat_daily WHERE day >= ${sinceDay}::date GROUP BY job_kind, job_id`,
     prisma.$queryRaw<{ job_kind: JobKind; job_id: number; total: number; recent: number }[]>`
       SELECT job_kind, job_id, count(*)::int AS total, count(*) FILTER (WHERE created_at >= ${since})::int AS recent
@@ -107,10 +109,6 @@ export async function jobStats(days: number | null): Promise<{ rows: JobStatRow[
       SELECT f.job_kind, f.job_id, f.staff_id, s.name, s.mail, s.phone_number AS tel, f.created_at
       FROM hp_job_favorite f JOIN staff s ON s.id = f.staff_id AND lower(s.mail) = lower(f.staff_mail)
       ORDER BY f.created_at DESC`,
-    prisma.$queryRaw<{ project_id: number | null; recruit_project_id: number | null; n: number }[]>`
-      SELECT project_id, recruit_project_id, count(*)::int AS n FROM application
-      WHERE created_at >= ${since} AND (project_id IS NOT NULL OR recruit_project_id IS NOT NULL)
-      GROUP BY project_id, recruit_project_id`,
   ]);
 
   const rows = new Map<string, JobStatRow>();
@@ -123,12 +121,8 @@ export async function jobStats(days: number | null): Promise<{ rows: JobStatRow[
     }
     return r;
   };
-  for (const s of stats) Object.assign(row(s.job_kind, s.job_id), { listViews: s.list_views, clicks: s.clicks, detailViews: s.detail_views });
+  for (const s of stats) Object.assign(row(s.job_kind, s.job_id), { listViews: s.list_views, clicks: s.clicks, detailViews: s.detail_views, applications: s.applications });
   for (const f of favs) Object.assign(row(f.job_kind, f.job_id), { favorites: f.total, favoritesInPeriod: f.recent });
-  for (const a of apps) {
-    if (a.project_id) row("project", a.project_id).applications += a.n;
-    else if (a.recruit_project_id) row("recruit", a.recruit_project_id).applications += a.n;
-  }
 
   // 案件名と、いまも掲載中か
   const projectIds = [...rows.values()].filter((r) => r.kind === "project").map((r) => r.id);
