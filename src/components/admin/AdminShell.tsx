@@ -28,6 +28,7 @@ export async function AdminShell({
   en,
   title,
   lead,
+  unhandled: given,
   children,
 }: {
   session: AdminSession;
@@ -35,9 +36,10 @@ export async function AdminShell({
   en: string;
   title: string;
   lead?: ReactNode;
+  unhandled?: number; // 未対応のお問い合わせの件数（ページ側で他の問い合わせと同時に数えた場合に渡す。無ければここで数える）
   children: ReactNode;
 }) {
-  const unhandled = await countUnhandledInquiries().catch(() => 0);
+  const unhandled = given ?? (await countUnhandledInquiries().catch(() => 0));
   return (
     <div className="adm">
       <aside className="adm-side">

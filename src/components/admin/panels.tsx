@@ -554,6 +554,7 @@ const FORM_NAMES = { employers: '企業担当者様', seekers: 'お仕事をお�
 const FILTERS = [
   ['', 'すべて'],
   ['open', '未対応'],
+  ['done', '対応済み'],
   ['mine', '自分の担当'],
   ['employers', '企業担当者様'],
   ['seekers', 'お仕事をお探しの方']
@@ -582,11 +583,13 @@ export function InquiriesPanel({
   const shown = inquiries.filter((i) =>
     filter === 'open'
       ? !i.handled
-      : filter === 'mine'
-        ? i.assignee_id === selfId
-        : filter === 'employers' || filter === 'seekers'
-          ? i.form === filter
-          : true
+      : filter === 'done'
+        ? i.handled
+        : filter === 'mine'
+          ? i.assignee_id === selfId
+          : filter === 'employers' || filter === 'seekers'
+            ? i.form === filter
+            : true
   );
   const open = inquiries.filter((i) => !i.handled).length;
   return (
@@ -676,7 +679,9 @@ export function InquiriesPanel({
                   admins={admins}
                   assigneeId={i.assignee_id}
                   memo={i.memo ?? ''}
-                  memoInfo={i.memo_updated_at ? `${i.memo_updated_by_name ?? '（削除された管理者）'}・${dateTime(i.memo_updated_at)}` : null}
+                  memoInfo={
+                    i.memo_updated_at ? `${i.memo_updated_by_name ?? '（削除された管理者）'}・${dateTime(i.memo_updated_at)}` : null
+                  }
                 />
               </details>
               <InquiryHandledToggle id={i.id} handled={i.handled} />

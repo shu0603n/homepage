@@ -127,7 +127,9 @@ export function getGa4(): Promise<Section<Ga4Data>> {
     const previous = { startDate: "56daysAgo", endDate: "29daysAgo", name: "previous" };
     const desc = (metric: string) => [{ metric: { metricName: metric }, desc: true }];
 
-    const batch = await call<{ reports: Report[] }>(`${base}:batchRunReports`, {
+    // 3つの問い合わせは同時に送る（順番に待つより速い）
+    const [batch, reg, realtime] = await Promise.all([
+      call<{ reports: Report[] }>(`${base}:batchRunReports`, {
       requests: [
         { dateRanges: [current, previous], metrics: [{ name: "activeUsers" }, { name: "newUsers" }, { name: "sessions" }, { name: "screenPageViews" }] },
         { dateRanges: [current], dimensions: [{ name: "date" }], metrics: [{ name: "activeUsers" }], orderBys: [{ dimension: { dimensionName: "date" } }] },
@@ -135,17 +137,17 @@ export function getGa4(): Promise<Section<Ga4Data>> {
         { dateRanges: [current], dimensions: [{ name: "sessionDefaultChannelGroup" }], metrics: [{ name: "sessions" }], orderBys: desc("sessions") },
         { dateRanges: [current], dimensions: [{ name: "deviceCategory" }], metrics: [{ name: "activeUsers" }], orderBys: desc("activeUsers") },
       ],
-    });
+      }),
+      // スタッフ登録の完了（完了ページ /register/complete/ が表示された回数）
+      call<Report>(`${base}:runReport`, {
+        dateRanges: [current, previous],
+        dimensions: [{ name: "pagePath" }],
+        metrics: [{ name: "screenPageViews" }],
+        dimensionFilter: { filter: { fieldName: "pagePath", stringFilter: { matchType: "BEGINS_WITH", value: "/register/complete" } } },
+      }),
+      call<Report>(`${base}:runRealtimeReport`, { metrics: [{ name: "activeUsers" }] }),
+    ]);
     const [totalsR, dailyR, pagesR, channelsR, devicesR] = batch.reports;
-
-    // スタッフ登録の完了（完了ページ /register/complete/ が表示された回数）
-    const reg = await call<Report>(`${base}:runReport`, {
-      dateRanges: [current, previous],
-      dimensions: [{ name: "pagePath" }],
-      metrics: [{ name: "screenPageViews" }],
-      dimensionFilter: { filter: { fieldName: "pagePath", stringFilter: { matchType: "BEGINS_WITH", value: "/register/complete" } } },
-    });
-    const realtime = await call<Report>(`${base}:runRealtimeReport`, { metrics: [{ name: "activeUsers" }] });
 
     // 期間（dateRange）ごとの合計。ディメンションの最後に dateRange の名前が入る
     const byRange = (rows: ReportRow[] | undefined, name: string) => rows?.find((r) => r.dimensionValues?.some((d) => d.value === name));
@@ -225,17 +227,23 @@ export type GtmData = {
 type GtmContainer = { path: string; publicId: string };
 type GtmVersion = { name?: string; containerVersionId?: string; fingerprint?: string; tag?: { name: string; type: string; paused?: boolean }[] };
 
+// コンテナの場所（accounts/…/containers/…）は変わらないので、一度探したら1日覚えておく（毎回探すと3往復かかる）
+let gtmContainer: { value: GtmContainer; at: number } | null = null;
+
+async function findGtmContainer(api: string): Promise<GtmContainer> {
+  if (gtmContainer && Date.now() - gtmContainer.at < 86_400_000) return gtmContainer.value;
+  const { account = [] } = await call<{ account?: { path: string }[] }>(`${api}/accounts`);
+  const lists = await Promise.all(account.map((a) => call<{ container?: GtmContainer[] }>(`${api}/${a.path}/containers`)));
+  const found = lists.flatMap((l) => l.container ?? []).find((c) => c.publicId === SITE.gtmContainerId);
+  if (!found) throw new GoogleApiError(404, "コンテナが見つかりません");
+  gtmContainer = { value: found, at: Date.now() };
+  return found;
+}
+
 export function getGtm(): Promise<Section<GtmData>> {
   return cached("gtm", async () => {
     const api = "https://tagmanager.googleapis.com/tagmanager/v2";
-    const { account = [] } = await call<{ account?: { path: string }[] }>(`${api}/accounts`);
-    let container: GtmContainer | undefined;
-    for (const a of account) {
-      const { container: list = [] } = await call<{ container?: GtmContainer[] }>(`${api}/${a.path}/containers`);
-      container = list.find((c) => c.publicId === SITE.gtmContainerId);
-      if (container) break;
-    }
-    if (!container) throw new GoogleApiError(404, "コンテナが見つかりません");
+    const container = await findGtmContainer(api);
     const live = await call<GtmVersion>(`${api}/${container.path}/versions:live`);
     return {
       containerId: container.publicId,

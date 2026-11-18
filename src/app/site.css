@@ -2093,3 +2093,14 @@ button.adm-me:hover { background: rgba(255, 255, 255, .13); }
   .adm-me-wrap { position: static; }
   .adm-menu { left: auto; right: 0; bottom: auto; top: calc(100% + 10px); width: min(300px, calc(100vw - 32px)); }
 }
+
+/* 読み込み中の仮表示（灰色の帯がゆっくり光る） */
+.adm-skel { display: block; border-radius: 8px; background: linear-gradient(90deg, #e3eaef 0%, #f1f5f8 40%, #e3eaef 80%); background-size: 200% 100%; animation: admSkel 1.3s ease-in-out infinite; }
+@keyframes admSkel { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.adm-skel--summary { height: 150px; border-radius: var(--r); background: linear-gradient(90deg, #0c4a66 0%, #13607f 40%, #0c4a66 80%); background-size: 200% 100%; }
+.adm-skel--line { height: 12px; margin: 10px 0; }
+.adm-skel--big { width: 50%; height: 30px; margin: 14px 0; }
+.adm-skel--title { width: min(280px, 70%); height: 34px; margin-top: 8px; }
+.adm-skel--nav { height: 36px; margin: 6px 0; border-radius: 12px; background: linear-gradient(90deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.14) 40%, rgba(255,255,255,.07) 80%); background-size: 200% 100%; }
+.adm-loading { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; font-size: 13px; color: var(--sub); }
+.adm-loading__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); animation: admLive 1.4s infinite; box-shadow: 0 0 0 0 rgba(58,175,185,.5); }

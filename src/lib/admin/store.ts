@@ -58,9 +58,20 @@ export const ROLE_NAMES: Record<AdminRole, string> = { super: "特級", staff: "
 
 let ready: Promise<void> | null = null;
 
-// 表が無ければ作る（サーバーの起動ごとに 1 回だけ）。同時に作ろうとしてぶつかった場合に備えて、1 回だけやり直す
+// いちばん新しい定義（最後に足した列）が既にあるか。あれば上の SQL は流さなくてよい（1回の問い合わせで済ませて速くする）
+async function isUpToDate(): Promise<boolean> {
+  const rows = await prisma.$queryRaw<{ n: number }[]>`
+    SELECT count(*)::int AS n FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND ((table_name = 'hp_admin_user' AND column_name = 'role') OR (table_name = 'hp_inquiry' AND column_name = 'memo_updated_by'))`;
+  return rows[0]?.n === 2;
+}
+
+// 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。
+// 同時に作ろうとしてぶつかった場合に備えて、1 回だけやり直す
 export function ensureAdminTables(): Promise<void> {
   ready ??= (async () => {
+    if (await isUpToDate()) return;
     for (let attempt = 1; ; attempt++) {
       try {
         for (const sql of ADMIN_TABLES_SQL) await prisma.$executeRawUnsafe(sql);
