@@ -8,13 +8,14 @@ import { countUnhandledInquiries, ROLE_NAMES } from "@/lib/admin/store";
 
 // 管理ページの外枠：左にサイトと同じネイビーのメニュー（ロゴ・各ページ・ログイン中の人）、右に本文。
 // 本文の見出しは、ホームページと同じ「英字の小見出し＋日本語の大見出し」の形
-export type AdminNavKey = "access" | "search" | "tags" | "inquiries" | "users" | "password";
+export type AdminNavKey = "access" | "search" | "tags" | "jobs" | "inquiries" | "users" | "password";
 
 // 「管理者」「パスワード変更」は左のメニューには置かず、ログイン中の人のカードを押すと開く小窓（AdminMeMenu）に入れる。
 // superOnly：特級の管理者にだけ出す項目（一般の管理者には、メニューに出さず、開いても見られない）
 const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group: "data" | "work"; superOnly?: boolean }[] = [
   { key: "access", href: "/admin/?tab=access", label: "アクセス状況", icon: "bi-graph-up-arrow", group: "data" },
   { key: "search", href: "/admin/?tab=search", label: "検索での見え方", icon: "bi-search", group: "data" },
+  { key: "jobs", href: "/admin/?tab=jobs", label: "案件の反応", icon: "bi-bar-chart-line", group: "data" },
   { key: "tags", href: "/admin/?tab=tags", label: "計測タグ", icon: "bi-tags", group: "data", superOnly: true },
   { key: "inquiries", href: "/admin/?tab=inquiries", label: "お問い合わせ", icon: "bi-envelope-paper", group: "work" },
 ];

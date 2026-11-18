@@ -6,6 +6,7 @@ import { JobsExplorer } from "@/components/jobs/JobsExplorer";
 import { PageShell } from "@/components/site/PageShell";
 import { getSession } from "@/lib/auth/session";
 import { getJobsData } from "@/lib/jobs";
+import { myFavoriteKeys } from "@/lib/jobs-activity";
 import { buildMetadata } from "@/lib/metadata";
 
 const meta = {
@@ -20,7 +21,8 @@ export const metadata: Metadata = { ...buildMetadata("jobs/", meta), robots: { i
 // ログインしている人だけが見られる。LINE アプリ内ブラウザで開いたときも、ログイン済みならそのまま一覧が表示される。
 // 未ログインで LINE アプリ内（リッチメニュー「求人検索」の LIFF）から開かれたときは、ここで LINE の自動ログインを試す
 export default async function JobsPage() {
-  if (!(await getSession())) {
+  const session = await getSession();
+  if (!session) {
     const inLineApp = / Line\//.test((await headers()).get("user-agent") ?? "");
     if (!inLineApp || !process.env.LIFF_ID) redirect("/login/?next=/jobs/");
     return (
@@ -37,13 +39,14 @@ export default async function JobsPage() {
       </PageShell>
     );
   }
-  const data = await getJobsData();
+  // 案件と、このスタッフが「気になる」に入れている案件を同時に読む
+  const [data, favorites] = await Promise.all([getJobsData(), myFavoriteKeys(session.staffId)]);
 
   return (
     <PageShell route="jobs/" meta={meta}>
       <section className="section">
         <div className="container">
-          <JobsExplorer data={data} />
+          <JobsExplorer data={data} favorites={favorites} />
         </div>
       </section>
     </PageShell>

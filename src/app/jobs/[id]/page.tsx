@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ApplyForm } from "@/components/jobs/ApplyForm";
 import { formatSalary } from "@/components/jobs/format";
+import { FavoriteButton, JobDetailView } from "@/components/jobs/JobActivity";
+import { myFavoriteKeys } from "@/lib/jobs-activity";
 import { PageShell } from "@/components/site/PageShell";
 import { getSession } from "@/lib/auth/session";
 import { findStaffById } from "@/lib/auth/staff";
@@ -34,7 +36,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const job = Number.isInteger(jobId) && jobId > 0 ? await getJobDetail(jobId) : null;
   if (!job) notFound();
 
-  const staff = session.staffId === null ? null : await findStaffById(session.staffId).catch(() => null);
+  const [staff, favorites] = await Promise.all([session.staffId === null ? null : findStaffById(session.staffId).catch(() => null), myFavoriteKeys(session.staffId)]);
   const meta = {
     title: job.title ?? "案件詳細",
     hero: { en: "Job", ja: "案件詳細", img: "hero-staffing.jpg", crumbs: [["jobs/", "案件一覧"]] },
@@ -58,7 +60,9 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               </span>
             ))}
           </p>
+          <JobDetailView job={{ kind: "project", id: job.id }} />
           <h2 className="h2-line">{job.title}</h2>
+          <FavoriteButton job={{ kind: "project", id: job.id }} initial={favorites.includes(`project-${job.id}`)} variant="full" />
           {formatSalary(job) && <p className="job-card__salary">💴 {formatSalary(job)}</p>}
           {job.description && <p className="job-text">{job.description}</p>}
 
@@ -85,6 +89,9 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           <ul className="auth-links">
             <li>
               <Link href="/jobs/">案件一覧に戻る</Link>
+            </li>
+            <li>
+              <Link href="/jobs/favorites/">気になる一覧を見る</Link>
             </li>
           </ul>
         </div>

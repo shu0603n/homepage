@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AdminShell, type AdminNavKey } from "@/components/admin/AdminShell";
 import { AdminPanelSkeleton } from "@/components/admin/AdminSkeleton";
 import { Ga4Panel, GtmPanel, InquiriesPanel, ScPanel } from "@/components/admin/panels";
+import { JobStatsPanel } from "@/components/admin/JobStatsPanel";
 import { getAdminSession } from "@/lib/admin/session";
 import { countUnhandledInquiries, listAdmins, listInquiries } from "@/lib/admin/store";
 
@@ -12,11 +13,12 @@ export const dynamic = "force-dynamic";
 const TABS: Record<Exclude<AdminNavKey, "users" | "password">, { en: string; title: string; lead: string }> = {
   access: { en: "Analytics", title: "アクセス状況", lead: "ホームページに何人が来て、どのページを見ているか（Google アナリティクス）" },
   search: { en: "Search", title: "検索での見え方", lead: "Google の検索結果にどれだけ出て、どんな言葉で見つけてもらえているか（Search Console）" },
+  jobs: { en: "Job Insights", title: "案件の反応", lead: "案件一覧での表示・クリック・閲覧の回数と、「気になる」・応募の数（ホームページの案件一覧）" },
   tags: { en: "Tags", title: "計測タグ", lead: "サイトで動いている計測用のタグ（Google タグ マネージャー）" },
   inquiries: { en: "Inquiries", title: "お問い合わせ", lead: "ホームページのお問い合わせフォームから届いた内容" },
 };
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; filter?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; filter?: string; days?: string }> }) {
   const session = await getAdminSession().catch(() => null);
   if (!session) redirect("/admin/login/");
   const params = await searchParams;
@@ -49,6 +51,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "search" && (
         <Suspense fallback={<AdminPanelSkeleton kpis={4} />}>
           <ScPanel />
+        </Suspense>
+      )}
+      {tab === "jobs" && (
+        <Suspense fallback={<AdminPanelSkeleton kpis={5} cards={1} />}>
+          <JobStatsPanel days={params.days} />
         </Suspense>
       )}
       {tab === "tags" && (

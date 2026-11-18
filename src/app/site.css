@@ -2123,3 +2123,44 @@ label.adm-chipbtn { position: relative; }
 .adm-zoom__box figcaption { font-family: var(--f-head); font-weight: 700; color: var(--navy-dd); }
 .adm-zoom__close { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--bg-soft); color: var(--navy); cursor: pointer; }
 .adm-zoom__close:hover { background: var(--teal-soft); }
+
+/* 案件の「気になる」 */
+.job-card-wrap { position: relative; }
+.fav-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; cursor: pointer; font: inherit; transition: transform .2s var(--ease), background .2s, color .2s, box-shadow .2s; }
+.fav-btn .bi { line-height: 1; }
+.fav-btn--icon { position: absolute; top: 14px; right: 14px; z-index: 2; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, .95); color: #c4cfd6; font-size: 20px; box-shadow: 0 6px 16px -6px rgba(0, 30, 45, .35); }
+.fav-btn--icon:hover { transform: scale(1.08); color: var(--pink); }
+.fav-btn.is-on { color: #e8417f; }
+.fav-btn.is-on .bi { animation: favPop .35s var(--ease); }
+@keyframes favPop { 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.fav-btn--full { margin: -20px 0 24px; padding: 10px 20px; border-radius: 999px; background: #fff; color: var(--navy); font-weight: 700; font-size: 14px; box-shadow: inset 0 0 0 1.5px #f3b5cd; }
+.fav-btn--full:hover { background: #fff0f6; }
+.fav-btn--full.is-on { background: #fff0f6; box-shadow: inset 0 0 0 1.5px #e8417f; }
+.jobs__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 0 0 16px; }
+.jobs__bar .jobs__count { margin: 0; }
+.jobs__favlink { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; background: #fff0f6; color: #b2245e !important; font-weight: 700; font-size: 14px; text-decoration: none; }
+.jobs__favlink .bi-heart-fill { color: #e8417f; }
+.jobs__favlink span { font-weight: 500; }
+.jobs__favlink:hover { background: #ffe3ef; }
+.jobs__note { margin: 0 0 16px; padding: 12px 16px; border-radius: 12px; background: var(--bg-soft); font-size: 13px; color: var(--sub); }
+.jobs__empty .btn { margin-top: 20px; }
+@media (max-width: 640px) { .fav-btn--icon { top: 10px; right: 10px; width: 40px; height: 40px; font-size: 18px; } }
+
+/* 管理ページ「案件の反応」 */
+.adm-jobs td { vertical-align: middle; }
+.adm-jobs td:first-child { min-width: 260px; white-space: normal; font-family: var(--f-base); }
+.adm-jobs__name { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.adm-jobs__title { font-weight: 700; color: var(--navy-dd) !important; text-decoration: none; }
+a.adm-jobs__title:hover { text-decoration: underline; }
+.adm-jobs__ended { padding: 1px 8px; border-radius: 999px; background: #eef1f3; color: var(--sub); font-size: 11px; font-style: normal; font-weight: 700; }
+.adm-jobs tr.is-ended td { color: var(--sub); }
+.adm-jobs__zero { color: #b3c0c8; }
+.adm-favusers summary { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 999px; background: #fff0f6; color: #b2245e; font-family: var(--f-base); font-weight: 700; cursor: pointer; list-style: none; }
+.adm-favusers summary::-webkit-details-marker { display: none; }
+.adm-favusers[open] summary { background: #e8417f; color: #fff; }
+.adm-favusers ul { display: grid; gap: 8px; min-width: 240px; margin: 10px 0 0; padding: 12px; border-radius: 12px; background: #fff; box-shadow: var(--shadow-s), 0 0 0 1px var(--line); list-style: none; font-family: var(--f-base); white-space: normal; }
+.adm-favusers li { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px dashed var(--line); font-size: 13px; }
+.adm-favusers li:last-child { padding-bottom: 0; border-bottom: 0; }
+.adm-favusers li span { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.adm-favusers li small { color: var(--sub); }
+.adm-favusers__more { color: var(--sub); }

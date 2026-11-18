@@ -48,6 +48,11 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
             </Link>
           </p>
           <p className="lead-block">
+            <Link className="btn btn--ghost" href="/jobs/favorites/">
+              気になる案件を見る
+            </Link>
+          </p>
+          <p className="lead-block">
             <Link className="btn" href="/mypage/profile/">
               登録情報を編集する
             </Link>

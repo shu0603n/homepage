@@ -54,6 +54,28 @@ export const ADMIN_TABLES_SQL = [
   // 管理者のアイコン（2026-11-18 追加）。256×256 の WebP 画像をそのまま保存する（1枚 10KB ほど）。hp_admin_user にだけ列を足す
   `ALTER TABLE hp_admin_user ADD COLUMN IF NOT EXISTS avatar BYTEA`,
   `ALTER TABLE hp_admin_user ADD COLUMN IF NOT EXISTS avatar_updated_at TIMESTAMPTZ(6)`,
+  // 案件の「気になる」（2026-11-19 追加）。スタッフ ID は削除されると別の人に使い回されるため、メールアドレスも一緒に覚えて本人か確かめる。
+  // job_kind は project（派遣などの案件）か recruit（人材紹介の求人）。既存の表への関連付け（外部キー）は付けない
+  `CREATE TABLE IF NOT EXISTS hp_job_favorite (
+    id SERIAL PRIMARY KEY,
+    staff_id INTEGER NOT NULL,
+    staff_mail VARCHAR(254) NOT NULL,
+    job_kind VARCHAR(10) NOT NULL,
+    job_id INTEGER NOT NULL,
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS hp_job_favorite_staff_job_key ON hp_job_favorite (staff_id, job_kind, job_id)`,
+  `CREATE INDEX IF NOT EXISTS hp_job_favorite_job_idx ON hp_job_favorite (job_kind, job_id)`,
+  // 案件ごと・日ごとの反応の回数（一覧で表示された回数・一覧からのクリック・詳細の閲覧）。日付は日本時間
+  `CREATE TABLE IF NOT EXISTS hp_job_stat_daily (
+    job_kind VARCHAR(10) NOT NULL,
+    job_id INTEGER NOT NULL,
+    day DATE NOT NULL,
+    list_views INTEGER NOT NULL DEFAULT 0,
+    clicks INTEGER NOT NULL DEFAULT 0,
+    detail_views INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (job_kind, job_id, day)
+  )`,
 ];
 
 export type AdminRole = "super" | "staff";
@@ -66,8 +88,11 @@ async function isUpToDate(): Promise<boolean> {
   const rows = await prisma.$queryRaw<{ n: number }[]>`
     SELECT count(*)::int AS n FROM information_schema.columns
     WHERE table_schema = current_schema()
-      AND ((table_name = 'hp_admin_user' AND column_name = 'avatar_updated_at') OR (table_name = 'hp_inquiry' AND column_name = 'memo_updated_by'))`;
-  return rows[0]?.n === 2;
+      AND ((table_name = 'hp_admin_user' AND column_name = 'avatar_updated_at')
+        OR (table_name = 'hp_inquiry' AND column_name = 'memo_updated_by')
+        OR (table_name = 'hp_job_favorite' AND column_name = 'staff_mail')
+        OR (table_name = 'hp_job_stat_daily' AND column_name = 'detail_views'))`;
+  return rows[0]?.n === 4;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。

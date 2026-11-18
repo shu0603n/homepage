@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ApplyForm } from "@/components/jobs/ApplyForm";
 import { formatRecruitSalary } from "@/components/jobs/format";
+import { FavoriteButton, JobDetailView } from "@/components/jobs/JobActivity";
+import { myFavoriteKeys } from "@/lib/jobs-activity";
 import { PageShell } from "@/components/site/PageShell";
 import { getSession } from "@/lib/auth/session";
 import { findStaffById } from "@/lib/auth/staff";
@@ -24,7 +26,7 @@ export default async function RecruitDetailPage({ params }: { params: Promise<{ 
   const job = Number.isInteger(recruitId) && recruitId > 0 ? await getRecruitDetail(recruitId) : null;
   if (!job) notFound();
 
-  const staff = session.staffId === null ? null : await findStaffById(session.staffId).catch(() => null);
+  const [staff, favorites] = await Promise.all([session.staffId === null ? null : findStaffById(session.staffId).catch(() => null), myFavoriteKeys(session.staffId)]);
   const meta = {
     title: job.title,
     hero: { en: "Job", ja: "案件詳細", img: "hero-recruit.jpg", crumbs: [["jobs/", "案件一覧"]] },
@@ -48,7 +50,9 @@ export default async function RecruitDetailPage({ params }: { params: Promise<{ 
               </span>
             ))}
           </p>
+          <JobDetailView job={{ kind: "recruit", id: job.id }} />
           <h2 className="h2-line">{job.title}</h2>
+          <FavoriteButton job={{ kind: "recruit", id: job.id }} initial={favorites.includes(`recruit-${job.id}`)} variant="full" />
           {job.clientName && <p className="job-card__meta">🏢 {job.clientName}</p>}
           {salary && <p className="job-card__salary">💴 {salary}</p>}
           {job.description && <p className="job-text">{job.description}</p>}
@@ -57,6 +61,9 @@ export default async function RecruitDetailPage({ params }: { params: Promise<{ 
           <ul className="auth-links">
             <li>
               <Link href="/jobs/">案件一覧に戻る</Link>
+            </li>
+            <li>
+              <Link href="/jobs/favorites/">気になる一覧を見る</Link>
             </li>
           </ul>
         </div>
