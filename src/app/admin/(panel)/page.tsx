@@ -8,7 +8,7 @@ import { countUnhandledInquiries, listAdmins, listInquiries } from "@/lib/admin/
 
 export const dynamic = "force-dynamic";
 
-// 管理ページのトップ。?tab= で表示する内容を切り替える（左のメニューから選ぶ）
+// 管理ページのトップ。?tab= で表示する内容を切り替える（左のメニューから選ぶ）。何も指定がなければ、いちばん使うお問い合わせを出す
 const TABS: Record<Exclude<AdminNavKey, "users" | "password">, { en: string; title: string; lead: string }> = {
   access: { en: "Analytics", title: "アクセス状況", lead: "ホームページに何人が来て、どのページを見ているか（Google アナリティクス）" },
   search: { en: "Search", title: "検索での見え方", lead: "Google の検索結果にどれだけ出て、どんな言葉で見つけてもらえているか（Search Console）" },
@@ -20,9 +20,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const session = await getAdminSession().catch(() => null);
   if (!session) redirect("/admin/login/");
   const params = await searchParams;
-  // 計測タグは特級の管理者だけ（一般の管理者が URL で開いても、アクセス状況を出す）
-  const asked = params.tab && params.tab in TABS ? (params.tab as keyof typeof TABS) : "access";
-  const tab = asked === "tags" && session.role !== "super" ? "access" : asked;
+  // 計測タグは特級の管理者だけ（一般の管理者が URL で開いても、お問い合わせを出す）
+  const asked = params.tab && params.tab in TABS ? (params.tab as keyof typeof TABS) : "inquiries";
+  const tab = asked === "tags" && session.role !== "super" ? "inquiries" : asked;
   const head = TABS[tab];
 
   // データベースへの問い合わせは同時に送る（順番に待つより速い）。

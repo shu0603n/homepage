@@ -18,9 +18,10 @@ const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group:
   { key: "tags", href: "/admin/?tab=tags", label: "計測タグ", icon: "bi-tags", group: "data", superOnly: true },
   { key: "inquiries", href: "/admin/?tab=inquiries", label: "お問い合わせ", icon: "bi-envelope-paper", group: "work" },
 ];
+// 上から「お仕事」（お問い合わせ）→「データ」（アクセス状況など）の順。よく使うものを上に置く
 const GROUPS = [
-  ["data", "データ"],
   ["work", "お仕事"],
+  ["data", "データ"],
 ] as const;
 
 export async function AdminShell({
