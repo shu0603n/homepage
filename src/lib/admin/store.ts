@@ -315,8 +315,10 @@ export async function setInquiryMemo(id: number, memo: string | null, by: number
   return rows[0] ? { at: rows[0].memo_updated_at } : null;
 }
 
-export async function setInquiryHandled(id: number, handled: boolean): Promise<boolean> {
+// 対応済みにしたとき、担当者が未設定ならチェックした管理者（byAdminId）を担当者にする。設定済みの担当者は変えない
+export async function setInquiryHandled(id: number, handled: boolean, byAdminId?: number): Promise<boolean> {
   await ensureAdminTables();
-  const n = await prisma.$executeRaw`UPDATE hp_inquiry SET handled = ${handled} WHERE id = ${id}`;
+  const auto = handled && byAdminId ? byAdminId : null;
+  const n = await prisma.$executeRaw`UPDATE hp_inquiry SET handled = ${handled}, assignee_id = COALESCE(assignee_id, ${auto}::int) WHERE id = ${id}`;
   return n > 0;
 }

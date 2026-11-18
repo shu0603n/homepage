@@ -4,7 +4,7 @@ import { getAdminSession } from "@/lib/admin/session";
 import { setInquiryAssignee, setInquiryHandled, setInquiryMemo } from "@/lib/admin/store";
 
 // 問い合わせの更新。送られてきた項目だけを変える：
-//   handled     「対応済み」のチェック（true / false）
+//   handled     「対応済み」のチェック（true / false）。true にしたとき担当者が未設定なら、チェックした管理者が担当者になる
 //   assignee_id 担当者（管理者の id。null で未設定）
 //   memo        内部メモ（社内だけで見るメモ。空にすると消える。5000文字まで）
 const MEMO_MAX = 5000;
@@ -30,7 +30,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     let memoSavedAt: Date | null = null;
-    if (hasHandled && !(await setInquiryHandled(id, body.handled as boolean))) return jsonError("問い合わせが見つかりません。", 404);
+    if (hasHandled && !(await setInquiryHandled(id, body.handled as boolean, session.id))) return jsonError("問い合わせが見つかりません。", 404);
     if (hasAssignee && !(await setInquiryAssignee(id, body.assignee_id as number | null))) return jsonError("問い合わせか担当者が見つかりません。", 404);
     if (hasMemo) {
       const saved = await setInquiryMemo(id, memo || null, session.id);

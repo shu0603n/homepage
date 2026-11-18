@@ -82,7 +82,9 @@ export async function JobStatsPanel({ days: daysParam }: { days?: string }) {
         </p>
         <p className="adm-summary__text">
           ホームページの案件一覧で、案件が<strong>{fmt(total.list)}回</strong>表示され、<strong>{fmt(total.clicks)}回</strong>
-          押されて詳細が見られました。 「気になる」には<strong>{fmt(total.favNew)}件</strong>入れられ、ホームページからの応募は
+          押されて詳細が見られました。
+          <br />
+          「気になる」には<strong>{fmt(total.favNew)}件</strong>入れられ、ホームページからの応募は
           <strong>{fmt(total.apps)}件</strong>でした。
         </p>
         <p className="adm-summary__update">

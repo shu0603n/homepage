@@ -31,6 +31,7 @@ const FROM_NAME = '株式会社エモリスリンク';
 const AUTO_REPLY = env.AUTO_REPLY !== 'false';
 const ALLOWED_ORIGINS = (env.ALLOWED_ORIGINS || 'https://emorislink.co.jp,https://www.emorislink.co.jp').split(',').map((s) => s.trim()).filter(Boolean);
 const WAIT_SECONDS = 30; // 同じ接続元からの連続送信を止める間隔（秒）
+const ADMIN_URL = env.ADMIN_URL || 'https://www.emorislink.co.jp/admin/?tab=inquiries'; // 会社宛メールの「管理画面で確認する」ボタンの行き先
 
 // フォームごとの項目 [name, 表示名, 必須]。ここにない項目は無視する
 const FORMS = {
@@ -125,13 +126,14 @@ export const handler = async (event) => {
     to: TO_ADDRESS,
     replyTo: values.email,
     subject: form.subject,
-    text: 'ホームページのお問い合わせフォームから送信がありました。\n'
+    text: `管理画面で確認する：${ADMIN_URL}\n\n`
+      + 'ホームページのお問い合わせフォームから送信がありました。\n'
       + 'このメールに返信すると、入力されたメールアドレス宛に返信できます。\n\n'
       + detail
       + '\n----------------------------------------\n'
       + `送信日時：${sentAt}\n`
       + `送信元IP：${ip}\n`,
-    html: htmlMail(form.fields, values, '', `送信日時：${h(sentAt)}<br>送信元IP：${h(ip)}<br>このメールに返信すると、入力されたメールアドレス宛に返信できます。`),
+    html: htmlMail(form.fields, values, '', `送信日時：${h(sentAt)}<br>送信元IP：${h(ip)}<br>このメールに返信すると、入力されたメールアドレス宛に返信できます。`, adminButton(ADMIN_URL)),
   }];
   if (AUTO_REPLY) {
     const company = '株式会社エモリスリンク\n'
@@ -164,8 +166,16 @@ function h(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }
 
+// 会社宛メールだけに付ける、管理画面のお問い合わせ一覧へのボタン（自動返信には付けない）
+function adminButton(url) {
+  return '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 10px;"><tr>'
+    + `<td style="background:#1f3a68;border-radius:6px;"><a href="${h(url)}" target="_blank" style="display:inline-block;padding:12px 26px;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">管理画面で確認する &rarr;</a></td>`
+    + '</tr></table>';
+}
+
 // HTML 版：グレーの背景に白いカード、「項目名（太字）＋入力内容」を区切り線で並べる
-function htmlMail(fields, values, intro, foot) {
+// top はカードの一番上に置く部品（会社宛メールの管理画面ボタン）。自動返信では空のまま
+function htmlMail(fields, values, intro, foot, top = '') {
   const rows = fields.map(([key, label], i) => {
     const v = values[key] ? h(values[key]).replace(/\n/g, '<br>') : '<span style="color:#999999;">（未選択）</span>';
     const border = i < fields.length - 1 ? 'border-bottom:1px solid #e5e5e5;' : '';
@@ -178,6 +188,7 @@ function htmlMail(fields, values, intro, foot) {
     + '<tr><td align="center" style="padding:40px 12px;">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #cccccc;">'
     + '<tr><td style="padding:24px 38px 12px;">'
+    + top
     + (intro ? `<div style="font-size:14px;line-height:1.8;color:#555555;padding:16px 0 6px;">${intro}</div>` : '')
     + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`
     + '</td></tr>'

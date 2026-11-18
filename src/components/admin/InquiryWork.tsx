@@ -34,6 +34,12 @@ export function InquiryWork({ id, admins, assigneeId, memo: initialMemo, memoInf
   const [info, setInfo] = useState(initialInfo);
   const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  // 「対応済み」にチェックして担当者が自動で入ったとき（画面の再読み込みで assigneeId が変わる）、選択欄も合わせる
+  const [prevAssigneeId, setPrevAssigneeId] = useState(assigneeId);
+  if (assigneeId !== prevAssigneeId) {
+    setPrevAssigneeId(assigneeId);
+    setAssignee(assigneeId === null ? "" : String(assigneeId));
+  }
   const dirty = memo.trim() !== saved.trim();
   // 削除された管理者が担当のままの場合も、選択肢に出しておく
   const options = assigneeId !== null && !admins.some((a) => a.id === assigneeId) ? [...admins, { id: assigneeId, label: "（削除された管理者）" }] : admins;
