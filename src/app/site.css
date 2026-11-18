@@ -1956,14 +1956,17 @@ body:has(.admin-shell) #main { padding-top: 0 !important; }
 
 /* ---------- 管理者 ---------- */
 .adm-members { display: grid; margin: 0; padding: 0; list-style: none; }
-.adm-member { display: grid; grid-template-columns: auto minmax(0, 1.3fr) minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+/* 1段目：アイコン・名前とメール・利用状況（幅を固定して、どの行でも同じ位置にそろえる）／2段目：操作ボタン */
+.adm-member { display: grid; grid-template-columns: auto minmax(0, 1fr) 250px; grid-template-areas: "av info status" "av actions actions"; align-items: center; gap: 10px 16px; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .adm-member:last-child { border-bottom: 0; }
-.adm-member__avatar { width: 42px; height: 42px; font-size: 17px; }
+.adm-member__avatar { grid-area: av; align-self: start; width: 42px; height: 42px; font-size: 17px; }
+.adm-member__info { grid-area: info; }
+.adm-member__status { grid-area: status; }
 .adm-member__avatar.is-pending { background: #d7e0e6; color: var(--sub); }
 .adm-member__info, .adm-member__status { display: grid; min-width: 0; line-height: 1.5; }
 .adm-member__info strong { display: flex; align-items: center; gap: 8px; font-family: var(--f-head); font-size: 15px; color: var(--navy-dd); }
 .adm-member__info small, .adm-member__status small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--sub); }
-.adm-member__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.adm-member__actions { grid-area: actions; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
 .adm-you { padding: 1px 8px; border-radius: 999px; background: var(--teal-soft); color: var(--navy); font-family: var(--f-base); font-size: 11px; font-style: normal; font-weight: 700; }
 .adm-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
 .adm-status.is-ok { color: #12875a; }
@@ -2017,8 +2020,7 @@ body:has(.admin-shell) #main { padding-top: 0 !important; }
   .adm-inquiry__who { grid-column: 1 / -1; grid-row: 2; }
   .adm-inquiry__body > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .adm-handled { justify-self: start; }
-  .adm-member { grid-template-columns: auto minmax(0, 1fr); }
-  .adm-member__status, .adm-member__actions { grid-column: 2; justify-content: flex-start; }
+  .adm-member { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "av info" "av status" "av actions"; }
   .adm-invite { grid-template-columns: minmax(0, 1fr); }
   .adm-auth__card { padding: 32px 22px 26px; }
 }
