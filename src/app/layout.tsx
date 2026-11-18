@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Footer } from "@/components/site/Footer";
+import { GoogleAnalytics } from "@/components/site/GoogleAnalytics";
 import { Header } from "@/components/site/Header";
 import { SiteBehavior } from "@/components/site/SiteBehavior";
 import { SITE } from "@/lib/site";
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main id="main">{children}</main>
         <Footer />
         <SiteBehavior />
+        <GoogleAnalytics />
       </body>
     </html>
   );

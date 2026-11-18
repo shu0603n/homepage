@@ -79,6 +79,25 @@ export function Privacy() {
       <p>
         当社は、閲覧されたWebサイトのセキュリティ確保・ユーザーサービス向上のため、Cookieにより閲覧された方の情報を取得することがあります。
       </p>
+      {/* アクセス解析（Google アナリティクス／components/site/GoogleAnalytics.tsx）の利用について */}
+      <p>
+        また、本Webサイトでは、利用状況を把握してサイトの改善に役立てるため、Google LLCが提供するアクセス解析ツール「Googleアナリティクス」を利用しています。
+        Googleアナリティクスは、Cookieを使用して、閲覧されたページ、滞在時間、ご利用の端末・ブラウザの種類などのアクセス情報を、個人を特定しない形で収集します。収集された情報は、Google社のプライバシーポリシーに基づいて管理されます。
+        <br />
+        Cookieの利用はブラウザの設定で無効にすることができます。また、
+        <a href="https://tools.google.com/dlpage/gaoptout?hl=ja" target="_blank" rel="noopener">
+          Googleアナリティクス オプトアウト アドオン
+        </a>
+        を利用すると、Googleアナリティクスによる情報の収集を停止できます。詳しくは、
+        <a href="https://marketingplatform.google.com/about/analytics/terms/jp/" target="_blank" rel="noopener">
+          Googleアナリティクス利用規約
+        </a>
+        および
+        <a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener">
+          Googleのサービスを使用するサイトやアプリから収集した情報のGoogleによる使用
+        </a>
+        をご確認ください。
+      </p>
       <h4>【お問合せ窓口】</h4>
       <p>
         〒060-0042 北海道札幌市中央区大通西７丁目 井門札幌パークフロントビル 1F
