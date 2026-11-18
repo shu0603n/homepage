@@ -31,45 +31,60 @@ export function AdminUsers({ admins, selfId }: { admins: Admin[]; selfId: number
   }
 
   return (
-    <div className="admin-stack">
+    <div className="adm-stack">
       {message && (
-        <p className={`admin-alert ${message.ok ? "is-ok" : "is-ng"}`} role="status">
-          {message.text}
+        <p className={`adm-alert ${message.ok ? "is-ok" : "is-ng"}`} role="status">
+          <i className={`bi ${message.ok ? "bi-check-circle" : "bi-exclamation-circle"}`} aria-hidden="true" />
+          <span>{message.text}</span>
         </p>
       )}
-      <table className="admin-table admin-users">
-        <thead>
-          <tr>
-            <th>お名前</th>
-            <th>メールアドレス</th>
-            <th>状態</th>
-            <th>最後のログイン</th>
-            <th aria-label="操作" />
-          </tr>
-        </thead>
-        <tbody>
+
+      <section className="adm-card adm-card--wide">
+        <p className="adm-card__en">Members</p>
+        <h2 className="adm-card__title">
+          管理ページを使える人<small>{admins.length}名</small>
+        </h2>
+        <ul className="adm-members">
           {admins.map((a) => (
-            <tr key={a.id}>
-              <td>
-                {a.name ?? "—"}
-                {a.id === selfId && <span className="admin-you">あなた</span>}
-              </td>
-              <td>{a.email}</td>
-              <td>{a.active ? "利用中" : <span className="admin-pending">パスワード設定待ち</span>}</td>
-              <td>{a.lastLogin ?? "—"}</td>
-              <td className="admin-users__actions">
+            <li key={a.id} className="adm-member">
+              <span className={`adm-member__avatar${a.active ? "" : " is-pending"}`} aria-hidden="true">
+                {(a.name ?? a.email).slice(0, 1).toUpperCase()}
+              </span>
+              <span className="adm-member__info">
+                <strong>
+                  {a.name ?? "（お名前未登録）"}
+                  {a.id === selfId && <em className="adm-you">あなた</em>}
+                </strong>
+                <small>{a.email}</small>
+              </span>
+              <span className="adm-member__status">
+                {a.active ? (
+                  <span className="adm-status is-ok">
+                    <i className="bi bi-check-circle-fill" aria-hidden="true" />
+                    利用中
+                  </span>
+                ) : (
+                  <span className="adm-status is-wait">
+                    <i className="bi bi-hourglass-split" aria-hidden="true" />
+                    パスワード設定待ち
+                  </span>
+                )}
+                <small>最後のログイン：{a.lastLogin ?? "—"}</small>
+              </span>
+              <span className="adm-member__actions">
                 <button
                   type="button"
-                  className="admin-smallbtn"
+                  className="adm-chipbtn"
                   disabled={busy}
                   onClick={() => run(() => postJson(`/api/admin/users/${a.id}/`, {}), `${a.email} に、ご案内メールを送りました。`)}
                 >
-                  ご案内メールを送る
+                  <i className="bi bi-envelope" aria-hidden="true" />
+                  ご案内メール
                 </button>
                 {a.id !== selfId && (
                   <button
                     type="button"
-                    className="admin-smallbtn is-danger"
+                    className="adm-chipbtn is-danger"
                     disabled={busy}
                     onClick={() => {
                       if (confirm(`${a.name ?? a.email} さんを管理者から外しますか？（管理ページに入れなくなります）`)) {
@@ -77,31 +92,35 @@ export function AdminUsers({ admins, selfId }: { admins: Admin[]; selfId: number
                       }
                     }}
                   >
+                    <i className="bi bi-trash3" aria-hidden="true" />
                     削除
                   </button>
                 )}
-              </td>
-            </tr>
+              </span>
+            </li>
           ))}
-        </tbody>
-      </table>
+        </ul>
+      </section>
 
-      <form className="admin-form admin-adduser" onSubmit={onAdd}>
-        <h2 className="admin-h2">管理者を追加する</h2>
-        <div className="admin-adduser__row">
-          <label className="admin-field">
+      <section className="adm-card adm-card--wide">
+        <p className="adm-card__en">Invite</p>
+        <h2 className="adm-card__title">管理者を追加する</h2>
+        <p className="adm-card__help">追加した人に「パスワード設定のご案内」メールが届きます。</p>
+        <form className="adm-form adm-invite" onSubmit={onAdd}>
+          <label className="adm-field">
             <span>お名前</span>
             <input name="name" type="text" maxLength={100} placeholder="例：山田 花子" required />
           </label>
-          <label className="admin-field">
+          <label className="adm-field">
             <span>メールアドレス</span>
             <input name="email" type="email" placeholder="例：h_yamada@emorislink.co.jp" required />
           </label>
-          <button className="admin-btn" type="submit" disabled={busy}>
+          <button className="adm-btn" type="submit" disabled={busy}>
+            <i className="bi bi-send" aria-hidden="true" />
             追加してご案内メールを送る
           </button>
-        </div>
-      </form>
+        </form>
+      </section>
     </div>
   );
 }

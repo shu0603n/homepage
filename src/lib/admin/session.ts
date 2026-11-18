@@ -17,7 +17,7 @@ function secretKey(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-export type AdminSession = { id: number; email: string; weak: boolean };
+export type AdminSession = { id: number; email: string; name: string | null; weak: boolean };
 
 export async function createAdminSession(admin: { id: number; email: string; pwd_version: number }, weak: boolean): Promise<void> {
   const token = await new SignJWT({ email: admin.email, pwd: admin.pwd_version, weak })
@@ -52,7 +52,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     if (!Number.isInteger(id) || typeof payload.pwd !== "number") return null;
     const admin = await findAdminById(id);
     if (!admin || admin.pwd_version !== payload.pwd) return null;
-    return { id, email: admin.email, weak: payload.weak === true };
+    return { id, email: admin.email, name: admin.name, weak: payload.weak === true };
   } catch {
     return null;
   }

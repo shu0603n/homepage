@@ -25,25 +25,25 @@ export function AdminSetupForm({ token, min }: { token: string; min: number }) {
 
   const type = show ? "text" : "password";
   return (
-    <form className="admin-form" onSubmit={onSubmit}>
+    <form className="adm-form" onSubmit={onSubmit}>
       {message && (
-        <p className="admin-alert is-ng" role="alert">
+        <p className="adm-alert is-ng" role="alert">
           {message}
         </p>
       )}
-      <label className="admin-field">
+      <label className="adm-field">
         <span>パスワード</span>
         <input key={`p${show}`} type={type} name="password" autoComplete="new-password" minLength={min} required />
       </label>
-      <label className="admin-field">
+      <label className="adm-field">
         <span>パスワード（確認）</span>
         <input key={`p2${show}`} type={type} name="password2" autoComplete="new-password" minLength={min} required />
       </label>
-      <label className="admin-check">
+      <label className="adm-check">
         <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
         入力したパスワードを表示する
       </label>
-      <button className="admin-btn" type="submit" disabled={busy}>
+      <button className="adm-btn adm-btn--block" type="submit" disabled={busy}>
         {busy ? "設定しています…" : "パスワードを設定してログイン"}
       </button>
     </form>

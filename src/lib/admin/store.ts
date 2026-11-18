@@ -190,6 +190,12 @@ export async function listInquiries(limit = 300): Promise<InquiryRow[]> {
     FROM hp_inquiry ORDER BY created_at DESC LIMIT ${limit}`;
 }
 
+export async function countUnhandledInquiries(): Promise<number> {
+  await ensureAdminTables();
+  const rows = await prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM hp_inquiry WHERE handled = false`;
+  return rows[0]?.n ?? 0;
+}
+
 export async function setInquiryHandled(id: number, handled: boolean): Promise<boolean> {
   await ensureAdminTables();
   const n = await prisma.$executeRaw`UPDATE hp_inquiry SET handled = ${handled} WHERE id = ${id}`;

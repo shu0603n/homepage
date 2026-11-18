@@ -27,29 +27,29 @@ export function AdminPasswordForm({ min }: { min: number }) {
 
   const type = show ? "text" : "password";
   return (
-    <form className="admin-form" onSubmit={onSubmit}>
+    <form className="adm-form" onSubmit={onSubmit}>
       {message && (
-        <p className={`admin-alert ${message.ok ? "is-ok" : "is-ng"}`} role="status">
+        <p className={`adm-alert ${message.ok ? "is-ok" : "is-ng"}`} role="status">
           {message.text}
         </p>
       )}
-      <label className="admin-field">
+      <label className="adm-field">
         <span>今のパスワード</span>
         <input key={`c${show}`} type={type} name="current" autoComplete="current-password" required />
       </label>
-      <label className="admin-field">
+      <label className="adm-field">
         <span>新しいパスワード</span>
         <input key={`n${show}`} type={type} name="next" autoComplete="new-password" minLength={min} required />
       </label>
-      <label className="admin-field">
+      <label className="adm-field">
         <span>新しいパスワード（確認）</span>
         <input key={`n2${show}`} type={type} name="next2" autoComplete="new-password" minLength={min} required />
       </label>
-      <label className="admin-check">
+      <label className="adm-check">
         <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
         入力したパスワードを表示する
       </label>
-      <button className="admin-btn" type="submit" disabled={busy}>
+      <button className="adm-btn adm-btn--block" type="submit" disabled={busy}>
         {busy ? "変更しています…" : "パスワードを変更する"}
       </button>
     </form>

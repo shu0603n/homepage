@@ -22,21 +22,21 @@ export function AdminLoginForm() {
   }
 
   return (
-    <form className="admin-form" onSubmit={onSubmit}>
+    <form className="adm-form" onSubmit={onSubmit}>
       {message && (
-        <p className="admin-alert is-ng" role="alert">
+        <p className="adm-alert is-ng" role="alert">
           {message}
         </p>
       )}
-      <label className="admin-field">
+      <label className="adm-field">
         <span>メールアドレス</span>
         <input type="email" name="email" autoComplete="username" required />
       </label>
-      <label className="admin-field">
+      <label className="adm-field">
         <span>パスワード</span>
         <input type="password" name="password" autoComplete="current-password" required />
       </label>
-      <button className="admin-btn" type="submit" disabled={busy}>
+      <button className="adm-btn adm-btn--block" type="submit" disabled={busy}>
         {busy ? "確認中…" : "ログイン"}
       </button>
     </form>

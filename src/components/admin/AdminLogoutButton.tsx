@@ -6,12 +6,13 @@ export function AdminLogoutButton() {
   return (
     <button
       type="button"
-      className="admin-linkbtn"
+      className="adm-logout"
       onClick={async () => {
         await postJson("/api/admin/logout/", {});
         window.location.assign("/admin/login/");
       }}
     >
+      <i className="bi bi-box-arrow-right" aria-hidden="true" />
       ログアウト
     </button>
   );

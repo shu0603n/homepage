@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { SETUP_HOURS } from "@/lib/admin/invite";
 import { getAdminSession } from "@/lib/admin/session";
@@ -15,21 +15,17 @@ export default async function AdminUsersPage() {
   if (!session) redirect("/admin/login/");
   const admins = await listAdmins();
   return (
-    <>
-      <AdminHeader email={session.email} />
-      <main className="admin-main">
-        <h1 className="admin-h1">管理者</h1>
-        <div className="admin-card">
-          <p className="admin-help">
-            管理ページを使える人の一覧です。追加すると、その人に「パスワード設定のご案内」メールが届き、本人がリンクからパスワードを決めます（リンクの有効期限は{SETUP_HOURS}時間）。
-            パスワードを忘れた人がいたら「ご案内メールを送る」を押してください。
-          </p>
-          <AdminUsers
-            selfId={session.id}
-            admins={admins.map((a) => ({ id: a.id, email: a.email, name: a.name, active: a.has_password, lastLogin: dateTime(a.last_login_at) }))}
-          />
-        </div>
-      </main>
-    </>
+    <AdminShell
+      session={session}
+      active="users"
+      en="Members"
+      title="管理者"
+      lead={`管理ページを使える人の一覧です。追加すると「パスワード設定のご案内」メールが届き、本人がリンクからパスワードを決めます（有効期限${SETUP_HOURS}時間）。パスワードを忘れた人がいたら「ご案内メール」を押してください。`}
+    >
+      <AdminUsers
+        selfId={session.id}
+        admins={admins.map((a) => ({ id: a.id, email: a.email, name: a.name, active: a.has_password, lastLogin: dateTime(a.last_login_at) }))}
+      />
+    </AdminShell>
   );
 }

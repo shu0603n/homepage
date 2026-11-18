@@ -9,7 +9,7 @@ export function InquiryHandledToggle({ id, handled }: { id: number; handled: boo
   const [checked, setChecked] = useState(handled);
   const [busy, setBusy] = useState(false);
   return (
-    <label className="admin-handled">
+    <label className="adm-handled">
       <input
         type="checkbox"
         checked={checked}
