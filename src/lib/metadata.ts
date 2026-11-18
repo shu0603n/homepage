@@ -25,15 +25,23 @@ export function pageDescription(meta: PageMeta): string {
   return meta.description || SITE.defaultDescription;
 }
 
+// SNS・LINE などで共有したときに出る画像。全ページ共通のロゴ入り画像（1200×630）を使う。
+// ページごとに変えたいときだけ、そのページの meta に ogImage を書く
+const OGP_IMAGE = { file: "ogp.jpg", width: 1200, height: 630 } as const;
+
 export function pageImage(meta: PageMeta): string {
-  return `${SITE.siteUrl}/assets/img/${meta.ogImage || meta.hero?.img || "contact-bg.jpg"}`;
+  return `${SITE.siteUrl}/assets/img/${meta.ogImage || OGP_IMAGE.file}`;
+}
+
+function ogImages(meta: PageMeta) {
+  const url = pageImage(meta);
+  return meta.ogImage ? [{ url, alt: SITE.siteName }] : [{ url, width: OGP_IMAGE.width, height: OGP_IMAGE.height, alt: SITE.siteName }];
 }
 
 export function buildMetadata(route: string, meta: PageMeta): Metadata {
   const title = pageTitle(meta);
   const description = pageDescription(meta);
   const url = `${SITE.siteUrl}/${route}`;
-  const image = pageImage(meta);
   return {
     title: { absolute: title },
     description,
@@ -45,8 +53,8 @@ export function buildMetadata(route: string, meta: PageMeta): Metadata {
       title,
       description,
       url,
-      images: [image],
+      images: ogImages(meta),
     },
-    twitter: { card: "summary_large_image", title, description, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: ogImages(meta) },
   };
 }
