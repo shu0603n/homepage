@@ -3,7 +3,7 @@
 export const SITE = {
   siteName: "株式会社エモリスリンク",
   siteUrl: "https://www.emorislink.co.jp", // 正規の入口は www あり（www なしはエックスサーバー側で www へ転送）
-  gaMeasurementId: "G-9X8WDKWNDL", // Google アナリティクス（GA4）の測定 ID。空にすると計測しない
+  gtmContainerId: "GTM-P7Z2LF3T", // Google タグ マネージャーのコンテナ ID（GA4 G-9X8WDKWNDL は GTM の中で設定）。空にすると読み込まない
   defaultDescription:
     "株式会社エモリスリンクは、札幌を拠点に人材派遣・人材紹介・SES・システム開発・Web制作を通じて、人と企業をつなぐ架け橋となることを目指しています。",
   defaultTitle: "株式会社エモリスリンク | 札幌の人材派遣・人材紹介・SES・システム開発・Web制作",

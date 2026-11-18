@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Footer } from "@/components/site/Footer";
-import { GoogleAnalytics } from "@/components/site/GoogleAnalytics";
+import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/site/GoogleTagManager";
 import { Header } from "@/components/site/Header";
 import { SiteBehavior } from "@/components/site/SiteBehavior";
 import { SITE } from "@/lib/site";
@@ -42,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
       </head>
       <body id="top" suppressHydrationWarning>
+        <GoogleTagManagerNoScript />
         <a className="skip-link" href="#main">
           本文へスキップ
         </a>
@@ -49,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main id="main">{children}</main>
         <Footer />
         <SiteBehavior />
-        <GoogleAnalytics />
+        <GoogleTagManager />
       </body>
     </html>
   );
