@@ -2022,3 +2022,14 @@ body:has(.admin-shell) #main { padding-top: 0 !important; }
   .adm-invite { grid-template-columns: minmax(0, 1fr); }
   .adm-auth__card { padding: 32px 22px 26px; }
 }
+
+/* 管理者の権限（特級・一般）のしるし */
+.adm-role { padding: 1px 9px; border-radius: 999px; font-family: var(--f-base); font-size: 11px; font-style: normal; font-weight: 700; line-height: 1.7; white-space: nowrap; }
+.adm-role--super { background: linear-gradient(120deg, #ffe3a3, #ffc46b); color: #6b4300; }
+.adm-role--staff { background: #e7edf1; color: var(--sub); }
+.adm-me__text strong { display: flex; align-items: center; gap: 6px; }
+.adm-me .adm-role--staff { background: rgba(255, 255, 255, .15); color: rgba(255, 255, 255, .8); }
+.adm-member__info strong { flex-wrap: wrap; }
+.adm-summary__update { position: relative; display: flex; gap: 8px; max-width: 900px; margin: 16px 0 0; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .14); font-size: 12px; line-height: 1.7; color: rgba(255, 255, 255, .72); }
+.adm-summary__update .bi { flex: 0 0 auto; margin-top: 2px; }
+.adm-note { display: flex; align-items: center; gap: 8px; margin: 0; padding: 14px 18px; border-radius: 14px; background: #fff; box-shadow: var(--shadow-s); font-size: 13px; color: var(--sub); }

@@ -18,7 +18,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const session = await getAdminSession().catch(() => null);
   if (!session) redirect("/admin/login/");
   const params = await searchParams;
-  const tab = (params.tab && params.tab in TABS ? params.tab : "access") as keyof typeof TABS;
+  // 計測タグは特級の管理者だけ（一般の管理者が URL で開いても、アクセス状況を出す）
+  const asked = params.tab && params.tab in TABS ? (params.tab as keyof typeof TABS) : "access";
+  const tab = asked === "tags" && session.role !== "super" ? "access" : asked;
   const head = TABS[tab];
 
   const inquiries =

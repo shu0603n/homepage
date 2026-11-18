@@ -20,11 +20,12 @@ export default async function AdminUsersPage() {
       active="users"
       en="Members"
       title="管理者"
-      lead={`管理ページを使える人の一覧です。追加すると「パスワード設定のご案内」メールが届き、本人がリンクからパスワードを決めます（有効期限${SETUP_HOURS}時間）。パスワードを忘れた人がいたら「ご案内メール」を押してください。`}
+      lead={`管理ページを使える人の一覧です。特級の管理者が追加すると「パスワード設定のご案内」メールが届き、本人がリンクからパスワードを決めます（有効期限${SETUP_HOURS}時間）。パスワードを忘れた人がいたら「ご案内メール」を押してください。`}
     >
       <AdminUsers
         selfId={session.id}
-        admins={admins.map((a) => ({ id: a.id, email: a.email, name: a.name, active: a.has_password, lastLogin: dateTime(a.last_login_at) }))}
+        selfRole={session.role}
+        admins={admins.map((a) => ({ id: a.id, email: a.email, name: a.name, role: a.role, active: a.has_password, lastLogin: dateTime(a.last_login_at) }))}
       />
     </AdminShell>
   );

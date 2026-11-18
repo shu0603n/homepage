@@ -6,11 +6,12 @@ import { getAdminSession } from "@/lib/admin/session";
 import { deleteAdmin, findAdminById, insertAdmin } from "@/lib/admin/store";
 import { isMailConfigured } from "@/lib/mail";
 
-// 管理者の追加。追加した人に「パスワード設定のご案内」メールを送り、本人がリンクからパスワードを決める
+// 管理者の追加（特級の管理者だけができる）。追加した人に「パスワード設定のご案内」メールを送り、本人がリンクからパスワードを決める
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return jsonError("不正なリクエストです。", 403);
   const session = await getAdminSession();
   if (!session) return jsonError("ログインが必要です。", 401);
+  if (session.role !== "super") return jsonError("管理者を追加できるのは、特級の管理者だけです。", 403);
 
   const body = (await readJson(request)) as { email?: unknown; name?: unknown } | null;
   const email = normalizeEmail(body?.email);

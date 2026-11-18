@@ -41,7 +41,14 @@ export const ADMIN_TABLES_SQL = [
     created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX IF NOT EXISTS hp_inquiry_created_at_idx ON hp_inquiry (created_at DESC)`,
+  // 権限（2026-11-18 追加）：super＝特級（計測タグの閲覧・権限の変更ができる）、staff＝一般。この表（hp_ で始まる管理ページ専用の表）にだけ列を足す
+  `ALTER TABLE hp_admin_user ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'staff'`,
+  // 特級が1人もいなければ、最初の管理者（環境変数から作った人＝追加者がいない人）を特級にする
+  `UPDATE hp_admin_user SET role = 'super' WHERE created_by IS NULL AND NOT EXISTS (SELECT 1 FROM hp_admin_user WHERE role = 'super')`,
 ];
+
+export type AdminRole = "super" | "staff";
+export const ROLE_NAMES: Record<AdminRole, string> = { super: "特級", staff: "一般" };
 
 let ready: Promise<void> | null = null;
 
@@ -74,12 +81,13 @@ export type AdminRow = {
   pwd_version: number; // パスワードを最後に変えた日時（マイクロ秒の数値。ログイン状態・ご案内リンクの照合に使う）
   failed_count: number;
   locked_until: Date | null;
+  role: AdminRole;
 };
 
 export async function findAdminByEmail(email: string): Promise<AdminRow | null> {
   await ensureAdminTables();
   const rows = await prisma.$queryRaw<AdminRow[]>`
-    SELECT id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until
+    SELECT id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until, role
     FROM hp_admin_user WHERE lower(email) = lower(${email}) LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -87,7 +95,7 @@ export async function findAdminByEmail(email: string): Promise<AdminRow | null> 
 export async function findAdminById(id: number): Promise<AdminRow | null> {
   await ensureAdminTables();
   const rows = await prisma.$queryRaw<AdminRow[]>`
-    SELECT id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until
+    SELECT id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until, role
     FROM hp_admin_user WHERE id = ${id} LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -102,8 +110,8 @@ export async function countAdmins(): Promise<number> {
 export async function insertFirstAdmin(email: string, passwordHash: string, name: string | null): Promise<void> {
   await ensureAdminTables();
   await prisma.$executeRaw`
-    INSERT INTO hp_admin_user (email, name, password_hash)
-    SELECT ${email}, ${name}, ${passwordHash}
+    INSERT INTO hp_admin_user (email, name, password_hash, role)
+    SELECT ${email}, ${name}, ${passwordHash}, 'super'
     WHERE NOT EXISTS (SELECT 1 FROM hp_admin_user)
     ON CONFLICT (email) DO NOTHING`;
 }
@@ -130,12 +138,12 @@ export async function updateAdminPassword(id: number, passwordHash: string): Pro
 // パスワードがまだ無い（招待メールのリンクから設定する前の）管理者に入れておく値。scrypt$ で始まらないので、どのパスワードでも一致しない
 export const NO_PASSWORD = "!unset";
 
-export type AdminListRow = { id: number; email: string; name: string | null; has_password: boolean; last_login_at: Date | null; created_at: Date };
+export type AdminListRow = { id: number; email: string; name: string | null; role: AdminRole; has_password: boolean; last_login_at: Date | null; created_at: Date };
 
 export async function listAdmins(): Promise<AdminListRow[]> {
   await ensureAdminTables();
   return prisma.$queryRaw<AdminListRow[]>`
-    SELECT id, email, name, (password_hash <> ${NO_PASSWORD}) AS has_password, last_login_at, created_at
+    SELECT id, email, name, role, (password_hash <> ${NO_PASSWORD}) AS has_password, last_login_at, created_at
     FROM hp_admin_user ORDER BY id`;
 }
 
@@ -146,8 +154,14 @@ export async function insertAdmin(email: string, name: string, createdBy: number
     INSERT INTO hp_admin_user (email, name, password_hash, created_by)
     VALUES (${email}, ${name}, ${NO_PASSWORD}, ${createdBy})
     ON CONFLICT (email) DO NOTHING
-    RETURNING id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until`;
+    RETURNING id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until, role`;
   return rows[0] ?? null;
+}
+
+export async function setAdminRole(id: number, role: AdminRole): Promise<boolean> {
+  await ensureAdminTables();
+  const n = await prisma.$executeRaw`UPDATE hp_admin_user SET role = ${role} WHERE id = ${id}`;
+  return n > 0;
 }
 
 export async function deleteAdmin(id: number): Promise<boolean> {

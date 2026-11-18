@@ -2,16 +2,17 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import type { AdminSession } from "@/lib/admin/session";
-import { countUnhandledInquiries } from "@/lib/admin/store";
+import { countUnhandledInquiries, ROLE_NAMES } from "@/lib/admin/store";
 
 // 管理ページの外枠：左にサイトと同じネイビーのメニュー（ロゴ・各ページ・ログイン中の人）、右に本文。
 // 本文の見出しは、ホームページと同じ「英字の小見出し＋日本語の大見出し」の形
 export type AdminNavKey = "access" | "search" | "tags" | "inquiries" | "users" | "password";
 
-const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group: "data" | "work" | "account" }[] = [
+// superOnly：特級の管理者にだけ出す項目（一般の管理者には、メニューに出さず、開いても見られない）
+const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group: "data" | "work" | "account"; superOnly?: boolean }[] = [
   { key: "access", href: "/admin/?tab=access", label: "アクセス状況", icon: "bi-graph-up-arrow", group: "data" },
   { key: "search", href: "/admin/?tab=search", label: "検索での見え方", icon: "bi-search", group: "data" },
-  { key: "tags", href: "/admin/?tab=tags", label: "計測タグ", icon: "bi-tags", group: "data" },
+  { key: "tags", href: "/admin/?tab=tags", label: "計測タグ", icon: "bi-tags", group: "data", superOnly: true },
   { key: "inquiries", href: "/admin/?tab=inquiries", label: "お問い合わせ", icon: "bi-envelope-paper", group: "work" },
   { key: "users", href: "/admin/users/", label: "管理者", icon: "bi-people", group: "account" },
   { key: "password", href: "/admin/password/", label: "パスワード変更", icon: "bi-key", group: "account" },
@@ -49,7 +50,7 @@ export async function AdminShell({
           {GROUPS.map(([group, label]) => (
             <div key={group} className="adm-nav__group">
               <p className="adm-nav__label">{label}</p>
-              {NAV.filter((n) => n.group === group).map((n) => (
+              {NAV.filter((n) => n.group === group && (!n.superOnly || session.role === "super")).map((n) => (
                 <Link key={n.key} href={n.href} className={`adm-nav__item${active === n.key ? " is-active" : ""}`} aria-current={active === n.key ? "page" : undefined}>
                   <i className={`bi ${n.icon}`} aria-hidden="true" />
                   <span>{n.label}</span>
@@ -73,7 +74,10 @@ export async function AdminShell({
               {(session.name ?? session.email).slice(0, 1).toUpperCase()}
             </span>
             <span className="adm-me__text">
-              <strong>{session.name ?? "管理者"}</strong>
+              <strong>
+                {session.name ?? "管理者"}
+                <em className={`adm-role adm-role--${session.role}`}>{ROLE_NAMES[session.role]}</em>
+              </strong>
               <small>{session.email}</small>
             </span>
           </div>
