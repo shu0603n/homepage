@@ -550,6 +550,14 @@ export async function GtmPanel() {
 
 // ---------- お問い合わせ ----------
 
+// 一覧に出す本文の冒頭（改行や空白はまとめ、50文字を超えたら「…」）。全文は開いたときに出す
+const EXCERPT_CHARS = 50;
+function excerpt(message: string | null): string {
+  const text = (message ?? '').split(/[\s　]+/).filter(Boolean).join(' ');
+  const chars = [...text];
+  return chars.length > EXCERPT_CHARS ? `${chars.slice(0, EXCERPT_CHARS).join('')}…` : text;
+}
+
 const FORM_NAMES = { employers: '企業担当者様', seekers: 'お仕事をお探しの方' } as const;
 const FILTERS = [
   ['', 'すべて'],
@@ -638,7 +646,7 @@ export function InquiriesPanel({
                       メモあり
                     </span>
                   )}
-                  <span className="adm-inquiry__excerpt">{(i.message ?? '').slice(0, 80)}</span>
+                  <span className="adm-inquiry__excerpt">{excerpt(i.message)}</span>
                 </summary>
                 <dl className="adm-inquiry__body">
                   {(

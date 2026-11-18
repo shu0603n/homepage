@@ -2224,3 +2224,6 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 @media (max-width: 640px) {
   .adm-favlist { position: sticky; left: 0; width: calc(100vw - 32px - 36px - 24px); max-width: 100%; box-sizing: border-box; }
 }
+
+/* お問い合わせ一覧：「企業担当者様」「お仕事をお探しの方」のしるしを同じ幅にして、名前の始まる位置をそろえる */
+.adm-inquiry summary .adm-pill { box-sizing: border-box; width: 11.6em; text-align: center; }
