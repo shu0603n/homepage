@@ -2001,7 +2001,7 @@ body:has(.admin-shell) #main { padding-top: 0 !important; }
   .adm-nav__item { flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; font-size: 13px; }
   .adm-nav__item.is-active::before { display: none; }
   .adm-side__foot { order: 2; margin-left: auto; display: flex; align-items: center; gap: 10px; padding: 0; border: 0; }
-  .adm-side__site, .adm-me { display: none; }
+  .adm-side__site { display: none; }
   .adm-logout { padding: 6px 12px; font-size: 12px; }
   .adm-body { padding: 24px 16px 56px; }
 }
@@ -2056,4 +2056,38 @@ body:has(.admin-shell) #main { padding-top: 0 !important; }
   .adm-inquiry__assignee, .adm-inquiry__hasmemo { justify-self: start; }
   .adm-work { padding: 14px; }
   .adm-work__assignee { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+}
+
+/* ログイン中の人のカード（押すと「管理者」「パスワード変更」の小窓が開く） */
+.adm-me-wrap { position: relative; }
+button.adm-me { width: 100%; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; transition: background .2s, box-shadow .2s; }
+button.adm-me:hover { background: rgba(255, 255, 255, .13); }
+.adm-me.is-current, .adm-me-wrap.is-open .adm-me { background: rgba(255, 255, 255, .14); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
+.adm-me__text { flex: 1; }
+.adm-me__chev { flex: 0 0 auto; font-size: 14px; color: rgba(255, 255, 255, .55); }
+.adm-menu {
+  position: absolute; left: 0; right: 0; bottom: calc(100% + 10px); z-index: 30; display: grid; gap: 4px; padding: 10px;
+  border-radius: 16px; background: #fff; color: var(--ink); box-shadow: 0 24px 50px -18px rgba(0, 20, 30, .55), 0 0 0 1px rgba(0, 54, 81, .08);
+  animation: admMenuIn .18s var(--ease);
+}
+@keyframes admMenuIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.adm-menu__head { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; padding: 6px 8px 12px; border-bottom: 1px solid var(--line); }
+.adm-menu__head > span:last-child { display: grid; min-width: 0; line-height: 1.4; }
+.adm-menu__head strong { font-family: var(--f-head); font-size: 14px; color: var(--navy-dd); }
+.adm-menu__head small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--sub); }
+.adm-menu__item { display: flex; align-items: center; gap: 12px; padding: 10px 10px; border-radius: 10px; color: var(--navy-dd) !important; text-decoration: none; transition: background .2s; }
+.adm-menu__item:hover { background: var(--teal-soft); }
+.adm-menu__item.is-active { background: var(--bg-soft); box-shadow: inset 3px 0 0 var(--teal); }
+.adm-menu__item > .bi { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, rgba(58, 175, 185, .16), rgba(0, 73, 104, .12)); color: var(--navy); font-size: 15px; }
+.adm-menu__item > span { display: grid; line-height: 1.45; }
+.adm-menu__item strong { font-family: var(--f-head); font-size: 14px; }
+.adm-menu__item small { font-size: 11px; color: var(--sub); }
+@media (max-width: 960px) {
+  .adm-side__foot .adm-me { display: flex; width: auto; padding: 0; border-radius: 50%; background: none; box-shadow: none; }
+  .adm-side__foot .adm-me .adm-me__text, .adm-side__foot .adm-me .adm-me__chev { display: none; }
+  .adm-side__foot .adm-me .adm-me__avatar { width: 34px; height: 34px; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
+  .adm-me-wrap.is-open .adm-me .adm-me__avatar, .adm-me.is-current .adm-me__avatar { box-shadow: 0 0 0 3px #fff; }
+  .adm-side__foot { position: relative; }
+  .adm-me-wrap { position: static; }
+  .adm-menu { left: auto; right: 0; bottom: auto; top: calc(100% + 10px); width: min(300px, calc(100vw - 32px)); }
 }

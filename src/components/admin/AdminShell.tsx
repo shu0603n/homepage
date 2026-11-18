@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
+import { AdminMeMenu } from "@/components/admin/AdminMeMenu";
 import type { AdminSession } from "@/lib/admin/session";
 import { countUnhandledInquiries, ROLE_NAMES } from "@/lib/admin/store";
 
@@ -8,19 +9,17 @@ import { countUnhandledInquiries, ROLE_NAMES } from "@/lib/admin/store";
 // 本文の見出しは、ホームページと同じ「英字の小見出し＋日本語の大見出し」の形
 export type AdminNavKey = "access" | "search" | "tags" | "inquiries" | "users" | "password";
 
+// 「管理者」「パスワード変更」は左のメニューには置かず、ログイン中の人のカードを押すと開く小窓（AdminMeMenu）に入れる。
 // superOnly：特級の管理者にだけ出す項目（一般の管理者には、メニューに出さず、開いても見られない）
-const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group: "data" | "work" | "account"; superOnly?: boolean }[] = [
+const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group: "data" | "work"; superOnly?: boolean }[] = [
   { key: "access", href: "/admin/?tab=access", label: "アクセス状況", icon: "bi-graph-up-arrow", group: "data" },
   { key: "search", href: "/admin/?tab=search", label: "検索での見え方", icon: "bi-search", group: "data" },
   { key: "tags", href: "/admin/?tab=tags", label: "計測タグ", icon: "bi-tags", group: "data", superOnly: true },
   { key: "inquiries", href: "/admin/?tab=inquiries", label: "お問い合わせ", icon: "bi-envelope-paper", group: "work" },
-  { key: "users", href: "/admin/users/", label: "管理者", icon: "bi-people", group: "account" },
-  { key: "password", href: "/admin/password/", label: "パスワード変更", icon: "bi-key", group: "account" },
 ];
 const GROUPS = [
   ["data", "データ"],
   ["work", "お仕事"],
-  ["account", "アカウント"],
 ] as const;
 
 export async function AdminShell({
@@ -69,18 +68,13 @@ export async function AdminShell({
             <i className="bi bi-box-arrow-up-right" aria-hidden="true" />
             サイトを見る
           </a>
-          <div className="adm-me">
-            <span className="adm-me__avatar" aria-hidden="true">
-              {(session.name ?? session.email).slice(0, 1).toUpperCase()}
-            </span>
-            <span className="adm-me__text">
-              <strong>
-                {session.name ?? "管理者"}
-                <em className={`adm-role adm-role--${session.role}`}>{ROLE_NAMES[session.role]}</em>
-              </strong>
-              <small>{session.email}</small>
-            </span>
-          </div>
+          <AdminMeMenu
+            name={session.name}
+            email={session.email}
+            role={session.role}
+            roleLabel={ROLE_NAMES[session.role]}
+            current={active === "users" || active === "password" ? active : null}
+          />
           <AdminLogoutButton />
         </div>
       </aside>
