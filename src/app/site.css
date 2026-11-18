@@ -2164,3 +2164,34 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .adm-favusers li span { display: flex; flex-wrap: wrap; gap: 2px 12px; }
 .adm-favusers li small { color: var(--sub); }
 .adm-favusers__more { color: var(--sub); }
+
+/* アイコンの拡大カード（きらびやか版）：ネイビーの上半分にブランドの帯と星、回る4色の輪、開くときの光の筋 */
+.adm-zoom__box { position: relative; display: grid; justify-items: center; gap: 0; width: min(360px, 92vw); margin: 0; padding: 0 24px 28px; overflow: hidden; border-radius: 28px; background: #fff; box-shadow: 0 40px 90px -30px rgba(0, 20, 30, .8), 0 0 0 1px rgba(255, 255, 255, .5); animation: admZoomPop .55s cubic-bezier(.2, 1.35, .4, 1); }
+@keyframes admZoomPop { from { opacity: 0; transform: translateY(18px) scale(.86); } to { opacity: 1; transform: none; } }
+.adm-zoom__stage { position: absolute; inset: 0 0 auto 0; height: 168px; overflow: hidden; background: radial-gradient(120% 90% at 20% 0%, #0f6a8f 0%, var(--navy) 45%, var(--navy-dd) 100%); }
+.adm-zoom__stripe { position: absolute; left: -20%; right: -20%; top: 62%; height: 22px; background: var(--grad); transform: rotate(-10deg); box-shadow: 0 0 28px rgba(255, 111, 177, .55); opacity: .95; }
+.adm-zoom__stripe::after { content: ""; position: absolute; left: 0; right: 0; top: 30px; height: 6px; background: var(--grad); opacity: .45; }
+.adm-zoom__spark { position: absolute; color: #fff; font-size: 12px; line-height: 1; text-shadow: 0 0 8px rgba(255, 255, 255, .9); animation: admTwinkle 2.4s ease-in-out infinite; }
+.adm-zoom__spark--0 { left: 10%; top: 18%; font-size: 14px; animation-delay: 0s; }
+.adm-zoom__spark--1 { left: 24%; top: 44%; font-size: 9px; animation-delay: .5s; color: #ffd66b; }
+.adm-zoom__spark--2 { left: 6%; top: 70%; font-size: 10px; animation-delay: 1.1s; }
+.adm-zoom__spark--3 { right: 9%; top: 16%; font-size: 16px; animation-delay: .3s; color: #ffd66b; }
+.adm-zoom__spark--4 { right: 22%; top: 40%; font-size: 9px; animation-delay: .9s; }
+.adm-zoom__spark--5 { right: 6%; top: 66%; font-size: 12px; animation-delay: 1.5s; color: #ffb6d6; }
+.adm-zoom__spark--6 { left: 40%; top: 10%; font-size: 8px; animation-delay: 1.8s; }
+.adm-zoom__spark--7 { right: 38%; top: 8%; font-size: 10px; animation-delay: .7s; color: #bff0ff; }
+.adm-zoom__spark--8 { left: 48%; top: 52%; font-size: 7px; animation-delay: 1.3s; }
+@keyframes admTwinkle { 0%, 100% { opacity: .15; transform: scale(.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(20deg); } }
+.adm-zoom__brand { position: relative; margin: 20px 0 14px; font-family: var(--f-en); font-size: 11px; font-weight: 600; letter-spacing: .32em; color: rgba(255, 255, 255, .85); }
+.adm-zoom__avatar { position: relative; display: grid; place-items: center; width: min(220px, 62vw); aspect-ratio: 1; }
+.adm-zoom__ring { position: absolute; inset: -9px; border-radius: 50%; background: conic-gradient(from 0deg, var(--pink), var(--orange), var(--green), var(--blue), var(--pink)); filter: drop-shadow(0 0 16px rgba(255, 111, 177, .45)); animation: admSpin 6s linear infinite; }
+@keyframes admSpin { to { transform: rotate(360deg); } }
+.adm-zoom__box .adm-zoom__avatar img { position: relative; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 6px solid #fff; box-shadow: 0 14px 30px -12px rgba(0, 30, 45, .55); }
+.adm-zoom__box figcaption { display: grid; justify-items: center; gap: 8px; margin-top: 18px; text-align: center; }
+.adm-zoom__name { font-family: var(--f-head); font-size: 24px; font-weight: 900; letter-spacing: .06em; color: var(--navy-dd); background: linear-gradient(var(--pink), var(--pink)) no-repeat; background-image: var(--grad); background-size: 100% 4px; background-position: 0 100%; padding-bottom: 6px; }
+.adm-zoom__mail { font-size: 12px; color: var(--sub); }
+.adm-zoom__box--super .adm-role--super { box-shadow: 0 0 0 2px #fff, 0 0 16px rgba(255, 196, 107, .9); }
+.adm-zoom__shine { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .6) 50%, transparent 62%); transform: translateX(-120%); animation: admShine 1.3s .35s ease-out forwards; }
+@keyframes admShine { to { transform: translateX(120%); } }
+.adm-zoom__box .adm-zoom__close { top: 12px; right: 12px; z-index: 2; background: rgba(255, 255, 255, .14); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
+.adm-zoom__box .adm-zoom__close:hover { background: rgba(255, 255, 255, .28); }

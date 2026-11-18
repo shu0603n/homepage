@@ -25,7 +25,7 @@ export function AdminUsers({ admins, selfId, selfRole }: { admins: Admin[]; self
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   // アイコンを押したときに大きく見せる画像（null のときは閉じている）。Esc キーでも閉じる
-  const [zoom, setZoom] = useState<{ url: string; name: string } | null>(null);
+  const [zoom, setZoom] = useState<{ url: string; name: string; email: string; role: AdminRole } | null>(null);
   useEffect(() => {
     if (!zoom) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setZoom(null);
@@ -57,11 +57,29 @@ export function AdminUsers({ admins, selfId, selfRole }: { admins: Admin[]; self
 
   return (
     <div className="adm-stack">
+      {/* アイコンの拡大表示。ブランドの4色の輪が回り、まわりで星がきらめくカード */}
       {zoom && (
         <div className="adm-zoom" role="dialog" aria-modal="true" aria-label={`${zoom.name} さんのアイコン`} onClick={() => setZoom(null)}>
-          <figure className="adm-zoom__box" onClick={(e) => e.stopPropagation()}>
-            <img src={zoom.url} alt={`${zoom.name} さんのアイコン`} width={256} height={256} />
-            <figcaption>{zoom.name}</figcaption>
+          <figure className={`adm-zoom__box adm-zoom__box--${zoom.role}`} onClick={(e) => e.stopPropagation()}>
+            <div className="adm-zoom__stage" aria-hidden="true">
+              <span className="adm-zoom__stripe" />
+              {Array.from({ length: 9 }, (_, i) => (
+                <span key={i} className={`adm-zoom__spark adm-zoom__spark--${i}`}>
+                  ✦
+                </span>
+              ))}
+            </div>
+            <p className="adm-zoom__brand">EMORISLINK ADMIN</p>
+            <div className="adm-zoom__avatar">
+              <span className="adm-zoom__ring" aria-hidden="true" />
+              <img src={zoom.url} alt={`${zoom.name} さんのアイコン`} width={256} height={256} />
+            </div>
+            <figcaption>
+              <span className="adm-zoom__name">{zoom.name}</span>
+              <em className={`adm-role adm-role--${zoom.role}`}>{ROLE_NAMES[zoom.role]}</em>
+              <span className="adm-zoom__mail">{zoom.email}</span>
+            </figcaption>
+            <span className="adm-zoom__shine" aria-hidden="true" />
             <button type="button" className="adm-zoom__close" aria-label="閉じる" onClick={() => setZoom(null)} autoFocus>
               <i className="bi bi-x-lg" aria-hidden="true" />
             </button>
@@ -88,7 +106,7 @@ export function AdminUsers({ admins, selfId, selfRole }: { admins: Admin[]; self
                   type="button"
                   className="adm-member__zoom"
                   aria-label={`${a.name ?? a.email} さんのアイコンを大きく表示`}
-                  onClick={() => setZoom({ url: a.avatar!, name: a.name ?? a.email })}
+                  onClick={() => setZoom({ url: a.avatar!, name: a.name ?? a.email, email: a.email, role: a.role })}
                 >
                   <AdminAvatar name={a.name} email={a.email} url={a.avatar} className="adm-member__avatar" />
                   <i className="bi bi-zoom-in" aria-hidden="true" />
