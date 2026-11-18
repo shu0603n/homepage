@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { AdminAvatar } from '@/components/admin/AdminAvatar';
 import { deleteJson, postJson } from '@/components/auth/api';
 import type { AdminRole } from '@/lib/admin/store';
@@ -24,6 +24,14 @@ export function AdminUsers({ admins, selfId, selfRole }: { admins: Admin[]; self
   const router = useRouter();
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  // アイコンを押したときに大きく見せる画像（null のときは閉じている）。Esc キーでも閉じる
+  const [zoom, setZoom] = useState<{ url: string; name: string } | null>(null);
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setZoom(null);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [zoom]);
 
   async function run(action: () => Promise<{ ok: boolean; message?: string }>, done: string) {
     setBusy(true);
@@ -49,6 +57,17 @@ export function AdminUsers({ admins, selfId, selfRole }: { admins: Admin[]; self
 
   return (
     <div className="adm-stack">
+      {zoom && (
+        <div className="adm-zoom" role="dialog" aria-modal="true" aria-label={`${zoom.name} さんのアイコン`} onClick={() => setZoom(null)}>
+          <figure className="adm-zoom__box" onClick={(e) => e.stopPropagation()}>
+            <img src={zoom.url} alt={`${zoom.name} さんのアイコン`} width={256} height={256} />
+            <figcaption>{zoom.name}</figcaption>
+            <button type="button" className="adm-zoom__close" aria-label="閉じる" onClick={() => setZoom(null)} autoFocus>
+              <i className="bi bi-x-lg" aria-hidden="true" />
+            </button>
+          </figure>
+        </div>
+      )}
       {message && (
         <p className={`adm-alert ${message.ok ? 'is-ok' : 'is-ng'}`} role="status">
           <i className={`bi ${message.ok ? 'bi-check-circle' : 'bi-exclamation-circle'}`} aria-hidden="true" />
@@ -64,7 +83,24 @@ export function AdminUsers({ admins, selfId, selfRole }: { admins: Admin[]; self
         <ul className="adm-members">
           {admins.map((a) => (
             <li key={a.id} className="adm-member">
-              <AdminAvatar name={a.name} email={a.email} url={a.avatar} className={`adm-member__avatar${a.active ? '' : ' is-pending'}`} />
+              {a.avatar ? (
+                <button
+                  type="button"
+                  className="adm-member__zoom"
+                  aria-label={`${a.name ?? a.email} さんのアイコンを大きく表示`}
+                  onClick={() => setZoom({ url: a.avatar!, name: a.name ?? a.email })}
+                >
+                  <AdminAvatar name={a.name} email={a.email} url={a.avatar} className="adm-member__avatar" />
+                  <i className="bi bi-zoom-in" aria-hidden="true" />
+                </button>
+              ) : (
+                <AdminAvatar
+                  name={a.name}
+                  email={a.email}
+                  url={a.avatar}
+                  className={`adm-member__avatar${a.active ? '' : ' is-pending'}`}
+                />
+              )}
               <span className="adm-member__info">
                 <strong>
                   {a.name ?? '（お名前未登録）'}

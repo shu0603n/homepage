@@ -2110,3 +2110,16 @@ button.adm-me:hover { background: rgba(255, 255, 255, .13); }
 .adm-me__avatar.has-image img, .adm-member__avatar.has-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 label.adm-chipbtn { position: relative; }
 .adm-chipbtn.is-disabled { opacity: .5; cursor: default; }
+
+/* 管理者一覧：アイコンを押すと大きく表示 */
+.adm-member__zoom { grid-area: av; align-self: start; position: relative; padding: 0; border: 0; border-radius: 50%; background: none; cursor: zoom-in; }
+.adm-member__zoom > .bi { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #fff; color: var(--navy); font-size: 11px; box-shadow: 0 2px 6px rgba(0, 30, 45, .25); opacity: 0; transition: opacity .2s; }
+.adm-member__zoom:hover > .bi, .adm-member__zoom:focus-visible > .bi { opacity: 1; }
+.adm-member__zoom:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.adm-zoom { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(0, 20, 30, .6); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); animation: admZoomIn .2s ease; cursor: zoom-out; }
+@keyframes admZoomIn { from { opacity: 0; } to { opacity: 1; } }
+.adm-zoom__box { position: relative; display: grid; justify-items: center; gap: 14px; margin: 0; padding: 26px 26px 20px; border-radius: var(--r); background: #fff; box-shadow: 0 30px 70px -30px rgba(0, 20, 30, .7); cursor: default; animation: admMenuIn .22s var(--ease); }
+.adm-zoom__box img { width: min(256px, 70vw); height: auto; aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--teal-soft); }
+.adm-zoom__box figcaption { font-family: var(--f-head); font-weight: 700; color: var(--navy-dd); }
+.adm-zoom__close { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--bg-soft); color: var(--navy); cursor: pointer; }
+.adm-zoom__close:hover { background: var(--teal-soft); }
