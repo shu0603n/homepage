@@ -2,6 +2,8 @@
 // @ts-nocheck
 // EMORISLINK – サイトの動き（スクロール連動・メニュー・カルーセル・地図・フォーム送信など）
 // 画面の DOM を直接さわる処理なので型チェックは外している。ページ遷移のたびに initSite() を呼び直し、戻り値の関数で後片付けする
+import { newEventId, trackMeta } from '@/lib/meta-pixel';
+
 export function initSite() {
   const ac = new AbortController();
   const cleanups = [];
@@ -763,6 +765,12 @@ export function initSite() {
         }
         // 管理ページの問い合わせ一覧用に、同じ内容をこのサイトにも控えておく（失敗しても送信自体は成功として扱う）
         fetch('/api/inquiries/', { method: 'POST', body: fd, keepalive: true }).catch(() => {});
+        // Meta 広告（エンジニア採用）の成果：システムエンジニアの採用ページの「今すぐ応募する」から来た（?job=engineer）
+        // お仕事をお探しの方のフォームが、送信先で受け付けられたときだけ「応募完了」を1回送る（個人情報は送らない）。
+        // ボタンを押しただけ・入力エラー・送信失敗では、ここまで来ないので送られない
+        if (fd.get('_form') === 'seekers' && new URLSearchParams(location.search).get('job') === 'engineer') {
+          trackMeta('SubmitApplication', { content_name: 'SESエンジニア採用' }, newEventId('apply'));
+        }
         form.reset();
         syncAgree();
         showStatus('お問い合わせありがとうございます。内容を確認のうえ、担当者より順次ご連絡いたします。', true);

@@ -4,6 +4,7 @@ export const SITE = {
   siteName: "株式会社エモリスリンク",
   siteUrl: "https://www.emorislink.co.jp", // 正規の入口は www あり（www なしはエックスサーバー側で www へ転送）
   gtmContainerId: "GTM-P7Z2LF3T", // Google タグ マネージャーのコンテナ ID（GA4 G-9X8WDKWNDL は GTM の中で設定）。空にすると読み込まない
+  metaPixelId: "2240874160112546", // Meta Pixel（データセット「EMORISLINK_採用サイト」）。本番のドメインでだけ動かす（lib/meta-pixel.ts）。空にすると読み込まない
   defaultDescription:
     "株式会社エモリスリンクは、札幌を拠点に人材派遣・人材紹介・SES・システム開発・Web制作を通じて、人と企業をつなぐ架け橋となることを目指しています。",
   defaultTitle: "株式会社エモリスリンク | 札幌の人材派遣・人材紹介・SES・システム開発・Web制作",

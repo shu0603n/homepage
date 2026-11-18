@@ -98,6 +98,19 @@ export function Privacy() {
         </a>
         をご確認ください。
       </p>
+      {/* 広告の効果測定（Meta ピクセル／lib/meta-pixel.ts）の利用について */}
+      <p>
+        また、広告の効果を測るため、Meta Platforms, Inc.が提供する「Metaピクセル」を利用しています。
+        Metaピクセルは、Cookie等を使用して、閲覧されたページや応募の完了などの情報を、氏名・メールアドレス・電話番号など個人を直接特定する情報を含まない形でMeta社に送信します。送信された情報は、
+        <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener">
+          Meta社のプライバシーポリシー
+        </a>
+        に基づいて取り扱われます。Meta社のサービスをご利用の方は、
+        <a href="https://www.facebook.com/adpreferences/" target="_blank" rel="noopener">
+          広告設定
+        </a>
+        から、広告の表示に使われる情報を管理できます。
+      </p>
       <h4>【お問合せ窓口】</h4>
       <p>
         〒060-0042 北海道札幌市中央区大通西７丁目 井門札幌パークフロントビル 1F

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Footer } from "@/components/site/Footer";
 import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/site/GoogleTagManager";
+import { MetaPixel } from "@/components/site/MetaPixel";
 import { Header } from "@/components/site/Header";
 import { SiteBehavior } from "@/components/site/SiteBehavior";
 import { SITE } from "@/lib/site";
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <SiteBehavior />
         <GoogleTagManager />
+        <MetaPixel />
       </body>
     </html>
   );
