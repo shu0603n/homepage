@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
+import { avatarUrl } from "@/components/admin/AdminAvatar";
 import { AdminMeMenu } from "@/components/admin/AdminMeMenu";
 import type { AdminSession } from "@/lib/admin/session";
 import { countUnhandledInquiries, ROLE_NAMES } from "@/lib/admin/store";
@@ -75,6 +76,7 @@ export async function AdminShell({
             email={session.email}
             role={session.role}
             roleLabel={ROLE_NAMES[session.role]}
+            avatar={avatarUrl(session.id, session.avatarVersion)}
             current={active === "users" || active === "password" ? active : null}
           />
           <AdminLogoutButton />

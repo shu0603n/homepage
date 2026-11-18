@@ -2,12 +2,21 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { AdminAvatar } from '@/components/admin/AdminAvatar';
 import { deleteJson, postJson } from '@/components/auth/api';
 import type { AdminRole } from '@/lib/admin/store';
 
 const ROLE_NAMES: Record<AdminRole, string> = { super: '特級', staff: '一般' };
 
-type Admin = { id: number; email: string; name: string | null; role: AdminRole; active: boolean; lastLogin: string | null };
+type Admin = {
+  id: number;
+  email: string;
+  name: string | null;
+  role: AdminRole;
+  avatar: string | null;
+  active: boolean;
+  lastLogin: string | null;
+};
 
 // selfRole：見ている人の権限。特級の人にだけ「特級にする／一般にする」を出す
 export function AdminUsers({ admins, selfId, selfRole }: { admins: Admin[]; selfId: number; selfRole: AdminRole }) {
@@ -55,9 +64,7 @@ export function AdminUsers({ admins, selfId, selfRole }: { admins: Admin[]; self
         <ul className="adm-members">
           {admins.map((a) => (
             <li key={a.id} className="adm-member">
-              <span className={`adm-member__avatar${a.active ? '' : ' is-pending'}`} aria-hidden="true">
-                {(a.name ?? a.email).slice(0, 1).toUpperCase()}
-              </span>
+              <AdminAvatar name={a.name} email={a.email} url={a.avatar} className={`adm-member__avatar${a.active ? '' : ' is-pending'}`} />
               <span className="adm-member__info">
                 <strong>
                   {a.name ?? '（お名前未登録）'}
@@ -81,6 +88,39 @@ export function AdminUsers({ admins, selfId, selfRole }: { admins: Admin[]; self
                 <small>最後のログイン：{a.lastLogin ?? '—'}</small>
               </span>
               <span className="adm-member__actions">
+                {/* アイコンの登録・解除（特級の管理者だけ）。画像を選ぶとすぐ保存する */}
+                {isSuper && (
+                  <label className={`adm-chipbtn${busy ? ' is-disabled' : ''}`}>
+                    <i className="bi bi-image" aria-hidden="true" />
+                    {a.avatar ? 'アイコンを変更' : 'アイコンを登録'}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="visually-hidden"
+                      disabled={busy}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = '';
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) return setMessage({ text: '画像は5MBまでにしてください。', ok: false });
+                        run(() => uploadAvatar(a.id, file), `${a.name ?? a.email} さんのアイコンを登録しました。`);
+                      }}
+                    />
+                  </label>
+                )}
+                {isSuper && a.avatar && (
+                  <button
+                    type="button"
+                    className="adm-chipbtn"
+                    disabled={busy}
+                    onClick={() =>
+                      run(() => deleteJson(`/api/admin/users/${a.id}/avatar/`), `${a.name ?? a.email} さんのアイコンを外しました。`)
+                    }
+                  >
+                    <i className="bi bi-x-circle" aria-hidden="true" />
+                    アイコンを外す
+                  </button>
+                )}
                 {isSuper && a.id !== selfId && (
                   <button
                     type="button"
@@ -168,6 +208,19 @@ async function sendPatch(id: number, role: AdminRole): Promise<{ ok: boolean; me
     });
     const data = (await res.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
     return res.ok && data?.ok ? { ok: true } : { ok: false, message: data?.message ?? '権限の変更に失敗しました。' };
+  } catch {
+    return { ok: false, message: '通信に失敗しました。' };
+  }
+}
+
+// アイコンの登録（画像ファイルをそのまま送る。サーバー側で正方形に切り取り、256×256 にして保存する）
+async function uploadAvatar(id: number, file: File): Promise<{ ok: boolean; message?: string }> {
+  try {
+    const body = new FormData();
+    body.append('file', file);
+    const res = await fetch(`/api/admin/users/${id}/avatar/`, { method: 'POST', body });
+    const data = (await res.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+    return res.ok && data?.ok ? { ok: true } : { ok: false, message: data?.message ?? 'アイコンを登録できませんでした。' };
   } catch {
     return { ok: false, message: '通信に失敗しました。' };
   }

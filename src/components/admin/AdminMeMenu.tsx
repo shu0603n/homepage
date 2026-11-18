@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { AdminAvatar } from "@/components/admin/AdminAvatar";
 
 // ログイン中の人のカード。押すと小窓が開き、「管理者」「パスワード変更」に進める。
 // 小窓の外を押すか Esc キーで閉じる。スマホでは上部の帯に頭文字の丸いボタンとして出る
@@ -10,6 +11,7 @@ type Props = {
   email: string;
   role: "super" | "staff";
   roleLabel: string;
+  avatar: string | null; // アイコン画像の URL（無ければ頭文字）
   current: "users" | "password" | null; // いま開いているページ（小窓の中の項目を強調する）
 };
 
@@ -18,7 +20,7 @@ const ITEMS = [
   { key: "password", href: "/admin/password/", label: "パスワード変更", help: "自分のログイン用パスワードを変える", icon: "bi-key" },
 ] as const;
 
-export function AdminMeMenu({ name, email, role, roleLabel, current }: Props) {
+export function AdminMeMenu({ name, email, role, roleLabel, avatar, current }: Props) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
@@ -36,13 +38,10 @@ export function AdminMeMenu({ name, email, role, roleLabel, current }: Props) {
     };
   }, [open]);
 
-  const initial = (name ?? email).slice(0, 1).toUpperCase();
   return (
     <div className={`adm-me-wrap${open ? " is-open" : ""}`} ref={box}>
       <button type="button" className={`adm-me${current ? " is-current" : ""}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <span className="adm-me__avatar" aria-hidden="true">
-          {initial}
-        </span>
+        <AdminAvatar name={name} email={email} url={avatar} className="adm-me__avatar" />
         <span className="adm-me__text">
           <strong>
             {name ?? "管理者"}
@@ -56,9 +55,7 @@ export function AdminMeMenu({ name, email, role, roleLabel, current }: Props) {
       {open && (
         <div className="adm-menu" role="menu">
           <div className="adm-menu__head">
-            <span className="adm-me__avatar" aria-hidden="true">
-              {initial}
-            </span>
+            <AdminAvatar name={name} email={email} url={avatar} className="adm-me__avatar" />
             <span>
               <strong>{name ?? "管理者"}</strong>
               <small>{email}</small>

@@ -2104,3 +2104,9 @@ button.adm-me:hover { background: rgba(255, 255, 255, .13); }
 .adm-skel--nav { height: 36px; margin: 6px 0; border-radius: 12px; background: linear-gradient(90deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.14) 40%, rgba(255,255,255,.07) 80%); background-size: 200% 100%; }
 .adm-loading { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; font-size: 13px; color: var(--sub); }
 .adm-loading__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); animation: admLive 1.4s infinite; box-shadow: 0 0 0 0 rgba(58,175,185,.5); }
+
+/* 管理者のアイコン画像（丸の中いっぱいに表示） */
+.adm-me__avatar.has-image, .adm-member__avatar.has-image { overflow: hidden; padding: 0; background: #fff; }
+.adm-me__avatar.has-image img, .adm-member__avatar.has-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+label.adm-chipbtn { position: relative; }
+.adm-chipbtn.is-disabled { opacity: .5; cursor: default; }

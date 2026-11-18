@@ -51,6 +51,9 @@ export const ADMIN_TABLES_SQL = [
   `ALTER TABLE hp_inquiry ADD COLUMN IF NOT EXISTS memo TEXT`,
   `ALTER TABLE hp_inquiry ADD COLUMN IF NOT EXISTS memo_updated_at TIMESTAMPTZ(6)`,
   `ALTER TABLE hp_inquiry ADD COLUMN IF NOT EXISTS memo_updated_by INTEGER`,
+  // 管理者のアイコン（2026-11-18 追加）。256×256 の WebP 画像をそのまま保存する（1枚 10KB ほど）。hp_admin_user にだけ列を足す
+  `ALTER TABLE hp_admin_user ADD COLUMN IF NOT EXISTS avatar BYTEA`,
+  `ALTER TABLE hp_admin_user ADD COLUMN IF NOT EXISTS avatar_updated_at TIMESTAMPTZ(6)`,
 ];
 
 export type AdminRole = "super" | "staff";
@@ -58,12 +61,12 @@ export const ROLE_NAMES: Record<AdminRole, string> = { super: "特級", staff: "
 
 let ready: Promise<void> | null = null;
 
-// いちばん新しい定義（最後に足した列）が既にあるか。あれば上の SQL は流さなくてよい（1回の問い合わせで済ませて速くする）
+// いちばん新しい定義（最後に足した列）が既にあるか。列を足したら、ここの確認する列も新しいものに変えること。あれば上の SQL は流さなくてよい（1回の問い合わせで済ませて速くする）
 async function isUpToDate(): Promise<boolean> {
   const rows = await prisma.$queryRaw<{ n: number }[]>`
     SELECT count(*)::int AS n FROM information_schema.columns
     WHERE table_schema = current_schema()
-      AND ((table_name = 'hp_admin_user' AND column_name = 'role') OR (table_name = 'hp_inquiry' AND column_name = 'memo_updated_by'))`;
+      AND ((table_name = 'hp_admin_user' AND column_name = 'avatar_updated_at') OR (table_name = 'hp_inquiry' AND column_name = 'memo_updated_by'))`;
   return rows[0]?.n === 2;
 }
 
@@ -99,12 +102,14 @@ export type AdminRow = {
   failed_count: number;
   locked_until: Date | null;
   role: AdminRole;
+  avatar_version: number | null; // アイコンを登録した日時（ミリ秒）。アイコンが無ければ null。画像の URL に付けて、変えたらすぐ新しい画像になるようにする
 };
 
 export async function findAdminByEmail(email: string): Promise<AdminRow | null> {
   await ensureAdminTables();
   const rows = await prisma.$queryRaw<AdminRow[]>`
-    SELECT id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until, role
+    SELECT id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until, role,
+      (extract(epoch from avatar_updated_at) * 1000)::float8 AS avatar_version
     FROM hp_admin_user WHERE lower(email) = lower(${email}) LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -112,7 +117,8 @@ export async function findAdminByEmail(email: string): Promise<AdminRow | null> 
 export async function findAdminById(id: number): Promise<AdminRow | null> {
   await ensureAdminTables();
   const rows = await prisma.$queryRaw<AdminRow[]>`
-    SELECT id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until, role
+    SELECT id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until, role,
+      (extract(epoch from avatar_updated_at) * 1000)::float8 AS avatar_version
     FROM hp_admin_user WHERE id = ${id} LIMIT 1`;
   return rows[0] ?? null;
 }
@@ -155,12 +161,22 @@ export async function updateAdminPassword(id: number, passwordHash: string): Pro
 // パスワードがまだ無い（招待メールのリンクから設定する前の）管理者に入れておく値。scrypt$ で始まらないので、どのパスワードでも一致しない
 export const NO_PASSWORD = "!unset";
 
-export type AdminListRow = { id: number; email: string; name: string | null; role: AdminRole; has_password: boolean; last_login_at: Date | null; created_at: Date };
+export type AdminListRow = {
+  id: number;
+  email: string;
+  name: string | null;
+  role: AdminRole;
+  has_password: boolean;
+  last_login_at: Date | null;
+  created_at: Date;
+  avatar_version: number | null;
+};
 
 export async function listAdmins(): Promise<AdminListRow[]> {
   await ensureAdminTables();
   return prisma.$queryRaw<AdminListRow[]>`
-    SELECT id, email, name, role, (password_hash <> ${NO_PASSWORD}) AS has_password, last_login_at, created_at
+    SELECT id, email, name, role, (password_hash <> ${NO_PASSWORD}) AS has_password, last_login_at, created_at,
+      (extract(epoch from avatar_updated_at) * 1000)::float8 AS avatar_version
     FROM hp_admin_user ORDER BY id`;
 }
 
@@ -171,8 +187,27 @@ export async function insertAdmin(email: string, name: string, createdBy: number
     INSERT INTO hp_admin_user (email, name, password_hash, created_by)
     VALUES (${email}, ${name}, ${NO_PASSWORD}, ${createdBy})
     ON CONFLICT (email) DO NOTHING
-    RETURNING id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until, role`;
+    RETURNING id, email, name, password_hash, (extract(epoch from password_changed_at) * 1000000)::float8 AS pwd_version, failed_count, locked_until, role,
+      (extract(epoch from avatar_updated_at) * 1000)::float8 AS avatar_version`;
   return rows[0] ?? null;
+}
+
+// アイコン（画像のデータ）。表示のときだけ読む（一覧などでは重いので読まない）
+export async function getAdminAvatar(id: number): Promise<{ data: Buffer; version: number } | null> {
+  await ensureAdminTables();
+  const rows = await prisma.$queryRaw<{ avatar: Uint8Array | null; v: number | null }[]>`
+    SELECT avatar, (extract(epoch from avatar_updated_at) * 1000)::float8 AS v FROM hp_admin_user WHERE id = ${id}`;
+  const row = rows[0];
+  return row?.avatar && row.v !== null ? { data: Buffer.from(row.avatar), version: row.v } : null;
+}
+
+// アイコンを保存する（null で消す）
+export async function setAdminAvatar(id: number, data: Buffer | null): Promise<boolean> {
+  await ensureAdminTables();
+  const n = data
+    ? await prisma.$executeRaw`UPDATE hp_admin_user SET avatar = ${data}, avatar_updated_at = now() WHERE id = ${id}`
+    : await prisma.$executeRaw`UPDATE hp_admin_user SET avatar = NULL, avatar_updated_at = NULL WHERE id = ${id}`;
+  return n > 0;
 }
 
 export async function setAdminRole(id: number, role: AdminRole): Promise<boolean> {

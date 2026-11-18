@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { avatarUrl } from "@/components/admin/AdminAvatar";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { SETUP_HOURS } from "@/lib/admin/invite";
 import { getAdminSession } from "@/lib/admin/session";
@@ -25,7 +26,7 @@ export default async function AdminUsersPage() {
       <AdminUsers
         selfId={session.id}
         selfRole={session.role}
-        admins={admins.map((a) => ({ id: a.id, email: a.email, name: a.name, role: a.role, active: a.has_password, lastLogin: dateTime(a.last_login_at) }))}
+        admins={admins.map((a) => ({ id: a.id, email: a.email, name: a.name, role: a.role, avatar: avatarUrl(a.id, a.avatar_version), active: a.has_password, lastLogin: dateTime(a.last_login_at) }))}
       />
     </AdminShell>
   );
