@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { jobStats, type FavoriteUser, type JobStatRow } from '@/lib/jobs-activity';
+import { JobStatsTable } from '@/components/admin/JobStatsTable';
+import { jobStats, type JobStatRow } from '@/lib/jobs-activity';
 
 // 管理ページ「案件の反応」：ホームページの案件一覧で、どの案件がどれだけ見られ、押され、「気になる」に入れられ、応募されたか
 
@@ -11,7 +12,6 @@ const PERIODS = [
 ] as const;
 
 const fmt = (n: number) => n.toLocaleString('ja-JP');
-const rate = (a: number, b: number) => (b > 0 ? `${((a / b) * 100).toFixed(1)}%` : '—');
 const dateTime = (d: Date) =>
   new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(
     d
@@ -32,32 +32,6 @@ function Kpi({ icon, label, value, unit, help }: { icon: string; label: string; 
       </p>
       <p className="adm-kpi__help">{help}</p>
     </div>
-  );
-}
-
-// 「気になる」に入れた人の一覧（押すと開く）
-function FavoriteUsers({ count, users }: { count: number; users: FavoriteUser[] }) {
-  if (count === 0) return <span className="adm-jobs__zero">0</span>;
-  return (
-    <details className="adm-favusers">
-      <summary>
-        <i className="bi bi-heart-fill" aria-hidden="true" />
-        {fmt(count)}人
-      </summary>
-      <ul>
-        {users.map((u) => (
-          <li key={`${u.staffId}-${u.createdAt.getTime()}`}>
-            <strong>{u.name ?? '（お名前未登録）'}</strong>
-            <span>
-              {u.tel && <a href={`tel:${u.tel.replace(/[^\d+]/g, '')}`}>{u.tel}</a>}
-              {u.mail && <a href={`mailto:${u.mail}`}>{u.mail}</a>}
-            </span>
-            <small>{dateTime(u.createdAt)} に追加</small>
-          </li>
-        ))}
-        {users.length < count && <li className="adm-favusers__more">ほか {count - users.length} 人（スタッフ情報が削除・変更された方）</li>}
-      </ul>
-    </details>
   );
 }
 
@@ -163,60 +137,31 @@ export async function JobStatsPanel({ days: daysParam }: { days?: string }) {
           案件ごとの反応<small>{rows.length}件</small>
         </h2>
         <p className="adm-card__help">
-          「気になる」の人数を押すと、入れた人のお名前・連絡先が出ます。案件名を押すと、ホームページの案件ページが新しいタブで開きます。
+          「気になる」の人数を押すと、その行の下に、入れた人のお名前・連絡先の一覧が開きます。案件名を押すと、ホームページの案件ページが新しいタブで開きます。
         </p>
         {rows.length === 0 ? (
           <p className="adm-empty">まだ記録がありません。スタッフが案件一覧を見ると、ここに集まります。</p>
         ) : (
-          <div className="adm-tablewrap">
-            <table className="adm-table adm-jobs">
-              <thead>
-                <tr>
-                  <th>案件</th>
-                  <th>一覧での表示</th>
-                  <th>クリック</th>
-                  <th>クリック率</th>
-                  <th>詳細の閲覧</th>
-                  <th>気になる</th>
-                  <th>HPからの応募</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={`${r.kind}-${r.id}`} className={r.posted ? '' : 'is-ended'}>
-                    <td>
-                      <div className="adm-jobs__name">
-                        <span className={`adm-pill adm-pill--${r.kind === 'project' ? 'employers' : 'seekers'}`}>
-                          {r.kind === 'project' ? '派遣など' : '人材紹介'}
-                        </span>
-                        {r.posted ? (
-                          <a
-                            className="adm-jobs__title"
-                            href={r.kind === 'project' ? `/jobs/${r.id}/` : `/jobs/recruit/${r.id}/`}
-                            target="_blank"
-                            rel="noopener"
-                          >
-                            {r.title}
-                          </a>
-                        ) : (
-                          <span className="adm-jobs__title">{r.title}</span>
-                        )}
-                        {!r.posted && <em className="adm-jobs__ended">掲載終了</em>}
-                      </div>
-                    </td>
-                    <td>{fmt(r.listViews)}</td>
-                    <td>{fmt(r.clicks)}</td>
-                    <td>{rate(r.clicks, r.listViews)}</td>
-                    <td>{fmt(r.detailViews)}</td>
-                    <td>
-                      <FavoriteUsers count={r.favorites} users={usersOf(r)} />
-                    </td>
-                    <td>{fmt(r.applications)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <JobStatsTable
+            rows={rows.map((r) => ({
+              key: `${r.kind}-${r.id}`,
+              kind: r.kind,
+              title: r.title,
+              href: r.posted ? (r.kind === 'project' ? `/jobs/${r.id}/` : `/jobs/recruit/${r.id}/`) : null,
+              listViews: r.listViews,
+              clicks: r.clicks,
+              detailViews: r.detailViews,
+              favorites: r.favorites,
+              applications: r.applications,
+              users: usersOf(r).map((u) => ({
+                key: `${u.staffId}-${u.createdAt.getTime()}`,
+                name: u.name,
+                tel: u.tel,
+                mail: u.mail,
+                addedAt: dateTime(u.createdAt)
+              }))
+            }))}
+          />
         )}
       </section>
     </div>
