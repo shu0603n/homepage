@@ -761,6 +761,8 @@ export function initSite() {
           }
           throw new Error(res.status);
         }
+        // 管理ページの問い合わせ一覧用に、同じ内容をこのサイトにも控えておく（失敗しても送信自体は成功として扱う）
+        fetch('/api/inquiries/', { method: 'POST', body: fd, keepalive: true }).catch(() => {});
         form.reset();
         syncAgree();
         showStatus('お問い合わせありがとうございます。内容を確認のうえ、担当者より順次ご連絡いたします。', true);
