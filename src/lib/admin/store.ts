@@ -45,6 +45,12 @@ export const ADMIN_TABLES_SQL = [
   `ALTER TABLE hp_admin_user ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'staff'`,
   // 特級が1人もいなければ、最初の管理者（環境変数から作った人＝追加者がいない人）を特級にする
   `UPDATE hp_admin_user SET role = 'super' WHERE created_by IS NULL AND NOT EXISTS (SELECT 1 FROM hp_admin_user WHERE role = 'super')`,
+  // お問い合わせの担当者と内部メモ（2026-11-18 追加）。hp_inquiry（管理ページ専用の表）にだけ列を足す。
+  // 担当者・メモを書いた人は管理者の id。管理者を削除しても問い合わせは残すため、関連付け（外部キー）は付けない
+  `ALTER TABLE hp_inquiry ADD COLUMN IF NOT EXISTS assignee_id INTEGER`,
+  `ALTER TABLE hp_inquiry ADD COLUMN IF NOT EXISTS memo TEXT`,
+  `ALTER TABLE hp_inquiry ADD COLUMN IF NOT EXISTS memo_updated_at TIMESTAMPTZ(6)`,
+  `ALTER TABLE hp_inquiry ADD COLUMN IF NOT EXISTS memo_updated_by INTEGER`,
 ];
 
 export type AdminRole = "super" | "staff";
@@ -188,7 +194,15 @@ export type InquiryInput = {
   user_agent: string | null;
 };
 
-export type InquiryRow = InquiryInput & { id: number; handled: boolean; created_at: Date };
+export type InquiryRow = InquiryInput & {
+  id: number;
+  handled: boolean;
+  created_at: Date;
+  assignee_id: number | null;
+  memo: string | null;
+  memo_updated_at: Date | null;
+  memo_updated_by_name: string | null; // メモを最後に書いた人の名前（削除された管理者なら null）
+};
 
 export async function insertInquiry(i: InquiryInput): Promise<void> {
   await ensureAdminTables();
@@ -200,14 +214,32 @@ export async function insertInquiry(i: InquiryInput): Promise<void> {
 export async function listInquiries(limit = 300): Promise<InquiryRow[]> {
   await ensureAdminTables();
   return prisma.$queryRaw<InquiryRow[]>`
-    SELECT id, form, company, name, kana, email, tel, address, gender, job, inquiry_type, message, ip, user_agent, handled, created_at
-    FROM hp_inquiry ORDER BY created_at DESC LIMIT ${limit}`;
+    SELECT i.id, i.form, i.company, i.name, i.kana, i.email, i.tel, i.address, i.gender, i.job, i.inquiry_type, i.message, i.ip, i.user_agent, i.handled, i.created_at,
+      i.assignee_id, i.memo, i.memo_updated_at, COALESCE(m.name, m.email) AS memo_updated_by_name
+    FROM hp_inquiry i LEFT JOIN hp_admin_user m ON m.id = i.memo_updated_by
+    ORDER BY i.created_at DESC LIMIT ${limit}`;
 }
 
 export async function countUnhandledInquiries(): Promise<number> {
   await ensureAdminTables();
   const rows = await prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM hp_inquiry WHERE handled = false`;
   return rows[0]?.n ?? 0;
+}
+
+// 担当者を決める（null で未設定）。担当者は今いる管理者だけ（いなければ false）
+export async function setInquiryAssignee(id: number, assigneeId: number | null): Promise<boolean> {
+  await ensureAdminTables();
+  if (assigneeId !== null && !(await findAdminById(assigneeId))) return false;
+  const n = await prisma.$executeRaw`UPDATE hp_inquiry SET assignee_id = ${assigneeId} WHERE id = ${id}`;
+  return n > 0;
+}
+
+// 内部メモを保存する（空にすると消える）。書いた人と日時も残す
+export async function setInquiryMemo(id: number, memo: string | null, by: number): Promise<{ at: Date } | null> {
+  await ensureAdminTables();
+  const rows = await prisma.$queryRaw<{ memo_updated_at: Date }[]>`
+    UPDATE hp_inquiry SET memo = ${memo}, memo_updated_at = now(), memo_updated_by = ${by} WHERE id = ${id} RETURNING memo_updated_at`;
+  return rows[0] ? { at: rows[0].memo_updated_at } : null;
 }
 
 export async function setInquiryHandled(id: number, handled: boolean): Promise<boolean> {

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AdminShell, type AdminNavKey } from "@/components/admin/AdminShell";
 import { Ga4Panel, GtmPanel, InquiriesPanel, ScPanel } from "@/components/admin/panels";
 import { getAdminSession } from "@/lib/admin/session";
-import { listInquiries } from "@/lib/admin/store";
+import { listAdmins, listInquiries } from "@/lib/admin/store";
 
 export const dynamic = "force-dynamic";
 
@@ -31,12 +31,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         })
       : null;
 
+  // 担当者のプルダウンに出す管理者（お問い合わせのタブを開いたときだけ読む）
+  const admins = tab === "inquiries" ? (await listAdmins().catch(() => [])).map((a) => ({ id: a.id, label: a.name ?? a.email })) : [];
+
   return (
     <AdminShell session={session} active={tab} en={head.en} title={head.title} lead={head.lead}>
       {tab === "access" && <Ga4Panel />}
       {tab === "search" && <ScPanel />}
       {tab === "tags" && <GtmPanel />}
-      {tab === "inquiries" && <InquiriesPanel inquiries={inquiries} filter={params.filter} />}
+      {tab === "inquiries" && <InquiriesPanel inquiries={inquiries} filter={params.filter} admins={admins} selfId={session.id} />}
     </AdminShell>
   );
 }

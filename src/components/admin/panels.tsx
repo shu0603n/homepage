@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { InquiryHandledToggle } from '@/components/admin/InquiryHandledToggle';
+import { InquiryWork } from '@/components/admin/InquiryWork';
 import { getGa4, getGtm, getSearchConsole, SEARCH_CONSOLE_SITE, type Section } from '@/lib/admin/google';
 import type { InquiryRow } from '@/lib/admin/store';
 import { COMPANY, RECRUIT, SERVICES, SITE } from '@/lib/site';
@@ -553,11 +554,24 @@ const FORM_NAMES = { employers: '企業担当者様', seekers: 'お仕事をお�
 const FILTERS = [
   ['', 'すべて'],
   ['open', '未対応'],
+  ['mine', '自分の担当'],
   ['employers', '企業担当者様'],
   ['seekers', 'お仕事をお探しの方']
 ] as const;
 
-export function InquiriesPanel({ inquiries, filter }: { inquiries: InquiryRow[] | null; filter?: string }) {
+// admins：担当者のプルダウンに出す管理者。selfId：ログイン中の管理者（「自分の担当」の絞り込み用）
+export function InquiriesPanel({
+  inquiries,
+  filter,
+  admins,
+  selfId
+}: {
+  inquiries: InquiryRow[] | null;
+  filter?: string;
+  admins: { id: number; label: string }[];
+  selfId: number;
+}) {
+  const adminName = new Map(admins.map((a) => [a.id, a.label]));
   if (!inquiries)
     return (
       <div className="adm-alert is-ng">
@@ -566,7 +580,13 @@ export function InquiriesPanel({ inquiries, filter }: { inquiries: InquiryRow[] 
       </div>
     );
   const shown = inquiries.filter((i) =>
-    filter === 'open' ? !i.handled : filter === 'employers' || filter === 'seekers' ? i.form === filter : true
+    filter === 'open'
+      ? !i.handled
+      : filter === 'mine'
+        ? i.assignee_id === selfId
+        : filter === 'employers' || filter === 'seekers'
+          ? i.form === filter
+          : true
   );
   const open = inquiries.filter((i) => !i.handled).length;
   return (
@@ -603,6 +623,18 @@ export function InquiriesPanel({ inquiries, filter }: { inquiries: InquiryRow[] 
                     {i.name} 様
                   </span>
                   <span className="adm-inquiry__date">{dateTime(i.created_at)}</span>
+                  {i.assignee_id !== null && (
+                    <span className="adm-inquiry__assignee">
+                      <i className="bi bi-person" aria-hidden="true" />
+                      担当：{adminName.get(i.assignee_id) ?? '（削除された管理者）'}
+                    </span>
+                  )}
+                  {i.memo && (
+                    <span className="adm-inquiry__hasmemo">
+                      <i className="bi bi-sticky" aria-hidden="true" />
+                      メモあり
+                    </span>
+                  )}
                   <span className="adm-inquiry__excerpt">{(i.message ?? '').slice(0, 80)}</span>
                 </summary>
                 <dl className="adm-inquiry__body">
@@ -639,6 +671,13 @@ export function InquiriesPanel({ inquiries, filter }: { inquiries: InquiryRow[] 
                     <dd>{i.message}</dd>
                   </div>
                 </dl>
+                <InquiryWork
+                  id={i.id}
+                  admins={admins}
+                  assigneeId={i.assignee_id}
+                  memo={i.memo ?? ''}
+                  memoInfo={i.memo_updated_at ? `${i.memo_updated_by_name ?? '（削除された管理者）'}・${dateTime(i.memo_updated_at)}` : null}
+                />
               </details>
               <InquiryHandledToggle id={i.id} handled={i.handled} />
             </li>
