@@ -25,7 +25,7 @@ const LINE_MESSAGES: Record<string, string> = {
   not_linked: "この LINE アカウントと連携しているスタッフ登録が見つかりません。メールアドレスとパスワードでログインし、マイページから LINE の友だち追加を行ってください。",
   // LINE の本人確認が済んでいて、続けてログインすれば自動で連携できるとき（lib/auth/line-pending.ts）
   // LINE から来て未連携の方は、ほぼ全員まだパスワードを設定していないので、パスワード設定（LineSetupForm）を先に案内する
-  not_linked_pending: "この LINE はまだスタッフ登録と連携されていません。下の手順でパスワードを設定すると LINE と連携され、次回から LINE を開くだけで自動でログインできます。",
+  not_linked_pending: "この LINE はまだスタッフ登録と連携されていません。下からパスワード設定のメールを受け取り、パスワードを設定すると LINE と連携され、次回から LINE を開くだけで自動でログインできます。",
   blocked: "このアカウントではログインできません。お電話にてお問い合わせください。",
   cancelled: "LINE でのログインがキャンセルされました。",
   expired: "LINE でのログインの有効期限が切れました。もう一度お試しください。",
@@ -59,7 +59,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           )}
           {linePending && (
             <>
-              <LineSetupForm next={next} />
+              <LineSetupForm />
               <p className="line-login__or">
                 <span>パスワードを設定済みの方はこちら</span>
               </p>

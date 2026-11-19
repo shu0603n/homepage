@@ -1,55 +1,42 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { CognitoAuthError, createUser, setUserPassword, userLastModified } from "@/lib/auth/cognito";
 import { AUTH_MESSAGES, isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
-import { LINE_PENDING_COOKIE, linkStaffLine } from "@/lib/auth/line-pending";
+import { linkStaffLine } from "@/lib/auth/line-pending";
+import { isLinkUsed, readPasswordToken } from "@/lib/auth/password-link";
 import { createSession } from "@/lib/auth/session";
 import { findStaffById, isLoginBlocked } from "@/lib/auth/staff";
 import { passwordProblem } from "@/lib/auth/validation";
-import { checkVerification, clearVerification, VERIFY_MESSAGES } from "@/lib/auth/verify-code";
 
-// LINE から来て、まだ連携していない方のパスワード設定（2/2）：
-// 確認コードが正しければ（＝メールアドレスの持ち主）、パスワードを設定し、LINE と連携して、ログイン状態にする
+// LINE から来て、まだ連携していない方のパスワード設定（2/2）：メールのリンク（/password-setup/line/）から開いた画面で決めたパスワードを設定し、
+// リンクに入っている LINE と連携して、ログイン状態にする（リンクを開けた＝メールアドレスの持ち主）
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return jsonError("不正なリクエストです。", 403);
 
-  const body = (await readJson(request)) as { code?: unknown; password?: unknown } | null;
-  const code = typeof body?.code === "string" ? body.code.replace(/\s/g, "") : "";
-  if (!/^\d{6}$/.test(code)) return jsonError("メールに届いた6桁の確認コードを入力してください。", 400);
+  const body = (await readJson(request)) as { token?: unknown; password?: unknown } | null;
+  const link = await readPasswordToken(typeof body?.token === "string" ? body.token : undefined, "line-setup");
+  if (!link?.line) return jsonError("リンクの有効期限が切れているか、正しくありません。お手数ですが、LINE のメニューからもう一度お手続きください。", 400);
   const problem = passwordProblem(body?.password);
   if (problem) return jsonError(problem, 400);
   const password = body?.password as string;
 
-  const result = await checkVerification("line-setup", code);
-  if (!result.ok) return jsonError(VERIFY_MESSAGES[result.reason], 400);
-  let target: { staffId?: unknown; mail?: unknown; lineUserId?: unknown };
   try {
-    target = JSON.parse(result.target);
-  } catch {
-    return jsonError(VERIFY_MESSAGES.missing, 400);
-  }
-  const { staffId, mail, lineUserId } = target;
-  if (typeof staffId !== "number" || staffId <= 0 || typeof mail !== "string" || typeof lineUserId !== "string") return jsonError(VERIFY_MESSAGES.invalid, 400);
-
-  try {
-    // コードを送ったあとに社内システムでスタッフが削除・メール変更・NG/BL になっていたら使えない
-    const staff = await findStaffById(staffId);
-    if (!staff || staff.mail?.trim().toLowerCase() !== mail) return jsonError("お手続きを続けられません。お手数ですが、お電話にてお問い合わせください。", 400);
+    // リンクを送ったあとに社内システムでスタッフが削除・メール変更・NG/BL になっていたら使えない
+    const staff = await findStaffById(link.staffId);
+    if (!staff || staff.mail?.trim().toLowerCase() !== link.mail) return jsonError("このリンクは使えなくなりました。お手数ですが、お電話にてお問い合わせください。", 400);
     if (isLoginBlocked(staff)) return jsonError("このアカウントではログインできません。お電話にてお問い合わせください。", 403);
+    // 一度パスワードを設定したリンクは使えない
+    if (await isLinkUsed(link)) return jsonError("パスワードは既に設定されています。ログイン画面からログインしてください。", 400);
 
-    // メールのコードを受け取れた＝メールアドレスの持ち主なので、既にアカウントがある場合はパスワードを設定し直す
-    if ((await userLastModified(mail)) !== null) await setUserPassword(mail, password);
-    else await createUser(mail, password);
+    if ((await userLastModified(link.mail)) !== null) await setUserPassword(link.mail, password);
+    else await createUser(link.mail, password);
 
-    const lineLink = await linkStaffLine(staff.id, lineUserId).catch((error) => {
+    const lineLink = await linkStaffLine(staff.id, link.line.lineUserId).catch((error) => {
       console.error("staff LINE link failed:", error);
       return null;
     });
     if (lineLink !== "linked" && lineLink !== "already") console.warn("staff LINE link skipped:", staff.id, lineLink);
 
-    await clearVerification("line-setup");
-    (await cookies()).delete({ name: LINE_PENDING_COOKIE, path: "/" });
-    await createSession({ sub: mail, email: mail, staffId: staff.id, via: "cognito" });
+    await createSession({ sub: link.mail, email: link.mail, staffId: staff.id, via: "cognito" });
     return NextResponse.json({ ok: true, lineLink });
   } catch (error) {
     if (error instanceof CognitoAuthError) {

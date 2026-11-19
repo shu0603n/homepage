@@ -1552,6 +1552,11 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
 .line-setup { border-top: 4px solid #06c755; }
 .line-setup .form__note { line-height: 1.8; }
 .line-setup__back { margin-top: 18px; text-align: center; }
+.line-setup__sent { text-align: center; }
+.line-setup__sent-icon { margin: 0; font-size: 44px; line-height: 1; color: #06c755; }
+.line-setup__sent-mail { display: inline-block; margin: 12px 0 4px; padding: 6px 18px; border-radius: 999px; background: var(--bg-soft); color: var(--navy); word-break: break-all; }
+.line-setup__target { text-align: center; }
+.line-setup__target small { font-size: 13px; color: var(--sub); }
 .link-button { padding: 0; border: 0; background: none; font: inherit; font-size: 14px; color: var(--navy); text-decoration: underline; cursor: pointer; }
 .line-setup + .line-login__or { max-width: 640px; margin: 44px auto 28px; }
 /* スタッフ登録：送信後の「ご案内メールをお送りしました」と、パスワード設定画面 */

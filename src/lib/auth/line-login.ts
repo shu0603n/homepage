@@ -1,5 +1,6 @@
 import { jwtVerify, SignJWT } from "jose";
 import { siteUrl } from "@/lib/auth/http";
+import type { LineIdentity } from "@/lib/auth/line";
 
 // ログイン画面の「LINE でログイン」（LINE ログインの Web ログイン。PC・スマホのどのブラウザでも使える）。
 // LINE Developers のプロバイダ「社内案件通知BOT」の LINE ログインチャネル「スタッフ連携」を使う。
@@ -84,8 +85,8 @@ export async function readLineState(cookie: string | undefined): Promise<LineSta
   }
 }
 
-// LINE から戻ってきた認可コードを ID トークンに交換し、LINE に検証させて userId を返す（失敗なら null）
-export async function finishLineLogin(request: Request, code: string, nonce: string): Promise<string | null> {
+// LINE から戻ってきた認可コードを ID トークンに交換し、LINE に検証させて userId と表示名を返す（失敗なら null）
+export async function finishLineLogin(request: Request, code: string, nonce: string): Promise<LineIdentity | null> {
   const cred = credentials();
   if (!cred) return null;
 
@@ -116,6 +117,6 @@ export async function finishLineLogin(request: Request, code: string, nonce: str
     console.error("LINE id_token verify failed:", verifyRes.status, await verifyRes.text().catch(() => ""));
     return null;
   }
-  const verified = (await verifyRes.json()) as { aud?: string; sub?: string; nonce?: string };
-  return verified.aud === cred.channelId && verified.nonce === nonce && verified.sub ? verified.sub : null;
+  const verified = (await verifyRes.json()) as { aud?: string; sub?: string; nonce?: string; name?: string };
+  return verified.aud === cred.channelId && verified.nonce === nonce && verified.sub ? { userId: verified.sub, name: verified.name ?? null } : null;
 }

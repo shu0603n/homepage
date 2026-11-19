@@ -24,17 +24,18 @@ export async function GET(request: Request) {
   const code = params.get("code");
   if (!saved || !code || params.get("state") !== saved.state) return fail("expired");
 
-  const lineUserId = await finishLineLogin(request, code, saved.nonce).catch((error) => {
+  const line = await finishLineLogin(request, code, saved.nonce).catch((error) => {
     console.error("LINE login failed:", error);
     return null;
   });
-  if (!lineUserId) return fail("failed");
+  if (!line) return fail("failed");
+  const lineUserId = line.userId;
 
   const staff = await findStaffByLineUserId(lineUserId);
   if (!staff) {
     // 続けてメールアドレスとパスワードでログインしたら、この LINE と連携する（lib/auth/line-pending.ts）
     const res = fail("not_linked");
-    res.cookies.set(LINE_PENDING_COOKIE, await makeLinePendingToken(lineUserId), LINE_PENDING_COOKIE_OPTIONS);
+    res.cookies.set(LINE_PENDING_COOKIE, await makeLinePendingToken(lineUserId, line.name), LINE_PENDING_COOKIE_OPTIONS);
     return res;
   }
   if (isLoginBlocked(staff)) return fail("blocked");

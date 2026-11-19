@@ -12,10 +12,12 @@ export function isLineLoginEnabled(): boolean {
   return Boolean(process.env.LIFF_ID);
 }
 
-type LineVerifyResponse = { aud?: string; sub?: string };
+type LineVerifyResponse = { aud?: string; sub?: string; name?: string };
 
-// ID トークンを LINE に問い合わせて検証し、LINE の userId を返す（不正なら null）
-export async function verifyLineIdToken(idToken: string): Promise<string | null> {
+export type LineIdentity = { userId: string; name: string | null };
+
+// ID トークンを LINE に問い合わせて検証し、LINE の userId と表示名を返す（不正なら null）
+export async function verifyLineIdToken(idToken: string): Promise<LineIdentity | null> {
   const liffId = process.env.LIFF_ID;
   if (!liffId) return null;
   const channelId = liffId.split("-")[0];
@@ -27,5 +29,5 @@ export async function verifyLineIdToken(idToken: string): Promise<string | null>
   });
   if (!res.ok) return null;
   const verified = (await res.json()) as LineVerifyResponse;
-  return verified.aud === channelId && verified.sub ? verified.sub : null;
+  return verified.aud === channelId && verified.sub ? { userId: verified.sub, name: verified.name ?? null } : null;
 }

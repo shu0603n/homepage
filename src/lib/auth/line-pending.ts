@@ -31,8 +31,9 @@ export const LINE_PENDING_COOKIE_OPTIONS = {
   maxAge: MAX_AGE,
 };
 
-export async function makeLinePendingToken(lineUserId: string): Promise<string> {
-  return new SignJWT({})
+// name は LINE の表示名（パスワード設定画面で「どの LINE と連携するか」を本人に見せるため）
+export async function makeLinePendingToken(lineUserId: string, name: string | null = null): Promise<string> {
+  return new SignJWT(name ? { name: name.slice(0, 100) } : {})
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(lineUserId)
     .setAudience(AUDIENCE)
@@ -42,10 +43,15 @@ export async function makeLinePendingToken(lineUserId: string): Promise<string> 
 }
 
 export async function readLinePendingToken(token: string | undefined): Promise<string | null> {
+  return (await readLinePending(token))?.lineUserId ?? null;
+}
+
+export async function readLinePending(token: string | undefined): Promise<{ lineUserId: string; name: string | null } | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secretKey(), { audience: AUDIENCE });
-    return typeof payload.sub === "string" && payload.sub ? payload.sub : null;
+    if (typeof payload.sub !== "string" || !payload.sub) return null;
+    return { lineUserId: payload.sub, name: typeof payload.name === "string" ? payload.name : null };
   } catch {
     return null;
   }

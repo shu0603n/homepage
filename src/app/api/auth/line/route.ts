@@ -14,14 +14,15 @@ export async function POST(request: Request) {
   const body = (await readJson(request)) as { idToken?: unknown } | null;
   if (typeof body?.idToken !== "string" || !body.idToken) return jsonError("無効なリクエストです。", 400);
 
-  const lineUserId = await verifyLineIdToken(body.idToken);
-  if (!lineUserId) return jsonError("LINE の認証に失敗しました。", 401);
+  const line = await verifyLineIdToken(body.idToken);
+  if (!line) return jsonError("LINE の認証に失敗しました。", 401);
 
+  const lineUserId = line.userId;
   const staff = await findStaffByLineUserId(lineUserId);
   if (!staff) {
     // 続けてメールアドレスとパスワードでログインしたら、この LINE と連携する（lib/auth/line-pending.ts）
     const res = jsonError("LINE と連携済みのアカウントが見つかりません。", 404);
-    res.cookies.set(LINE_PENDING_COOKIE, await makeLinePendingToken(lineUserId), LINE_PENDING_COOKIE_OPTIONS);
+    res.cookies.set(LINE_PENDING_COOKIE, await makeLinePendingToken(lineUserId, line.name), LINE_PENDING_COOKIE_OPTIONS);
     return res;
   }
 
