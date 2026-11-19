@@ -2,7 +2,7 @@ import { createHmac, randomInt, randomUUID, timingSafeEqual } from "node:crypto"
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 
-// メールで送る6桁の確認コード（メールアドレス変更で使う。送信回数の制限はスタッフ登録のご案内メールでも使う）。
+// メールで送る6桁の確認コード（メールアドレス変更と、LINE から来た方のパスワード設定で使う。送信回数の制限はスタッフ登録のご案内メールでも使う）。
 // コードそのものは保存せず、「署名つきの Cookie（コードのハッシュ・対象・有効期限）」と、メールで送ったコードを突き合わせる。
 //
 // 総当たり対策：
@@ -11,9 +11,9 @@ import { cookies } from "next/headers";
 // 送信回数の制限：同じメールアドレスへの送信は RESEND_INTERVAL 秒に1回・1時間に MAX_SENDS_PER_HOUR 回まで
 // ※ メモリ上の回数はサーバーのインスタンスごと（再起動で消える）。DB にテーブルを増やさずにできる範囲の対策
 
-export type VerifyPurpose = "email-change";
+export type VerifyPurpose = "email-change" | "line-setup";
 
-const COOKIE_NAME: Record<VerifyPurpose, string> = { "email-change": "emoris_email_change" };
+const COOKIE_NAME: Record<VerifyPurpose, string> = { "email-change": "emoris_email_change", "line-setup": "emoris_line_setup" };
 const CODE_MINUTES = 15;
 const MAX_ATTEMPTS = 5;
 const RESEND_INTERVAL = 60;

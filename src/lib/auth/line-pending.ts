@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 // 「LINE ではログインできたが、連携しているスタッフが見つからなかった」人を、
 // 続けてメールアドレスとパスワードでログインしたときに、その LINE と自動で連携する。
 //
-//   1. LINE ログイン（LIFF・Web のどちらでも）で LINE が本人確認した userId を、署名つきの Cookie に10分だけ覚えておく
+//   1. LINE ログイン（LIFF・Web のどちらでも）で LINE が本人確認した userId を、署名つきの Cookie に30分だけ覚えておく
 //   2. その間にメールアドレスとパスワードでログインに成功したら、そのスタッフの staff.line_user_id に書き込む
 //   3. 次からは LINE の自動ログインでそのまま入れる
 //
@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 // Cookie の userId は LINE が検証した値だけを入れ、サイトの秘密鍵で署名するので、利用者が書き換えることはできない
 
 export const LINE_PENDING_COOKIE = "emoris_line_pending";
-const MAX_AGE = 10 * 60;
+const MAX_AGE = 30 * 60; // メールアドレスの入力・確認コードの受け取りまでの時間も見て30分
 const AUDIENCE = "emoris-line-pending";
 
 function secretKey(): Uint8Array {

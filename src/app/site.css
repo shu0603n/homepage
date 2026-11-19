@@ -1548,6 +1548,12 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
 .line-login__or { display: flex; align-items: center; gap: 16px; margin: 36px 0 0; font-size: 13px; font-weight: 700; color: var(--navy); }
 .line-login__or::before, .line-login__or::after { content: ""; flex: 1; height: 1px; background: #c3d2da; }
 .line-login__error { max-width: 640px; margin: 0 auto 28px; }
+/* LINE から来て未連携の方：確認コードでパスワード設定＋LINE 連携（LineSetupForm） */
+.line-setup { border-top: 4px solid #06c755; }
+.line-setup .form__note { line-height: 1.8; }
+.line-setup__back { margin-top: 18px; text-align: center; }
+.link-button { padding: 0; border: 0; background: none; font: inherit; font-size: 14px; color: var(--navy); text-decoration: underline; cursor: pointer; }
+.line-setup + .line-login__or { max-width: 640px; margin: 44px auto 28px; }
 /* スタッフ登録：送信後の「ご案内メールをお送りしました」と、パスワード設定画面 */
 .register-note { margin: 36px 0 0; font-size: 14px; text-align: center; color: var(--sub); }
 .register-sent { text-align: center; }

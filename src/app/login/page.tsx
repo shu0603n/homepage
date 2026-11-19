@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { LineAutoLogin } from "@/components/auth/LineAutoLogin";
+import { LineSetupForm } from "@/components/auth/LineSetupForm";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { PageShell } from "@/components/site/PageShell";
 import { isLineWebLoginEnabled } from "@/lib/auth/line-login";
@@ -23,7 +24,8 @@ export const metadata: Metadata = { ...buildMetadata("login/", meta), robots: { 
 const LINE_MESSAGES: Record<string, string> = {
   not_linked: "この LINE アカウントと連携しているスタッフ登録が見つかりません。メールアドレスとパスワードでログインし、マイページから LINE の友だち追加を行ってください。",
   // LINE の本人確認が済んでいて、続けてログインすれば自動で連携できるとき（lib/auth/line-pending.ts）
-  not_linked_pending: "この LINE はまだスタッフ登録と連携されていません。下のメールアドレスとパスワードで一度ログインすると、この LINE と連携され、次回から LINE で自動ログインできます。",
+  // LINE から来て未連携の方は、ほぼ全員まだパスワードを設定していないので、パスワード設定（LineSetupForm）を先に案内する
+  not_linked_pending: "この LINE はまだスタッフ登録と連携されていません。下の手順でパスワードを設定すると LINE と連携され、次回から LINE を開くだけで自動でログインできます。",
   blocked: "このアカウントではログインできません。お電話にてお問い合わせください。",
   cancelled: "LINE でのログインがキャンセルされました。",
   expired: "LINE でのログインの有効期限が切れました。もう一度お試しください。",
@@ -43,17 +45,27 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <PageShell route="login/" meta={meta}>
       <section className="section">
         <div className="container">
-          <div className="lead-block fade mb-48">
-            <p className="lead">
-              {isLineWebLoginEnabled() ? "LINE アカウント、または登録済みのメールアドレスとパスワードでログインしてください。" : "登録済みのメールアドレスとパスワードでログインしてください。"}
-            </p>
-          </div>
+          {!linePending && (
+            <div className="lead-block fade mb-48">
+              <p className="lead">
+                {isLineWebLoginEnabled() ? "LINE アカウント、または登録済みのメールアドレスとパスワードでログインしてください。" : "登録済みのメールアドレスとパスワードでログインしてください。"}
+              </p>
+            </div>
+          )}
           {lineMessage && (
             <p className={`form__status ${linePending ? "is-ok" : "is-ng"} line-login__error`} role="alert">
               {lineMessage}
             </p>
           )}
-          {isLineWebLoginEnabled() && (
+          {linePending && (
+            <>
+              <LineSetupForm next={next} />
+              <p className="line-login__or">
+                <span>パスワードを設定済みの方はこちら</span>
+              </p>
+            </>
+          )}
+          {isLineWebLoginEnabled() && !linePending && (
             <div className="line-login">
               <a className="line-step__btn" href={lineHref}>
                 <i className="bi bi-line" aria-hidden="true" />
