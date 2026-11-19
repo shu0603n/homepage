@@ -7,6 +7,7 @@ import { postJson } from "@/components/auth/api";
 export function LoginForm({ next }: { next: string }) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [linked, setLinked] = useState(false);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -15,6 +16,11 @@ export function LoginForm({ next }: { next: string }) {
     setMessage("");
     const result = await postJson("/api/auth/login/", { email: fd.get("email"), password: fd.get("password") });
     if (result.ok) {
+      // 直前の LINE ログインの LINE と、このログインで連携できたとき（api/auth/login）は、ひと言お知らせしてから移動する
+      if (result.data.lineLink === "linked") {
+        setLinked(true);
+        await new Promise((r) => setTimeout(r, 1800));
+      }
       // Cookie を反映させるためページ全体を読み込み直して移動する
       window.location.assign(next);
       return;
@@ -49,6 +55,11 @@ export function LoginForm({ next }: { next: string }) {
       {message && (
         <p className="form__status is-ng" role="alert">
           {message}
+        </p>
+      )}
+      {linked && (
+        <p className="form__status is-ok" role="status">
+          <i className="bi bi-check-circle-fill" aria-hidden="true" /> LINE と連携しました。次回から LINE で自動ログインできます。
         </p>
       )}
       <ul className="auth-links">

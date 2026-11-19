@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { LineAutoLogin } from "@/components/auth/LineAutoLogin";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { PageShell } from "@/components/site/PageShell";
 import { isLineWebLoginEnabled } from "@/lib/auth/line-login";
+import { LINE_PENDING_COOKIE, readLinePendingToken } from "@/lib/auth/line-pending";
 import { getSession } from "@/lib/auth/session";
 import { safeNext } from "@/lib/auth/redirect";
 import { buildMetadata } from "@/lib/metadata";
@@ -20,6 +22,8 @@ export const metadata: Metadata = { ...buildMetadata("login/", meta), robots: { 
 // LINE ログインから戻ってきたときの案内（/api/auth/line/callback/ が ?line=… を付ける）
 const LINE_MESSAGES: Record<string, string> = {
   not_linked: "この LINE アカウントと連携しているスタッフ登録が見つかりません。メールアドレスとパスワードでログインし、マイページから LINE の友だち追加を行ってください。",
+  // LINE の本人確認が済んでいて、続けてログインすれば自動で連携できるとき（lib/auth/line-pending.ts）
+  not_linked_pending: "この LINE はまだスタッフ登録と連携されていません。下のメールアドレスとパスワードで一度ログインすると、この LINE と連携され、次回から LINE で自動ログインできます。",
   blocked: "このアカウントではログインできません。お電話にてお問い合わせください。",
   cancelled: "LINE でのログインがキャンセルされました。",
   expired: "LINE でのログインの有効期限が切れました。もう一度お試しください。",
@@ -31,7 +35,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const params = await searchParams;
   const next = safeNext(params.next);
   if (await getSession()) redirect(next);
-  const lineMessage = params.line ? LINE_MESSAGES[params.line] : undefined;
+  const linePending = params.line === "not_linked" && (await readLinePendingToken((await cookies()).get(LINE_PENDING_COOKIE)?.value)) !== null;
+  const lineMessage = params.line ? LINE_MESSAGES[linePending ? "not_linked_pending" : params.line] : undefined;
   const lineHref = `/api/auth/line/start/?next=${encodeURIComponent(next)}`;
 
   return (
@@ -44,7 +49,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </p>
           </div>
           {lineMessage && (
-            <p className="form__status is-ng line-login__error" role="alert">
+            <p className={`form__status ${linePending ? "is-ok" : "is-ng"} line-login__error`} role="alert">
               {lineMessage}
             </p>
           )}

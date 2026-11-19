@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { finishLineLogin, LINE_STATE_COOKIE, readLineState, siteUrl } from "@/lib/auth/line-login";
+import { LINE_PENDING_COOKIE, LINE_PENDING_COOKIE_OPTIONS, makeLinePendingToken } from "@/lib/auth/line-pending";
 import { createSession } from "@/lib/auth/session";
 import { findStaffByLineUserId, isLoginBlocked, reactivateIfUnsubscribed } from "@/lib/auth/staff";
 
@@ -30,7 +31,12 @@ export async function GET(request: Request) {
   if (!lineUserId) return fail("failed");
 
   const staff = await findStaffByLineUserId(lineUserId);
-  if (!staff) return fail("not_linked");
+  if (!staff) {
+    // 続けてメールアドレスとパスワードでログインしたら、この LINE と連携する（lib/auth/line-pending.ts）
+    const res = fail("not_linked");
+    res.cookies.set(LINE_PENDING_COOKIE, await makeLinePendingToken(lineUserId), LINE_PENDING_COOKIE_OPTIONS);
+    return res;
+  }
   if (isLoginBlocked(staff)) return fail("blocked");
 
   await reactivateIfUnsubscribed(staff.id).catch((error) => console.error("staff reactivate failed:", error));

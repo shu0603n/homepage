@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { isLineLoginEnabled, verifyLineIdToken } from "@/lib/auth/line";
+import { LINE_PENDING_COOKIE, LINE_PENDING_COOKIE_OPTIONS, makeLinePendingToken } from "@/lib/auth/line-pending";
 import { createSession } from "@/lib/auth/session";
 import { findStaffByLineUserId, isLoginBlocked, reactivateIfUnsubscribed } from "@/lib/auth/staff";
 
@@ -17,7 +18,12 @@ export async function POST(request: Request) {
   if (!lineUserId) return jsonError("LINE の認証に失敗しました。", 401);
 
   const staff = await findStaffByLineUserId(lineUserId);
-  if (!staff) return jsonError("LINE と連携済みのアカウントが見つかりません。", 404);
+  if (!staff) {
+    // 続けてメールアドレスとパスワードでログインしたら、この LINE と連携する（lib/auth/line-pending.ts）
+    const res = jsonError("LINE と連携済みのアカウントが見つかりません。", 404);
+    res.cookies.set(LINE_PENDING_COOKIE, await makeLinePendingToken(lineUserId), LINE_PENDING_COOKIE_OPTIONS);
+    return res;
+  }
 
   if (isLoginBlocked(staff)) return jsonError("このアカウントではログインできません。お電話にてお問い合わせください。", 403);
 
