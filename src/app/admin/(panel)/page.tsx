@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { avatarUrl } from "@/components/admin/AdminAvatar";
 import { AdminShell, type AdminNavKey } from "@/components/admin/AdminShell";
 import { AdminPanelSkeleton } from "@/components/admin/AdminSkeleton";
 import { Ga4Panel, GtmPanel, InquiriesPanel, ScPanel } from "@/components/admin/panels";
@@ -64,7 +65,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         </Suspense>
       )}
       {tab === "inquiries" && (
-        <InquiriesPanel inquiries={inquiries} filter={params.filter} admins={admins.map((a) => ({ id: a.id, label: a.name ?? a.email }))} selfId={session.id} />
+        <InquiriesPanel inquiries={inquiries} filter={params.filter} admins={admins.map((a) => ({ id: a.id, label: a.name ?? a.email, email: a.email, avatar: avatarUrl(a.id, a.avatar_version) }))} selfId={session.id} />
       )}
     </AdminShell>
   );

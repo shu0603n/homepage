@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { AdminAvatar } from '@/components/admin/AdminAvatar';
 import { InquiryHandledToggle } from '@/components/admin/InquiryHandledToggle';
 import { InquiryWork } from '@/components/admin/InquiryWork';
 import { getGa4, getGtm, getSearchConsole, SEARCH_CONSOLE_SITE, type Section } from '@/lib/admin/google';
@@ -579,10 +580,10 @@ export function InquiriesPanel({
 }: {
   inquiries: InquiryRow[] | null;
   filter?: string;
-  admins: { id: number; label: string }[];
+  admins: { id: number; label: string; email: string; avatar: string | null }[];
   selfId: number;
 }) {
-  const adminName = new Map(admins.map((a) => [a.id, a.label]));
+  const adminById = new Map(admins.map((a) => [a.id, a]));
   if (!inquiries)
     return (
       <div className="adm-alert is-ng">
@@ -636,12 +637,21 @@ export function InquiriesPanel({
                     {i.name} 様
                   </span>
                   <span className="adm-inquiry__date">{dateTime(i.created_at)}</span>
-                  {i.assignee_id !== null && (
-                    <span className="adm-inquiry__assignee">
-                      <i className="bi bi-person" aria-hidden="true" />
-                      担当：{adminName.get(i.assignee_id) ?? '（削除された管理者）'}
-                    </span>
-                  )}
+                  {i.assignee_id !== null &&
+                    (() => {
+                      // 担当者のアイコン（未登録なら名前の頭文字）。削除された管理者は人のマーク
+                      const a = adminById.get(i.assignee_id);
+                      return (
+                        <span className="adm-inquiry__assignee">
+                          {a ? (
+                            <AdminAvatar name={a.label} email={a.email} url={a.avatar} className="adm-inquiry__avatar" />
+                          ) : (
+                            <i className="bi bi-person" aria-hidden="true" />
+                          )}
+                          担当：{a?.label ?? '（削除された管理者）'}
+                        </span>
+                      );
+                    })()}
                   {i.memo && (
                     <span className="adm-inquiry__hasmemo">
                       <i className="bi bi-sticky" aria-hidden="true" />
