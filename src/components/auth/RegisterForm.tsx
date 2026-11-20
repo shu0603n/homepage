@@ -85,6 +85,10 @@ export function RegisterForm({ privacy, variant = "web" }: { privacy: ReactNode;
     setBusy(false);
     if (result.ok) {
       if (typeof result.data.lineUrl === "string") setLineUrl(result.data.lineUrl);
+      // アクセス分析の「登録」用：申し込みが済んだら URL を /register/?sent=1 にする。
+      // GA4 はこれを1回のページ表示として記録するので、この訪問がどこ（instagram・LINE など）から来たかと結び付けて数えられる。
+      // （登録完了ページはメールのリンクから別の訪問で開かれるため、来た元が分からなくなる）。来社登録は対象外
+      if (!visit) window.history.pushState(null, "", "/register/?sent=1");
       return setSentTo(get("mail"));
     }
     setMessage(result.message);

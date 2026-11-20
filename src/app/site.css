@@ -1912,6 +1912,42 @@ body:has(.admin-shell) #main { padding-top: 0 !important; }
 .adm-share__dot { width: 10px; height: 10px; border-radius: 3px; }
 
 /* ---------- 表・タグ ---------- */
+/* アクセス分析：来た元ごとの積み上げ棒・凡例・表・割合・縦棒 */
+.adm-daily__stack { display: flex; flex-direction: column-reverse; width: 100%; border-radius: 6px 6px 2px 2px; overflow: hidden; transition: filter .2s; }
+.adm-daily__stack > span { display: block; min-height: 2px; }
+.adm-daily--stack .adm-daily__col:hover .adm-daily__stack { filter: brightness(1.08) saturate(1.1); }
+.adm-daily__tip em { display: block; font-style: normal; font-size: 11px; opacity: .85; }
+.adm-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; margin: 18px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--navy-dd); }
+.adm-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.adm-legend span { width: 12px; height: 12px; border-radius: 50%; }
+.adm-traffic th:not(:first-child), .adm-traffic td:not(:first-child) { text-align: right; width: 18%; }
+.adm-traffic td:first-child { font-weight: 500; word-break: break-all; }
+.adm-traffic td.is-hit { color: #0f9488; font-weight: 700; }
+.adm-traffic tbody tr { transition: background .2s; }
+.adm-traffic tbody tr:hover { background: #f6f9fb; }
+.adm-sharelist { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.adm-sharelist li { display: grid; grid-template-columns: minmax(0, 1fr) 48px minmax(60px, 120px) 52px; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.adm-sharelist__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-sharelist__num { font-family: var(--f-en); font-weight: 700; text-align: right; color: var(--navy-dd); }
+.adm-sharelist__track { height: 7px; border-radius: 4px; background: #edf2f5; overflow: hidden; }
+.adm-sharelist__track span { display: block; height: 100%; border-radius: 4px; background: var(--grad-cool); animation: adm-grow .8s ease-out both; transform-origin: left; }
+.adm-sharelist__pct { font-family: var(--f-en); font-size: 12px; text-align: right; color: var(--sub); }
+.adm-cols { display: grid; align-items: end; gap: 4px; height: 190px; padding-top: 18px; }
+.adm-cols__col { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; min-width: 0; }
+.adm-cols__bar { position: relative; display: block; min-height: 0; border-radius: 4px 4px 1px 1px; background: #9cc3ff; animation: adm-rise .7s ease-out both; transform-origin: bottom; }
+.adm-cols__col.is-max .adm-cols__bar { background: #1f6feb; }
+.adm-cols__bar em { position: absolute; left: 50%; bottom: calc(100% + 3px); transform: translateX(-50%); font-style: normal; font-family: var(--f-en); font-size: 10px; color: var(--sub); white-space: nowrap; }
+.adm-cols__col.is-max .adm-cols__bar em { color: #1f6feb; font-weight: 700; }
+.adm-cols__label { margin-top: 6px; font-size: 11px; text-align: center; color: var(--sub); border-top: 1px solid var(--line); padding-top: 4px; }
+@keyframes adm-rise { from { transform: scaleY(0); } }
+@keyframes adm-grow { from { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .adm-cols__bar, .adm-sharelist__track span { animation: none; } }
+@media (max-width: 600px) {
+  .adm-cols { gap: 2px; }
+  .adm-cols__bar em { display: none; }
+  .adm-cols__col.is-max .adm-cols__bar em { display: block; }
+  .adm-sharelist li { grid-template-columns: minmax(0, 1fr) 40px 60px 46px; gap: 8px; }
+}
 .adm-tablewrap { overflow-x: auto; }
 .adm-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .adm-table th, .adm-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }

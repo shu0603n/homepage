@@ -3,7 +3,16 @@ import type { ReactNode } from 'react';
 import { AdminAvatar } from '@/components/admin/AdminAvatar';
 import { InquiryHandledToggle } from '@/components/admin/InquiryHandledToggle';
 import { InquiryWork } from '@/components/admin/InquiryWork';
-import { getGa4, getGtm, getSearchConsole, SEARCH_CONSOLE_SITE, type Section } from '@/lib/admin/google';
+import {
+  getGa4,
+  getGtm,
+  getSearchConsole,
+  NATURAL,
+  SEARCH_CONSOLE_SITE,
+  type Ga4Traffic,
+  type Section,
+  type TrafficRow
+} from '@/lib/admin/google';
 import type { InquiryRow } from '@/lib/admin/store';
 import { COMPANY, RECRUIT, SERVICES, SITE } from '@/lib/site';
 
@@ -116,6 +125,132 @@ function Daily({ rows }: { rows: { date: string; users: number }[] }) {
           </span>
           <span className="adm-daily__bar" style={{ height: `${Math.max(3, (r.users / max) * 100)}%` }} />
           {(i % 7 === 0 || i === rows.length - 1) && <span className="adm-daily__date">{r.date}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------- アクセス分析のグラフ・表 ----------
+
+// 来た元ごとの色（多い順）。自然流入はグレー
+const SOURCE_COLORS = ['#1f6feb', '#e5484d', '#f59e0b', '#8e4ec6', '#0ea5a4'];
+const sourceColor = (name: string, i: number) =>
+  name === NATURAL ? '#a3b1bd' : name === 'その他' ? '#cbd5dd' : SOURCE_COLORS[i % SOURCE_COLORS.length];
+
+// 日ごとのアクセスを、来た元ごとに色分けして積み上げる
+function SourceDaily({ t }: { t: Ga4Traffic }) {
+  const totals = t.daily.map((d) => d.values.reduce((a, b) => a + b, 0));
+  const max = Math.max(1, ...totals);
+  if (totals.every((v) => v === 0)) return <p className="adm-empty">まだデータがありません。</p>;
+  return (
+    <>
+      <div className="adm-daily adm-daily--stack" role="img" aria-label="来た元ごとの日別アクセスのグラフ">
+        <span className="adm-daily__max">最大 {fmt(max)}回</span>
+        {t.daily.map((d, i) => (
+          <div key={d.date} className="adm-daily__col">
+            <span className="adm-daily__tip">
+              {d.date}
+              <strong>{fmt(totals[i])}回</strong>
+              {t.sources.map((n, k) =>
+                d.values[k] ? (
+                  <em key={n}>
+                    {n} {fmt(d.values[k])}
+                  </em>
+                ) : null
+              )}
+            </span>
+            <span className="adm-daily__stack" style={{ height: `${Math.max(totals[i] ? 3 : 0, (totals[i] / max) * 100)}%` }}>
+              {t.sources.map((n, k) =>
+                d.values[k] ? <span key={n} style={{ flexGrow: d.values[k], background: sourceColor(n, k) }} /> : null
+              )}
+            </span>
+            {(i % 7 === 0 || i === t.daily.length - 1) && <span className="adm-daily__date">{d.date}</span>}
+          </div>
+        ))}
+      </div>
+      <ul className="adm-legend">
+        {t.sources.map((n, k) => (
+          <li key={n}>
+            <span style={{ background: sourceColor(n, k) }} aria-hidden="true" />
+            {n}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+// メディア別・キャンペーン別の表（アクセス・登録・登録率）
+function TrafficTable({ rows, empty }: { rows: TrafficRow[]; empty: string }) {
+  if (rows.length === 0) return <p className="adm-empty">{empty}</p>;
+  return (
+    <div className="adm-tablewrap">
+      <table className="adm-table adm-traffic">
+        <thead>
+          <tr>
+            <th>名称</th>
+            <th>アクセス</th>
+            <th>登録</th>
+            <th>登録率</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.name}>
+              <td>{r.name}</td>
+              <td>{fmt(r.sessions)}</td>
+              <td className={r.signups > 0 ? 'is-hit' : undefined}>{fmt(r.signups)}</td>
+              <td>{r.sessions ? pct(r.signups / r.sessions) : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function TrafficUnavailable() {
+  return <p className="adm-empty">この集計を読み込めませんでした。時間をおいて開き直してください。</p>;
+}
+
+// 割合つきの一覧（流入元サイト）
+function ShareList({ rows }: { rows: { name: string; sessions: number }[] }) {
+  const total = rows.reduce((a, r) => a + r.sessions, 0);
+  if (!total) return <p className="adm-empty">まだデータがありません。</p>;
+  return (
+    <ul className="adm-sharelist">
+      {rows.map((r) => (
+        <li key={r.name}>
+          <span className="adm-sharelist__name">{r.name}</span>
+          <span className="adm-sharelist__num">{fmt(r.sessions)}</span>
+          <span className="adm-sharelist__track" aria-hidden="true">
+            <span style={{ width: `${(r.sessions / total) * 100}%` }} />
+          </span>
+          <span className="adm-sharelist__pct">{pct(r.sessions / total)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// 縦棒グラフ（時間帯別・曜日別）。いちばん多いところを濃い色にする
+function Columns({ values, labels, name }: { values: number[]; labels: string[]; name: string }) {
+  const max = Math.max(...values);
+  if (max === 0) return <p className="adm-empty">まだデータがありません。</p>;
+  return (
+    <div
+      className="adm-cols"
+      role="img"
+      aria-label={`${name}のグラフ`}
+      style={{ gridTemplateColumns: `repeat(${values.length}, minmax(0, 1fr))` }}
+    >
+      {values.map((v, i) => (
+        <div key={labels[i]} className={`adm-cols__col${v === max ? ' is-max' : ''}`}>
+          <span className="adm-cols__bar" style={{ height: `${(v / max) * 100}%` }}>
+            {v > 0 && <em>{fmt(v)}</em>}
+          </span>
+          <span className="adm-cols__label">{labels[i]}</span>
         </div>
       ))}
     </div>
@@ -249,12 +384,13 @@ const fetched = (at: number) => (
   </p>
 );
 
-// ---------- アクセス状況（GA4） ----------
+// ---------- アクセス分析（GA4） ----------
 
 export async function Ga4Panel() {
   const ga = await getGa4();
   if (!ga.ok) return <SetupGuide section={ga} service="ga4" />;
   const d = ga.data;
+  const t = d.traffic;
   const diff = d.previous.users ? (d.totals.users - d.previous.users) / d.previous.users : 0;
   return (
     <div className="adm-stack">
@@ -338,6 +474,34 @@ export async function Ga4Panel() {
         <Daily rows={d.daily} />
       </Card>
 
+      {t ? (
+        <>
+          <Card
+            en="Traffic"
+            title="来た元ごとの日別アクセス"
+            help="日ごとの訪問の回数を、来た元（utm_source）で色分けしています。広告や SNS のリンクに付けた印で分けており、印のない訪問は「自然流入」です。棒にマウスを乗せると内訳が出ます。"
+            wide
+          >
+            <SourceDaily t={t} />
+          </Card>
+
+          <Card
+            en="Media"
+            title="メディア別（utm_medium）"
+            help="「登録」は、その訪問の中でスタッフ登録の申し込みまで進んだ回数です。登録率 ＝ 登録 ÷ アクセス。"
+            wide
+          >
+            <TrafficTable rows={t.mediums} empty="まだデータがありません。" />
+          </Card>
+
+          <Card en="Campaign" title="キャンペーン別（utm_campaign）" help="広告・投稿ごとに付けたキャンペーン名で分けています。" wide>
+            <TrafficTable rows={t.campaigns} empty="キャンペーン名の付いたリンクからの訪問は、まだありません。" />
+          </Card>
+        </>
+      ) : (
+        <TrafficUnavailable />
+      )}
+
       <div className="adm-grid2">
         <Card en="Pages" title="よく見られたページ" help="どのページがよく読まれているかが分かります（上位10）。">
           <Bars rows={d.pages.map((p) => ({ label: pageName(p.path), value: p.views }))} unit="回" />
@@ -347,9 +511,31 @@ export async function Ga4Panel() {
         </Card>
       </div>
 
-      <Card en="Devices" title="使っている端末" help="スマホから見ている人が多い場合は、スマホでの見やすさが特に大切です。" wide>
-        <DeviceShare rows={d.devices} />
-      </Card>
+      <div className="adm-grid2">
+        <Card
+          en="Referrers"
+          title="流入元サイト"
+          help="どのサイト・アプリから来たかです（上位10）。「直接・不明」は、URL の直接入力・ブックマーク・アプリ内ブラウザなど、来た元が分からない訪問です。"
+        >
+          {t ? <ShareList rows={t.referrers} /> : <TrafficUnavailable />}
+        </Card>
+        <Card en="Devices" title="使っている端末" help="スマホから見ている人が多い場合は、スマホでの見やすさが特に大切です。">
+          <DeviceShare rows={d.devices} />
+        </Card>
+      </div>
+
+      <div className="adm-grid2">
+        <Card en="Hours" title="時間帯別アクセス（日本時間）" help="0〜23時台の訪問の回数です。いちばん多い時間帯を濃い色で示します。">
+          {t ? <Columns values={t.hours} labels={t.hours.map((_, h) => String(h))} name="時間帯別アクセス" /> : <TrafficUnavailable />}
+        </Card>
+        <Card en="Weekdays" title="曜日別アクセス" help="曜日ごとの訪問の回数です（28日間＝各曜日4回分の合計）。">
+          {t ? (
+            <Columns values={t.weekdays} labels={['日', '月', '火', '水', '木', '金', '土']} name="曜日別アクセス" />
+          ) : (
+            <TrafficUnavailable />
+          )}
+        </Card>
+      </div>
       {fetched(ga.fetchedAt)}
     </div>
   );
@@ -508,7 +694,7 @@ export async function GtmPanel() {
         アクセス計測や広告の「タグ」（計測用の小さなプログラム）を、まとめてサイトに配る仕組みです。
         <br />
         ここで<strong>公開中のタグ</strong>
-        が全ページで動いています。アクセス数などの数字は「アクセス状況」で見られます。
+        が全ページで動いています。アクセス数などの数字は「アクセス分析」で見られます。
       </Summary>
       <div className="adm-kpis">
         <Kpi icon="bi-box" label="コンテナ" value={d.containerId} help="サイトに埋め込んでいるタグ マネージャーの ID です。" />
@@ -556,7 +742,10 @@ export async function GtmPanel() {
 // 一覧に出す本文の冒頭（改行や空白はまとめ、50文字を超えたら「…」）。全文は開いたときに出す
 const EXCERPT_CHARS = 50;
 function excerpt(message: string | null): string {
-  const text = (message ?? '').split(/[\s　]+/).filter(Boolean).join(' ');
+  const text = (message ?? '')
+    .split(/[\s　]+/)
+    .filter(Boolean)
+    .join(' ');
   const chars = [...text];
   return chars.length > EXCERPT_CHARS ? `${chars.slice(0, EXCERPT_CHARS).join('')}…` : text;
 }

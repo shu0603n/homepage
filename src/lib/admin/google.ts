@@ -111,7 +111,26 @@ export type Ga4Data = {
   devices: { name: string; users: number }[];
   registrations: { current: number; previous: number };
   realtimeUsers: number;
+  traffic: Ga4Traffic | null; // 取得に失敗したら null（ほかの数字はそのまま出す）
 };
+
+// アクセス分析（どこから来て、いつ来て、登録につながったか）。「アクセス」は訪問の回数（セッション数）。
+// 来た元は URL の utm_source / utm_medium / utm_campaign（広告や SNS のリンクに付けている印）で分ける。印のない訪問は「自然流入」。
+// 「登録」はスタッフ登録フォームの申し込み（送信後に /register/?sent=1 が表示された回数）。その訪問の来た元に結び付けて数える
+export type TrafficRow = { name: string; sessions: number; signups: number };
+export type Ga4Traffic = {
+  sources: string[]; // 日別グラフの色分け（多い順。最後が「自然流入」）
+  daily: { date: string; values: number[] }[]; // values は sources と同じ順
+  mediums: TrafficRow[];
+  campaigns: TrafficRow[];
+  referrers: { name: string; sessions: number }[];
+  hours: number[]; // 0〜23時
+  weekdays: number[]; // 日〜土
+  signupsTotal: number;
+};
+
+export const NATURAL = "自然流入";
+const SIGNUP_PATH = "/register/?sent=";
 
 type ReportRow = { dimensionValues?: { value: string }[]; metricValues?: { value: string }[] };
 type Report = { rows?: ReportRow[] };
@@ -128,7 +147,7 @@ export function getGa4(): Promise<Section<Ga4Data>> {
     const desc = (metric: string) => [{ metric: { metricName: metric }, desc: true }];
 
     // 3つの問い合わせは同時に送る（順番に待つより速い）
-    const [batch, reg, realtime] = await Promise.all([
+    const [batch, reg, realtime, traffic] = await Promise.all([
       call<{ reports: Report[] }>(`${base}:batchRunReports`, {
       requests: [
         { dateRanges: [current, previous], metrics: [{ name: "activeUsers" }, { name: "newUsers" }, { name: "sessions" }, { name: "screenPageViews" }] },
@@ -146,6 +165,10 @@ export function getGa4(): Promise<Section<Ga4Data>> {
         dimensionFilter: { filter: { fieldName: "pagePath", stringFilter: { matchType: "BEGINS_WITH", value: "/register/complete" } } },
       }),
       call<Report>(`${base}:runRealtimeReport`, { metrics: [{ name: "activeUsers" }] }),
+      getTraffic(base, current).catch((error) => {
+        console.error("ga4 traffic failed:", error);
+        return null;
+      }),
     ]);
     const [totalsR, dailyR, pagesR, channelsR, devicesR] = batch.reports;
 
@@ -171,8 +194,99 @@ export function getGa4(): Promise<Section<Ga4Data>> {
       devices: (devicesR.rows ?? []).map((r) => ({ name: r.dimensionValues?.[0]?.value ?? "", users: num(r.metricValues?.[0]?.value) })),
       registrations: { current: regOf("current"), previous: regOf("previous") },
       realtimeUsers: num(realtime.rows?.[0]?.metricValues?.[0]?.value),
+      traffic,
     };
   });
+}
+
+async function getTraffic(base: string, range: { startDate: string; endDate: string; name: string }): Promise<Ga4Traffic> {
+  const dr = [{ startDate: range.startDate, endDate: range.endDate }];
+  const sessions = [{ name: "sessions" }];
+  const desc = [{ metric: { metricName: "sessions" }, desc: true }];
+  const [a, b] = await Promise.all([
+    call<{ reports: Report[] }>(`${base}:batchRunReports`, {
+      requests: [
+        { dateRanges: dr, dimensions: [{ name: "date" }, { name: "sessionManualSource" }], metrics: sessions, limit: 2000 },
+        { dateRanges: dr, dimensions: [{ name: "sessionManualMedium" }], metrics: sessions, orderBys: desc, limit: 20 },
+        { dateRanges: dr, dimensions: [{ name: "sessionManualCampaignName" }], metrics: sessions, orderBys: desc, limit: 20 },
+        { dateRanges: dr, dimensions: [{ name: "sessionSource" }], metrics: sessions, orderBys: desc, limit: 10 },
+        { dateRanges: dr, dimensions: [{ name: "hour" }], metrics: sessions },
+      ],
+    }),
+    call<{ reports: Report[] }>(`${base}:batchRunReports`, {
+      requests: [
+        { dateRanges: dr, dimensions: [{ name: "dayOfWeek" }], metrics: sessions },
+        {
+          dateRanges: dr,
+          dimensions: [{ name: "sessionManualMedium" }, { name: "sessionManualCampaignName" }],
+          metrics: [{ name: "screenPageViews" }],
+          dimensionFilter: { filter: { fieldName: "pagePathPlusQueryString", stringFilter: { matchType: "BEGINS_WITH", value: SIGNUP_PATH } } },
+        },
+      ],
+    }),
+  ]);
+  const [dailyR, mediumR, campaignR, sourceR, hourR] = a.reports;
+  const [weekR, signupR] = b.reports;
+  const dim = (r: ReportRow, i = 0) => r.dimensionValues?.[i]?.value ?? "";
+  const val = (r: ReportRow) => num(r.metricValues?.[0]?.value);
+  const label = (v: string) => (!v || v === "(not set)" || v === "(none)" ? NATURAL : v);
+
+  // 日別×来た元：多い順に4つまで色分けし、残りは「その他」、印なしは「自然流入」
+  const totals = new Map<string, number>();
+  for (const r of dailyR.rows ?? []) totals.set(label(dim(r, 1)), (totals.get(label(dim(r, 1))) ?? 0) + val(r));
+  const top = [...totals].filter(([n]) => n !== NATURAL).sort((x, y) => y[1] - x[1]).map(([n]) => n);
+  const sources = [...top.slice(0, 4), ...(top.length > 4 ? ["その他"] : []), ...(totals.has(NATURAL) ? [NATURAL] : [])];
+  const days = new Map<string, number[]>();
+  for (let i = 28; i >= 1; i--) {
+    const d = new Date(Date.now() - i * DAY + 9 * 3600_000).toISOString().slice(0, 10).replace(/-/g, "");
+    days.set(d, sources.map(() => 0));
+  }
+  for (const r of dailyR.rows ?? []) {
+    const row = days.get(dim(r));
+    if (!row) continue;
+    const n = label(dim(r, 1));
+    const idx = sources.indexOf(n) >= 0 ? sources.indexOf(n) : sources.indexOf("その他");
+    if (idx >= 0) row[idx] += val(r);
+  }
+
+  // 登録（申し込み）を、メディア・キャンペーンごとに数える
+  const signupBy = (i: number) => {
+    const m = new Map<string, number>();
+    for (const r of signupR.rows ?? []) m.set(label(dim(r, i)), (m.get(label(dim(r, i))) ?? 0) + val(r));
+    return m;
+  };
+  const sm = signupBy(0);
+  const sc = signupBy(1);
+  const rows = (rep: Report, signups: Map<string, number>, dropNatural: boolean): TrafficRow[] => {
+    const m = new Map<string, number>();
+    for (const r of rep.rows ?? []) m.set(label(dim(r)), (m.get(label(dim(r))) ?? 0) + val(r));
+    return [...m]
+      .filter(([n]) => !(dropNatural && n === NATURAL))
+      .map(([name, s]) => ({ name, sessions: s, signups: signups.get(name) ?? 0 }))
+      .sort((x, y) => y.sessions - x.sessions);
+  };
+
+  const hours = Array.from({ length: 24 }, () => 0);
+  for (const r of hourR.rows ?? []) {
+    const h = Number(dim(r));
+    if (h >= 0 && h < 24) hours[h] += val(r);
+  }
+  const weekdays = Array.from({ length: 7 }, () => 0);
+  for (const r of weekR.rows ?? []) {
+    const w = Number(dim(r));
+    if (w >= 0 && w < 7) weekdays[w] += val(r);
+  }
+
+  return {
+    sources,
+    daily: [...days].map(([d, values]) => ({ date: `${Number(d.slice(4, 6))}/${Number(d.slice(6, 8))}`, values })),
+    mediums: rows(mediumR, sm, false),
+    campaigns: rows(campaignR, sc, true),
+    referrers: (sourceR.rows ?? []).map((r) => ({ name: dim(r) === "(direct)" ? "直接・不明" : dim(r), sessions: val(r) })),
+    hours,
+    weekdays,
+    signupsTotal: [...sm.values()].reduce((x, y) => x + y, 0),
+  };
 }
 
 // ---------- Search Console ----------
