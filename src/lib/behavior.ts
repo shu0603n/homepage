@@ -782,9 +782,13 @@ export function initSite() {
   });
 
   // ---------- ページ遷移後：現在のページへのリンクに aria-current を付ける ----------
-  document.querySelectorAll('main a[href]').forEach((a) => {
-    if (a.pathname === location.pathname && a.origin === location.origin && !a.hash) a.setAttribute('aria-current', 'page');
-  });
+  // 管理ページ（.admin-shell）は対象外：遅れて表示される部分を React が処理する前に属性を足すと、サーバーの出力と食い違って
+  // ハイドレーションエラーになる。管理メニューのように「?tab=…」で見分けるリンクもあるので、パス名だけで判定しない
+  if (!document.querySelector('.admin-shell')) {
+    document.querySelectorAll('main a[href]').forEach((a) => {
+      if (a.pathname === location.pathname && a.search === location.search && a.origin === location.origin && !a.hash) a.setAttribute('aria-current', 'page');
+    });
+  }
 
   return () => {
     alive = false;

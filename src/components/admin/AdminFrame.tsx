@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type MouseEvent, type ReactNode } from "react";
+import { AdminWalker } from "@/components/admin/AdminWalker";
 
 // 管理ページの外枠（開閉できる左のメニュー＋本文）。
 //   - パソコン：左上のボタンでメニューを細く（アイコンだけに）たためる。たたんだかどうかは Cookie（adm_side）に覚え、
@@ -54,6 +55,7 @@ export function AdminFrame({
         {side}
       </aside>
       <div className="adm-body">{children}</div>
+      <AdminWalker />
     </div>
   );
 }
