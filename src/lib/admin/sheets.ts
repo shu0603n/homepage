@@ -247,6 +247,40 @@ function toSheetSubmission(form: FormDetail, s: SubmissionRow): SheetSubmission 
   return { id: s.id, submitted_at: s.submitted_at, who: s.who, line_name: s.line_name, line_user_id: s.line_user_id, staff_id: s.staff_id, answers, files };
 }
 
+// 書く行の準備：
+//   ・シートの行が足りなければ足す（シートはふつう 1000 行。超えると書き込めないため、余裕を持って足す）
+//   ・すぐ上の行（前の回答）の書式（色・罫線・文字・日付や数値の表示形式・そろえ方・入力規則）を、書く行にコピーする
+//     （GAS で行ごとに付けていたような見た目を、そのまま引き継ぐ。シートの書式を変えれば、次の行からそれに合わせる）
+// 書式のコピーができなくても、回答の書き込みは続ける
+async function prepareRows(link: SheetLink, first: number, count: number) {
+  const meta = await api<{ sheets: { properties: { title: string; sheetId: number; gridProperties?: { rowCount?: number } } }[] }>(
+    `${SHEETS}/${link.spreadsheet_id}?fields=sheets.properties(title,sheetId,gridProperties.rowCount)`,
+  );
+  const sheet = meta.sheets.find((s) => s.properties.title === link.sheet_name)?.properties;
+  if (!sheet) throw new SheetError(`シート「${link.sheet_name}」が見つかりません（名前が変わったか、消されました）。「書き込み先を変える」から選び直してください。`);
+  const requests: unknown[] = [];
+  const last = first + count - 1;
+  const rows = sheet.gridProperties?.rowCount ?? 0;
+  if (rows && last > rows) requests.push({ appendDimension: { sheetId: sheet.sheetId, dimension: "ROWS", length: last - rows + 100 } });
+  if (first - 1 > link.header_row) {
+    // 行の番号は 0 から数える（1行目＝0）。すぐ上の行の書式を、書く行（count 行）に貼る
+    requests.push({
+      copyPaste: {
+        source: { sheetId: sheet.sheetId, startRowIndex: first - 2, endRowIndex: first - 1 },
+        destination: { sheetId: sheet.sheetId, startRowIndex: first - 1, endRowIndex: first - 1 + count },
+        pasteType: "PASTE_FORMAT",
+        pasteOrientation: "NORMAL",
+      },
+    });
+  }
+  if (requests.length === 0) return;
+  try {
+    await api(`${SHEETS}/${link.spreadsheet_id}:batchUpdate`, { method: "POST", body: { requests } });
+  } catch (error) {
+    console.error("sheet row prepare failed:", error);
+  }
+}
+
 // 回答をシートに書く（同じフォームの書き込みは1つずつ。いちばん下の空いている行を、設定した列の範囲で探す）
 async function writeRows(form: FormDetail, link: SheetLink, subs: SubmissionRow[]) {
   if (link.columns.length === 0) throw new SheetError("どの列に何を入れるかが設定されていません。");
@@ -256,6 +290,7 @@ async function writeRows(form: FormDetail, link: SheetLink, subs: SubmissionRow[
   const got = await api<{ valueRanges?: { values?: unknown[][] }[] }>(`${SHEETS}/${link.spreadsheet_id}/values:batchGet?${q}`);
   const used = Math.max(0, ...(got.valueRanges ?? []).map((v) => v.values?.[0]?.length ?? 0));
   const first = link.header_row + 1 + used;
+  await prepareRows(link, first, subs.length);
   const data = subs.flatMap((s, i) => {
     const row = first + i;
     const ss = toSheetSubmission(form, s);
