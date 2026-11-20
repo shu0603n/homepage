@@ -2,7 +2,5 @@
 export const LINEXT_URL = (process.env.LINEXT_URL || "https://line-recruit-hub.vercel.app").replace(/\/$/, "");
 
 // 管理画面の左メニューに出す Linext のページ（/api/admin/linext/?to=… を通して、自動でログインして開く）
-export const LINEXT_NAV = [
-  { to: "/candidates", label: "友だち・求職者管理", icon: "bi-people" },
-  { to: "/dashboard", label: "Linext を開く", icon: "bi-line" },
-] as const;
+// （友だち管理・個別チャットは管理画面の「LINE 友だち・チャット」に移したので、Linext は移行中の予備としてだけ開けるようにしておく）
+export const LINEXT_NAV = [{ to: "/dashboard", label: "Linext を開く（移行中）", icon: "bi-line" }] as const;

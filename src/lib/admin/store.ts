@@ -78,6 +78,36 @@ export const ADMIN_TABLES_SQL = [
   )`,
   // ホームページの応募ボタンから応募が完了した回数（2026-11-19 追加。共用の応募の表には、社内システムからの応募も入るため別に数える）
   `ALTER TABLE hp_job_stat_daily ADD COLUMN IF NOT EXISTS applications INTEGER NOT NULL DEFAULT 0`,
+  // LINE 公式アカウントの友だちと、個別メッセージ（2026-11-20 追加。管理画面で友だち管理・個別チャットをするため。仕組みは lib/admin/line.ts）。
+  // スタッフとの紐付けは、スタッフ表の line_user_id（既存の列）と line_user_id で突き合わせるだけ（外部キーは付けない）
+  `CREATE TABLE IF NOT EXISTS hp_line_friend (
+    line_user_id VARCHAR(64) PRIMARY KEY,
+    display_name VARCHAR(200),
+    picture_url TEXT,
+    status_message TEXT,
+    is_friend BOOLEAN NOT NULL DEFAULT true,
+    followed_at TIMESTAMPTZ(6),
+    unfollowed_at TIMESTAMPTZ(6),
+    last_message_at TIMESTAMPTZ(6),
+    last_message_text VARCHAR(200),
+    unread INTEGER NOT NULL DEFAULT 0,
+    profile_updated_at TIMESTAMPTZ(6),
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_line_friend_last_message_idx ON hp_line_friend (last_message_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS hp_line_message (
+    id BIGSERIAL PRIMARY KEY,
+    line_user_id VARCHAR(64) NOT NULL,
+    direction VARCHAR(3) NOT NULL,
+    message_type VARCHAR(20) NOT NULL,
+    text TEXT,
+    line_message_id VARCHAR(64),
+    webhook_event_id VARCHAR(64),
+    sent_by INTEGER,
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_line_message_user_idx ON hp_line_message (line_user_id, created_at)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS hp_line_message_event_key ON hp_line_message (webhook_event_id)`,
 ];
 
 export type AdminRole = "super" | "staff";
@@ -93,8 +123,9 @@ async function isUpToDate(): Promise<boolean> {
       AND ((table_name = 'hp_admin_user' AND column_name = 'avatar_updated_at')
         OR (table_name = 'hp_inquiry' AND column_name = 'memo_updated_by')
         OR (table_name = 'hp_job_favorite' AND column_name = 'staff_mail')
-        OR (table_name = 'hp_job_stat_daily' AND column_name = 'applications'))`;
-  return rows[0]?.n === 4;
+        OR (table_name = 'hp_job_stat_daily' AND column_name = 'applications')
+        OR (table_name = 'hp_line_message' AND column_name = 'webhook_event_id'))`;
+  return rows[0]?.n === 5;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。

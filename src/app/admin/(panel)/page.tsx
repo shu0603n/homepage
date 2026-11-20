@@ -5,6 +5,9 @@ import { AdminShell, type AdminNavKey } from "@/components/admin/AdminShell";
 import { AdminPanelSkeleton } from "@/components/admin/AdminSkeleton";
 import { Ga4Panel, GtmPanel, InquiriesPanel, ScPanel } from "@/components/admin/panels";
 import { JobStatsPanel } from "@/components/admin/JobStatsPanel";
+import { LinePanel } from "@/components/admin/LinePanel";
+import { getFriend, listFriends, listMessages, markRead } from "@/lib/admin/line";
+import { isMessagingConfigured } from "@/lib/line-messaging";
 import { getAdminSession } from "@/lib/admin/session";
 import { countUnhandledInquiries, listAdmins, listInquiries } from "@/lib/admin/store";
 
@@ -17,9 +20,10 @@ const TABS: Record<Exclude<AdminNavKey, "users" | "password">, { en: string; tit
   jobs: { en: "Job Insights", title: "案件の反応", lead: "ホームページの案件一覧での表示・クリック・閲覧の回数と、「気になる」・ホームページからの応募の数" },
   tags: { en: "Tags", title: "計測タグ", lead: "サイトで動いている計測用のタグ（Google タグ マネージャー）" },
   inquiries: { en: "Inquiries", title: "お問い合わせ", lead: "ホームページのお問い合わせフォームから届いた内容" },
+  line: { en: "LINE", title: "LINE 友だち・チャット", lead: "LINE 公式アカウントの友だちの一覧と、一人ひとりとのメッセージのやり取り" },
 };
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; filter?: string; days?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; filter?: string; days?: string; u?: string; q?: string }> }) {
   const session = await getAdminSession().catch(() => null);
   if (!session) redirect("/admin/login/");
   const params = await searchParams;
@@ -64,9 +68,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <GtmPanel />
         </Suspense>
       )}
+      {tab === "line" && <LineTab u={params.u} filter={params.filter} q={params.q} />}
       {tab === "inquiries" && (
         <InquiriesPanel inquiries={inquiries} filter={params.filter} admins={admins.map((a) => ({ id: a.id, label: a.name ?? a.email, email: a.email, avatar: avatarUrl(a.id, a.avatar_version) }))} selfId={session.id} />
       )}
     </AdminShell>
   );
+}
+
+// 「LINE 友だち・チャット」：一覧と、選んだ友だちのやり取り。開いたチャットは既読にする
+async function LineTab({ u, filter, q }: { u?: string; filter?: string; q?: string }) {
+  const userId = u && /^U[0-9a-f]{32}$/.test(u) ? u : null;
+  const [friends, selected, messages] = await Promise.all([
+    listFriends().catch((error) => {
+      console.error("LINE friend list failed:", error);
+      return null;
+    }),
+    userId ? getFriend(userId).catch(() => null) : null,
+    userId ? listMessages(userId).catch(() => []) : [],
+  ]);
+  if (selected && selected.unread > 0) await markRead(selected.line_user_id).catch(() => {});
+  return <LinePanel friends={friends} selected={selected} messages={messages} filter={filter} q={q} configured={isMessagingConfigured()} />;
 }
