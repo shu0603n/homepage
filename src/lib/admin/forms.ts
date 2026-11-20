@@ -36,6 +36,7 @@ export type FormDetail = {
   done_message: string | null;
   on_submit_status: string | null;
   on_submit_tag_ids: number[];
+  notify: boolean; // 回答があったらメールで知らせる
   logic: FormLogic | null;
   updated_at: Date;
   fields: FormFieldRow[];
@@ -66,7 +67,7 @@ const toField = (r: { id: number; uid: string | null; type: string; label: strin
 async function loadForm(where: Prisma.Sql): Promise<FormDetail | null> {
   await ensureAdminTables();
   const [f] = await prisma.$queryRaw<Omit<FormDetail, "fields">[]>`
-    SELECT id, slug, title, description, purpose, auth_mode, is_published, done_message, on_submit_status, on_submit_tag_ids, logic, updated_at FROM hp_form WHERE ${where}`;
+    SELECT id, slug, title, description, purpose, auth_mode, is_published, done_message, on_submit_status, on_submit_tag_ids, notify, logic, updated_at FROM hp_form WHERE ${where}`;
   if (!f) return null;
   const fields = await prisma.$queryRaw<Parameters<typeof toField>[0][]>`
     SELECT id, uid, type, label, help, required, options, profile_key, logic, deleted_at FROM hp_form_field WHERE form_id = ${f.id} ORDER BY sort_order, id`;
@@ -92,6 +93,7 @@ export type FormInput = {
   done_message: string | null;
   on_submit_status: string | null;
   on_submit_tag_ids: number[];
+  notify: boolean;
   logic: FormLogic;
   fields: { id: number | null; uid: string; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null; logic: FieldLogic | null }[];
 };
@@ -177,6 +179,7 @@ export function parseFormInput(b: Record<string, unknown>): FormInput | string {
     done_message: s(b.done_message, 2000),
     on_submit_status: auth === "line" ? status : null,
     on_submit_tag_ids: auth === "line" ? [...new Set(tagIds)] : [],
+    notify: b.notify !== false,
     logic: firstNext ? { first_next: firstNext } : {},
     fields,
   };
@@ -191,15 +194,15 @@ export async function saveForm(id: number | null, f: FormInput, adminId: number)
     let formId: number;
     if (id === null) {
       const [r] = await tx.$queryRaw<{ id: number }[]>`
-        INSERT INTO hp_form (slug, title, description, purpose, auth_mode, is_published, done_message, on_submit_status, on_submit_tag_ids, logic, created_by)
-        VALUES (${f.slug}, ${f.title}, ${f.description}, ${f.purpose}, ${f.auth_mode}, ${f.is_published}, ${f.done_message}, ${f.on_submit_status}, ${f.on_submit_tag_ids}::int[], ${JSON.stringify(f.logic)}::jsonb, ${adminId})
+        INSERT INTO hp_form (slug, title, description, purpose, auth_mode, is_published, done_message, on_submit_status, on_submit_tag_ids, notify, logic, created_by)
+        VALUES (${f.slug}, ${f.title}, ${f.description}, ${f.purpose}, ${f.auth_mode}, ${f.is_published}, ${f.done_message}, ${f.on_submit_status}, ${f.on_submit_tag_ids}::int[], ${f.notify}, ${JSON.stringify(f.logic)}::jsonb, ${adminId})
         RETURNING id`;
       formId = r.id;
     } else {
       const n = await tx.$executeRaw`
         UPDATE hp_form SET slug = ${f.slug}, title = ${f.title}, description = ${f.description}, purpose = ${f.purpose}, auth_mode = ${f.auth_mode},
           is_published = ${f.is_published}, done_message = ${f.done_message}, on_submit_status = ${f.on_submit_status},
-          on_submit_tag_ids = ${f.on_submit_tag_ids}::int[], logic = ${JSON.stringify(f.logic)}::jsonb, updated_at = now()
+          on_submit_tag_ids = ${f.on_submit_tag_ids}::int[], notify = ${f.notify}, logic = ${JSON.stringify(f.logic)}::jsonb, updated_at = now()
         WHERE id = ${id}`;
       if (n === 0) return "not_found" as const;
       formId = id;

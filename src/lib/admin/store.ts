@@ -280,6 +280,8 @@ export const ADMIN_TABLES_SQL = [
   `ALTER TABLE hp_form_field ADD COLUMN IF NOT EXISTS uid VARCHAR(20)`,
   `ALTER TABLE hp_form_field ADD COLUMN IF NOT EXISTS logic JSONB`,
   `ALTER TABLE hp_form ADD COLUMN IF NOT EXISTS logic JSONB`,
+  // フォームに回答があったらメールで知らせるか（2026-11-21 追加。宛先は recruit_hr@emorislink.co.jp。lib/admin/form-notify.ts）
+  `ALTER TABLE hp_form ADD COLUMN IF NOT EXISTS notify BOOLEAN NOT NULL DEFAULT true`,
   // スプレッドシート連携（2026-11-21 追加。lib/admin/sheets.ts）。
   // hp_google_account：連携した会社の Google アカウント（1件だけ。リフレッシュトークンは暗号化して保存）
   // hp_form_sheet：フォームごとの書き込み先（スプレッドシート・シート・見出しの行・どの列に何を入れるか）
@@ -345,8 +347,9 @@ async function isUpToDate(): Promise<boolean> {
         OR (table_name = 'hp_form' AND column_name = 'logic')
         OR (table_name = 'hp_google_account' AND column_name = 'refresh_token_enc')
         OR (table_name = 'hp_form_sheet' AND column_name = 'columns')
-        OR (table_name = 'hp_form_submission' AND column_name = 'sheet_error'))`;
-  return rows[0]?.n === 15;
+        OR (table_name = 'hp_form_submission' AND column_name = 'sheet_error')
+        OR (table_name = 'hp_form' AND column_name = 'notify'))`;
+  return rows[0]?.n === 16;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。

@@ -43,8 +43,7 @@ export default async function FormPage({ params }: { params: Promise<{ slug: str
     <PageShell route={`jobs/forms/${form.slug}/`} meta={metaOf(form.title, form.description)} special>
       <section className="section">
         <div className="container">
-          {form.description && <div className="lead-block pf-lead">{form.description}</div>}
-          <PublicForm slug={form.slug} fields={publicFields(form)} logic={form.logic} lineRequired={form.auth_mode === "line"} preview={preview} />
+          <PublicForm description={form.description} slug={form.slug} fields={publicFields(form)} logic={form.logic} lineRequired={form.auth_mode === "line"} preview={preview} />
         </div>
       </section>
     </PageShell>

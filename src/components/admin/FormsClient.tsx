@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
+import { FORM_NOTIFY_TO } from "@/lib/form-notify-to";
 import { AUTH_MODES, BRANCH_TYPES, CHOICE_TYPES, FIELD_TYPE_LABEL, FIELD_TYPES, isInputType, OTHER_KEY, PROFILE_TARGETS, SLUG_RE, type AuthMode, type FieldLogic, type FieldType } from "@/lib/forms-def";
 
 // フォーム管理の、画面で操作する部品（フォームの作成・編集、URL のコピー、QR コード、公開の切り替え、削除）
@@ -197,6 +198,7 @@ export type BuilderInitial = {
   done_message: string;
   on_submit_status: string;
   on_submit_tag_ids: number[];
+  notify: boolean; // 回答があったらメールで知らせる
   first_next: string; // 最初のセクションのあとの行き先
   fields: { id: number | null; uid?: string; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null; logic?: FieldLogic | null }[];
   answers: number;
@@ -241,6 +243,7 @@ export function FormBuilder({
   const [doneMessage, setDoneMessage] = useState(initial.done_message);
   const [status, setStatus] = useState(initial.on_submit_status);
   const [tagIds, setTagIds] = useState<number[]>(initial.on_submit_tag_ids);
+  const [notify, setNotify] = useState(initial.notify);
   const [fields, setFields] = useState<Draft[]>(() =>
     initial.fields.length > 0
       ? initial.fields.map((f) => ({
@@ -276,6 +279,7 @@ export function FormBuilder({
       done_message: doneMessage,
       on_submit_status: auth === "line" ? status || null : null,
       on_submit_tag_ids: auth === "line" ? tagIds : [],
+      notify,
       logic: { first_next: firstNext },
       fields: fields.map((f) => ({
         id: f.id,
@@ -300,7 +304,7 @@ export function FormBuilder({
         profile_key: auth === "line" || f.profile_key === "name" ? f.profile_key || null : null,
       })),
     }),
-    [title, slug, description, purpose, auth, published, doneMessage, status, tagIds, fields, firstNext],
+    [title, slug, description, purpose, auth, published, doneMessage, status, tagIds, fields, firstNext, notify],
   );
   // テンプレートに入れる中身（URL の名前・公開の有無は入れない）
   const templateData = useMemo(() => {
@@ -500,6 +504,20 @@ export function FormBuilder({
               placeholder={"ご回答ありがとうございました。\n内容を確認のうえ、担当者よりご連絡いたします。"}
             />
           </label>
+        </div>
+      </section>
+
+      <section className="adm-card">
+        <p className="adm-card__en">Notification</p>
+        <h2 className="adm-card__title">回答の通知</h2>
+        <div className="adm-fb__notify">
+          <button type="button" role="switch" aria-checked={notify} className={`adm-switch${notify ? " is-on" : ""}`} onClick={() => setNotify(!notify)}>
+            <span className="adm-switch__knob" />
+            <span className="adm-switch__label">{notify ? "通知メールを受け取る" : "通知しない"}</span>
+          </button>
+          <p>
+            回答があるたびに、<strong>{FORM_NOTIFY_TO}</strong> へメールでお知らせします（回答の内容と、管理画面の回答ページへのリンク付き）。
+          </p>
         </div>
       </section>
 

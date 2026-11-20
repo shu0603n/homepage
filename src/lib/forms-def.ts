@@ -124,6 +124,7 @@ export function checkAnswer(f: PublicField, v: AnswerValue | undefined): string 
 export function answerText(type: string, text: string | null, json: unknown): string {
   if (Array.isArray(json)) return json.join("、");
   if (type === "CONSENT") return text === "true" ? "同意する" : text ? "同意しない" : "";
+  if (type === "DATE" && text && /^\d{4}-\d{2}-\d{2}$/.test(text)) return text.replace(/-/g, "/");
   return text ?? "";
 }
 

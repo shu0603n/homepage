@@ -19,6 +19,7 @@ const sub: SheetSubmission = {
     ["q1", { type: "SHORT_TEXT", text: "=HYPERLINK(\"x\")", json: null }],
     ["q2", { type: "SINGLE_CHOICE", text: "その他：学生", json: null }],
     ["q3", { type: "MULTI_CHOICE", text: null, json: ["月", "その他：土"] }],
+    ["q5", { type: "DATE", text: "2026-12-01", json: null }],
   ]),
   files: new Map([["q4", ["a.pdf", "b.png"]]]),
 };
@@ -46,6 +47,7 @@ describe("sheet columns", () => {
     expect(cellValue({ col: "A", source: "const", text: "HP" }, sub, "F")).toBe("HP");
     expect(cellValue({ col: "A", source: "form_title" }, sub, "面談")).toBe("面談");
     expect(cellValue({ col: "A", source: "staff_id" }, sub, "F")).toBe("");
+    expect(cellValue({ col: "A", source: "q:q5" }, sub, "F")).toBe("2026/12/01");
   });
 
   it("式として動かないように、文字の列と式に見える値には ' を付ける", () => {

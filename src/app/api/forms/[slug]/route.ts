@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { formatPhoneJP } from "@/lib/phone";
+import { notifySubmission } from "@/lib/admin/form-notify";
 import { syncSubmissions } from "@/lib/admin/sheets";
 import { getFormBySlug, isDuplicateOrFlood, publicFields, saveSubmission, type UploadedFile } from "@/lib/admin/forms";
 import { isSameOrigin, jsonError } from "@/lib/auth/http";
@@ -95,6 +96,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     });
     // スプレッドシート連携があれば書き込む（失敗しても回答は受け付ける。管理画面の「未送信の回答を書き込む」で書き直せる）
     await syncSubmissions(form.id, { submissionId }).catch((error) => console.error("sheet sync failed:", error));
+    // 回答の通知メール（フォームの設定でオンのとき。失敗しても回答は受け付ける）
+    await notifySubmission(form, submissionId).catch((error) => console.error("form notify mail failed:", error));
     return NextResponse.json({ ok: true, done: form.done_message });
   } catch (error) {
     console.error("form submission failed:", error);
