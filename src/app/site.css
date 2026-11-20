@@ -2460,6 +2460,24 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .adm-ftags__plus { display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px dashed #b8c8d1; border-radius: 50%; background: #fff; color: var(--navy); font-size: 12px; cursor: pointer; }
 .adm-ftags__plus:hover { border-style: solid; background: var(--bg-soft); }
 .adm-ftags__add { padding: 4px 8px; border: 1px solid #cfdbe2; border-radius: 8px; font: inherit; font-size: 12px; }
+.adm-ftags__plus { transition: transform .2s ease, background .2s ease, border-color .2s ease; }
+.adm-ftags__plus.is-open { transform: rotate(45deg); border-style: solid; background: var(--navy); color: #fff; }
+.adm-tagpop { position: fixed; z-index: 80; width: min(280px, calc(100vw - 24px)); padding: 10px; border: 1px solid #d6e1e8; border-radius: 12px; background: #fff; box-shadow: 0 14px 36px rgba(20,40,60,.18); animation: adm-tagpop-in .16s ease-out; }
+@keyframes adm-tagpop-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
+.adm-tagpop input { width: 100%; padding: 7px 10px; border: 1px solid #cfdbe2; border-radius: 8px; font: inherit; font-size: 13px; }
+.adm-tagpop__list { display: grid; gap: 2px; max-height: 190px; margin-top: 6px; overflow-y: auto; }
+.adm-tagpop__item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.adm-tagpop__item:hover, .adm-tagpop__item:focus-visible { background: var(--bg-soft); }
+.adm-tagpop__dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.adm-tagpop__empty { margin: 4px 2px; color: #6b7b85; font-size: 12px; line-height: 1.6; }
+.adm-tagpop__new { display: grid; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #edf2f5; }
+.adm-tagpop__swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.adm-tagpop__swatches button { width: 20px; height: 20px; padding: 0; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #cfdbe2; cursor: pointer; transition: transform .15s ease; }
+.adm-tagpop__swatches button.is-on { transform: scale(1.15); box-shadow: 0 0 0 2px var(--navy); }
+.adm-tagpop__create { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 7px 8px; border: 1px dashed #b8c8d1; border-radius: 8px; background: #fff; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.adm-tagpop__create:hover { border-style: solid; background: var(--bg-soft); }
+.adm-tagpop__manage { display: inline-flex; gap: 4px; margin-top: 8px; color: #5a6a73; font-size: 12px; text-decoration: none; }
+.adm-tagpop__manage:hover { color: var(--navy); text-decoration: underline; }
 .adm-pager { display: flex; justify-content: center; align-items: center; gap: 18px; font-size: 13px; }
 .adm-pager a { font-weight: 700; color: var(--navy) !important; }
 .adm-crm-import { display: flex; justify-content: center; }

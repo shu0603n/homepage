@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 // 友だち・求職者管理／個別チャット／タグ管理の、画面で操作する部品（Linext から移植）。
 // どれも管理画面の API に送ったあと、画面を読み込み直して最新の状態にする
@@ -77,47 +77,168 @@ export function FieldSelect({
   );
 }
 
-// タグの表示と付け外し（一覧のセル・詳細のタグ欄で共通）
+// タグの表示と付け外し（一覧のセル・詳細のタグ欄で共通）。
+// 「＋」でタグ選びの小窓を開く。付けられるタグがなくても、その場で名前を入れて新しいタグを作って付けられる
+const TAG_SWATCHES = ["#4B9C6B", "#1f6feb", "#e5484d", "#f59e0b", "#8b5cf6", "#0ea5a4", "#db2777", "#5a6a73"];
+
 export function TagEditor({ id, tags, available, readOnly = false }: { id: string; tags: { id: number; name: string; color: string }[]; available: { id: number; name: string; color: string; manual: boolean }[]; readOnly?: boolean }) {
-  const { busy, error, run } = useAction();
-  const [adding, setAdding] = useState(false);
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [q, setQ] = useState("");
+  const [color, setColor] = useState(TAG_SWATCHES[0]);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+
   const left = available.filter((t) => t.manual && !tags.some((x) => x.id === t.id));
+  const word = q.trim();
+  const shown = word ? left.filter((t) => t.name.toLowerCase().includes(word.toLowerCase())) : left;
+  const exists = available.some((t) => t.name === word) || tags.some((t) => t.name === word);
+
+  // 小窓は画面に固定して出す（表の枠で切れないように）。外を押す・Esc・スクロールで閉じる
+  useEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const r = btnRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const w = Math.min(280, window.innerWidth - 24);
+      setPos({ top: Math.min(r.bottom + 6, window.innerHeight - 330), left: Math.max(12, Math.min(r.left, window.innerWidth - w - 12)) });
+    };
+    place();
+    const onDown = (e: MouseEvent) => {
+      if (!popRef.current?.contains(e.target as Node) && !btnRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onScroll = (e: Event) => !popRef.current?.contains(e.target as Node) && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", place);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open]);
+
+  async function call(url: string, method: string, body: unknown): Promise<{ ok: boolean; id?: number; message?: string }> {
+    try {
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = (await res.json().catch(() => null)) as { ok?: boolean; id?: number; message?: string } | null;
+      return res.ok && data?.ok ? { ok: true, id: data.id } : { ok: false, message: data?.message ?? "保存できませんでした。" };
+    } catch {
+      return { ok: false, message: "通信に失敗しました。" };
+    }
+  }
+
+  async function attach(tagId: number) {
+    setBusy(true);
+    setError("");
+    const r = await call(`${friendUrl(id)}tags/`, "POST", { tag_id: tagId });
+    setBusy(false);
+    if (!r.ok) return setError(r.message ?? "");
+    setQ("");
+    setOpen(false);
+    router.refresh();
+  }
+
+  async function detach(tagId: number) {
+    setBusy(true);
+    setError("");
+    const r = await call(`${friendUrl(id)}tags/`, "DELETE", { tag_id: tagId });
+    setBusy(false);
+    if (!r.ok) return setError(r.message ?? "");
+    router.refresh();
+  }
+
+  async function createAndAttach() {
+    if (!word || exists) return;
+    setBusy(true);
+    setError("");
+    const made = await call("/api/admin/tags/", "POST", { name: word, color, category_id: null, is_manual_allowed: true, auto_trigger: null });
+    if (!made.ok || !made.id) {
+      setBusy(false);
+      return setError(made.message ?? "タグを作れませんでした。");
+    }
+    await attach(made.id);
+  }
+
   return (
     <div className="adm-ftags">
       {tags.map((t) => (
         <span key={t.id} className="adm-ftag" style={{ background: t.color }}>
           {t.name}
           {!readOnly && (
-            <button type="button" aria-label={`${t.name} を外す`} disabled={busy} onClick={() => run(`${friendUrl(id)}tags/`, "DELETE", { tag_id: t.id })}>
+            <button type="button" aria-label={`${t.name} を外す`} disabled={busy} onClick={() => detach(t.id)}>
               ×
             </button>
           )}
         </span>
       ))}
-      {!readOnly && left.length > 0 &&
-        (adding ? (
-          <select
+      {!readOnly && (
+        <button
+          ref={btnRef}
+          type="button"
+          className={`adm-ftags__plus${open ? " is-open" : ""}`}
+          onClick={() => setOpen((v) => !v)}
+          aria-label="タグを付ける"
+          aria-expanded={open}
+          title="タグを付ける"
+        >
+          <i className="bi bi-plus-lg" aria-hidden="true" />
+        </button>
+      )}
+      {open && pos && (
+        <div ref={popRef} className="adm-tagpop" style={{ top: pos.top, left: pos.left }} role="dialog" aria-label="タグを付ける">
+          <input
             autoFocus
-            className="adm-ftags__add"
-            defaultValue=""
-            disabled={busy}
-            onBlur={() => setAdding(false)}
-            onChange={(e) => e.target.value && run(`${friendUrl(id)}tags/`, "POST", { tag_id: Number(e.target.value) }, () => setAdding(false))}
-          >
-            <option value="">タグを選ぶ…</option>
-            {left.map((t) => (
-              <option key={t.id} value={t.id}>
+            value={q}
+            maxLength={100}
+            placeholder="タグを探す・新しく作る"
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              const hit = shown.find((t) => t.name === word) ?? (shown.length === 1 ? shown[0] : null);
+              if (hit) void attach(hit.id);
+              else void createAndAttach();
+            }}
+          />
+          <div className="adm-tagpop__list">
+            {shown.map((t) => (
+              <button key={t.id} type="button" className="adm-tagpop__item" disabled={busy} onClick={() => attach(t.id)}>
+                <span className="adm-tagpop__dot" style={{ background: t.color }} />
                 {t.name}
-              </option>
+              </button>
             ))}
-          </select>
-        ) : (
-          <button type="button" className="adm-ftags__plus" onClick={() => setAdding(true)} aria-label="タグを付ける">
-            ＋
-          </button>
-        ))}
+            {shown.length === 0 && <p className="adm-tagpop__empty">{left.length === 0 ? "付けられるタグがまだありません。上の欄に名前を入れると、新しく作って付けられます。" : "一致するタグがありません。"}</p>}
+          </div>
+          {word && !exists && (
+            <div className="adm-tagpop__new">
+              <div className="adm-tagpop__swatches" role="radiogroup" aria-label="新しいタグの色">
+                {TAG_SWATCHES.map((c) => (
+                  <button key={c} type="button" role="radio" aria-checked={color === c} aria-label={c} className={color === c ? "is-on" : ""} style={{ background: c }} onClick={() => setColor(c)} />
+                ))}
+              </div>
+              <button type="button" className="adm-tagpop__create" disabled={busy} onClick={createAndAttach}>
+                <span className="adm-ftag" style={{ background: color }}>
+                  {word}
+                </span>
+                を作って付ける
+              </button>
+            </div>
+          )}
+          {error && <small className="adm-crm-error">{error}</small>}
+          <a className="adm-tagpop__manage" href="/admin/?tab=linetags">
+            <i className="bi bi-gear" aria-hidden="true" /> タグ管理（色・カテゴリ・自動付与）
+          </a>
+        </div>
+      )}
       {tags.length === 0 && readOnly && <span className="adm-muted">－</span>}
-      {error && <small className="adm-crm-error">{error}</small>}
+      {error && !open && <small className="adm-crm-error">{error}</small>}
     </div>
   );
 }

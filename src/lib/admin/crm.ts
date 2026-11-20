@@ -116,7 +116,7 @@ export async function listCandidates(filter: CandidateFilter): Promise<Candidate
     ORDER BY COALESCE(f.last_action_at, f.last_message_at, f.followed_at, f.created_at) DESC NULLS LAST`;
   const list = rows.map((r) => ({ ...r, tags: r.tags ?? [] }));
   // 内勤者タグの人をいちばん下へ（それ以外の並びはそのまま）
-  const isStaff = (r: CandidateRow) => r.tags.some((t) => t.name === INTERNAL_STAFF_TAG_NAME);
+  const isStaff = (r: CandidateRow) => r.tags.some((t) => t.name.replace(/\s/g, "") === INTERNAL_STAFF_TAG_NAME);
   return [...list.filter((r) => !isStaff(r)), ...list.filter(isStaff)];
 }
 
@@ -372,7 +372,10 @@ export async function listChats(filter: { q?: string; status?: string; assignee?
       AND (${filter.status ?? null}::text IS NULL OR f.chat_status = ${filter.status ?? null})
       AND (${filter.assignee ?? null}::int IS NULL OR f.chat_assignee_id = ${filter.assignee ?? null})
       AND (${q}::text IS NULL OR f.display_name ILIKE ${q} OR p.name ILIKE ${q})
-    ORDER BY f.last_message_at DESC
+    -- 内勤者タグの人はいちばん下へ（友だち・求職者管理と同じ）
+    ORDER BY EXISTS (SELECT 1 FROM hp_line_friend_tag ft JOIN hp_tag t ON t.id = ft.tag_id
+                     WHERE ft.line_user_id = f.line_user_id AND regexp_replace(t.name, '[[:space:]　]', '', 'g') = ${INTERNAL_STAFF_TAG_NAME}),
+             f.last_message_at DESC
     LIMIT 200`;
 }
 
