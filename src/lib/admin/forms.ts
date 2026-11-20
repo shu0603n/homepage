@@ -151,9 +151,10 @@ export function parseFormInput(b: Record<string, unknown>): FormInput | string {
       const t = target(raw?.next, i);
       if (t) logic.next = t;
     }
+    if ((f.type === "SINGLE_CHOICE" || f.type === "MULTI_CHOICE") && raw?.other === true) logic.other = true;
     if (BRANCH_TYPES.includes(f.type) && raw?.branches && typeof raw.branches === "object") {
       const branches: Record<string, string> = {};
-      for (const o of f.options) {
+      for (const o of logic.other ? [...f.options, "__other"] : f.options) {
         const t = target((raw.branches as Record<string, unknown>)[o], i);
         if (t) branches[o] = t;
       }

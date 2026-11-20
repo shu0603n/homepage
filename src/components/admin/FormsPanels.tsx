@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CopyUrlButton, DeleteFormButton, DeleteSubmissionButton, DeleteTemplateButton, PublishToggle, QrButton } from "@/components/admin/FormsClient";
 import { authModeLabel, type FormDetail, type FormRow, type SubmissionRow, type TemplateRow } from "@/lib/admin/forms";
-import { answerText, CHOICE_TYPES, FIELD_TYPE_LABEL, isInputType } from "@/lib/forms-def";
+import { answerText, CHOICE_TYPES, FIELD_TYPE_LABEL, isInputType, isOtherValue, OTHER } from "@/lib/forms-def";
 import { SITE } from "@/lib/site";
 
 // フォーム管理の画面（一覧・回答一覧・グラフ・回答の詳細）
@@ -304,7 +304,7 @@ function ChartView({ fields, subs }: { fields: FormDetail["fields"]; subs: Submi
   return (
     <div className="adm-charts">
       {charts.map((f) => {
-        const counts = new Map<string, number>((f.type === "CONSENT" ? ["同意する"] : f.options).map((o) => [o, 0]));
+        const counts = new Map<string, number>((f.type === "CONSENT" ? ["同意する"] : [...f.options, ...(f.logic?.other ? [OTHER] : [])]).map((o) => [o, 0]));
         let n = 0;
         for (const s of subs) {
           const a = s.answers.get(f.id);
@@ -312,7 +312,10 @@ function ChartView({ fields, subs }: { fields: FormDetail["fields"]; subs: Submi
           const values = Array.isArray(a.json) ? (a.json as string[]) : a.text ? [f.type === "CONSENT" ? (a.text === "true" ? "同意する" : "同意しない") : a.text] : [];
           if (values.length === 0) continue;
           n++;
-          for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+          for (const raw of values) {
+            const v = f.logic?.other && !f.options.includes(raw) && isOtherValue(raw) ? OTHER : raw;
+            counts.set(v, (counts.get(v) ?? 0) + 1);
+          }
         }
         const max = Math.max(1, ...counts.values());
         return (

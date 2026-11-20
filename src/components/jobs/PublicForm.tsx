@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Celebration } from "@/components/auth/Celebration";
 import { loadLiffSdk } from "@/components/auth/LineAutoLogin";
-import { checkAnswer, FILE_MAX, FILE_TYPES, FILES_TOTAL_MAX, nextSection, splitSections, type AnswerValue, type FormLogic, type PublicField } from "@/lib/forms-def";
+import { checkAnswer, FILE_MAX, FILE_TYPES, FILES_TOTAL_MAX, isOtherValue, nextSection, OTHER, otherText, otherValue, splitSections, type AnswerValue, type FormLogic, type PublicField } from "@/lib/forms-def";
 
 // フォームの回答ページの中身（/jobs/forms/<slug>/。管理画面の「フォーム管理」で作ったもの。仕組みは lib/admin/forms.ts）。
 // LINE ログイン必須のフォームは、LIFF で LINE にログインしてから回答する（LINE アプリ内なら自動でログイン）。
@@ -286,10 +286,22 @@ function FieldInput({ f, value, file, invalid, onChange, onFile }: { f: PublicFi
               {o}
             </label>
           ))}
+          {f.logic?.other && (
+            <OtherChoice
+              type="radio"
+              name={`pf-${f.id}`}
+              checked={!f.options.includes(text) && isOtherValue(text)}
+              text={!f.options.includes(text) ? otherText(text) : ""}
+              onCheck={(on, t) => onChange(on ? otherValue(t) : "")}
+              onText={(t) => onChange(otherValue(t))}
+            />
+          )}
         </fieldset>
       );
     case "MULTI_CHOICE": {
       const sel = Array.isArray(value) ? value : [];
+      const other = sel.find((x) => !f.options.includes(x) && isOtherValue(x));
+      const withoutOther = sel.filter((x) => x !== other);
       return (
         <fieldset className="choices" aria-invalid={invalid || undefined}>
           {f.options.map((o) => (
@@ -298,6 +310,15 @@ function FieldInput({ f, value, file, invalid, onChange, onFile }: { f: PublicFi
               {o}
             </label>
           ))}
+          {f.logic?.other && (
+            <OtherChoice
+              type="checkbox"
+              checked={other !== undefined}
+              text={other ? otherText(other) : ""}
+              onCheck={(on, t) => onChange(on ? [...withoutOther, otherValue(t)] : withoutOther)}
+              onText={(t) => onChange([...withoutOther, otherValue(t)])}
+            />
+          )}
         </fieldset>
       );
     }
@@ -352,4 +373,17 @@ function FieldInput({ f, value, file, invalid, onChange, onFile }: { f: PublicFi
         />
       );
   }
+}
+
+// 「その他」の選択肢：選ぶと（または文字を入れると）、短い文で入力できる
+function OtherChoice({ type, name, checked, text, onCheck, onText }: { type: "radio" | "checkbox"; name?: string; checked: boolean; text: string; onCheck: (on: boolean, text: string) => void; onText: (text: string) => void }) {
+  return (
+    <span className={`pf-other${checked ? " is-on" : ""}`}>
+      <label>
+        <input type={type} name={name} value={OTHER} checked={checked} onChange={(e) => onCheck(type === "radio" ? true : e.target.checked, text)} />
+        {OTHER}
+      </label>
+      {checked && <input type="text" className="pf-other__input" value={text} maxLength={200} autoFocus placeholder="内容を入力してください" onChange={(e) => onText(e.target.value)} aria-label="その他の内容" />}
+    </span>
+  );
 }

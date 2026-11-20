@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
-import { AUTH_MODES, BRANCH_TYPES, CHOICE_TYPES, FIELD_TYPE_LABEL, FIELD_TYPES, isInputType, PROFILE_TARGETS, SLUG_RE, type AuthMode, type FieldLogic, type FieldType } from "@/lib/forms-def";
+import { AUTH_MODES, BRANCH_TYPES, CHOICE_TYPES, FIELD_TYPE_LABEL, FIELD_TYPES, isInputType, OTHER_KEY, PROFILE_TARGETS, SLUG_RE, type AuthMode, type FieldLogic, type FieldType } from "@/lib/forms-def";
 
 // フォーム管理の、画面で操作する部品（フォームの作成・編集、URL のコピー、QR コード、公開の切り替え、削除）
 
@@ -176,13 +176,15 @@ type Draft = {
   label: string;
   help: string;
   required: boolean;
-  options: string;
+  opts: Opt[]; // 選択肢（1つずつ。target＝その答えのときの行き先）
+  other: boolean; // 「その他」（回答者が自由に入力）を出す
+  otherTarget: string;
   profile_key: string;
   next: string;
   branchOn: boolean;
-  branches: Record<string, string>;
   fresh?: boolean;
 };
+type Opt = { k: string; text: string; target: string };
 
 export type BuilderInitial = {
   id: number | null;
@@ -203,8 +205,8 @@ export type BuilderInitial = {
 let seq = 0;
 const newKey = () => `n${Date.now().toString(36)}${(seq++).toString(36)}`;
 const newUid = () => Math.random().toString(36).slice(2, 10);
-const blank = (type: FieldType): Draft => ({ key: newKey(), id: null, uid: newUid(), type, label: "", help: "", required: false, options: "", profile_key: "", next: "", branchOn: false, branches: {}, fresh: true });
-const optionsOf = (d: Draft) => d.options.split("\n").map((o) => o.trim()).filter(Boolean);
+const newOpt = (text = "", target = ""): Opt => ({ k: newKey(), text, target });
+const blank = (type: FieldType): Draft => ({ key: newKey(), id: null, uid: newUid(), type, label: "", help: "", required: false, opts: CHOICE_TYPES.includes(type) ? [newOpt(), newOpt()] : [], other: false, otherTarget: "", profile_key: "", next: "", branchOn: false, fresh: true });
 const randomSlug = () => `form-${Math.random().toString(36).slice(2, 8)}`;
 
 export function FormBuilder({
@@ -249,11 +251,12 @@ export function FormBuilder({
           label: f.label,
           help: f.help ?? "",
           required: f.required,
-          options: f.options.join("\n"),
+          opts: f.options.map((o) => newOpt(o, f.logic?.branches?.[o] ?? "")),
+          other: f.logic?.other === true,
+          otherTarget: f.logic?.branches?.[OTHER_KEY] ?? "",
           profile_key: f.profile_key ?? "",
           next: f.logic?.next ?? "",
           branchOn: Object.keys(f.logic?.branches ?? {}).length > 0,
-          branches: f.logic?.branches ?? {},
         }))
       : [{ ...blank("SHORT_TEXT"), label: "お名前", required: true, profile_key: "name", fresh: false }],
   );
@@ -279,13 +282,21 @@ export function FormBuilder({
         uid: f.uid,
         logic: {
           ...(f.type === "SECTION" && f.next ? { next: f.next } : {}),
-          ...(BRANCH_TYPES.includes(f.type) && f.branchOn ? { branches: Object.fromEntries(optionsOf(f).flatMap((o) => (f.branches[o] ? [[o, f.branches[o]]] : []))) } : {}),
+          ...(f.other && (f.type === "SINGLE_CHOICE" || f.type === "MULTI_CHOICE") ? { other: true } : {}),
+          ...(BRANCH_TYPES.includes(f.type) && f.branchOn
+            ? {
+                branches: Object.fromEntries([
+                  ...f.opts.flatMap((o) => (o.target && o.text.trim() ? [[o.text.trim(), o.target]] : [])),
+                  ...(f.other && f.type === "SINGLE_CHOICE" && f.otherTarget ? [[OTHER_KEY, f.otherTarget]] : []),
+                ]),
+              }
+            : {}),
         },
         type: f.type,
         label: f.label,
         help: f.help,
         required: f.required,
-        options: f.options.split("\n").map((o) => o.trim()).filter(Boolean),
+        options: f.opts.map((o) => o.text.trim()).filter(Boolean),
         profile_key: auth === "line" || f.profile_key === "name" ? f.profile_key || null : null,
       })),
     }),
@@ -369,10 +380,35 @@ export function FormBuilder({
     ...sections.filter((x) => x.pos > pos).map((x) => ({ value: x.uid, label: `ページ ${sectionNo(x.uid)}${x.title ? `「${x.title.slice(0, 20)}」` : ""}へ移動` })),
     { value: "submit", label: "フォームを送信する（ここで終わり）" },
   ];
-  const addPageFor = (key: string, option: string) => {
+  const addPageFor = (key: string, optKey: string) => {
     const page = blank("SECTION");
-    setFields((list) => [...list.map((x) => (x.key === key ? { ...x, branches: { ...x.branches, [option]: page.uid } } : x)), page]);
+    setFields((list) => [
+      ...list.map((x) => (x.key !== key ? x : optKey === OTHER_KEY ? { ...x, otherTarget: page.uid } : { ...x, opts: x.opts.map((o) => (o.k === optKey ? { ...o, target: page.uid } : o)) })),
+      page,
+    ]);
   };
+  const setOpt = (key: string, k: string, patch: Partial<Opt>) => setFields((list) => list.map((x) => (x.key === key ? { ...x, opts: x.opts.map((o) => (o.k === k ? { ...o, ...patch } : o)) } : x)));
+  const [focusOpt, setFocusOpt] = useState<string | null>(null);
+  // 選択肢を足す（after の行のうしろ。無ければ最後）。足した行に入力の印を移す
+  const addOpt = (key: string, after?: string) => {
+    const o = newOpt();
+    setFields((list) => list.map((x) => (x.key !== key ? x : { ...x, opts: after ? x.opts.flatMap((y) => (y.k === after ? [y, o] : [y])) : [...x.opts, o] })));
+    setFocusOpt(o.k);
+  };
+  // 選択肢の「次の動き」の選び方（行き先の選択欄の中身）
+  const actionOptions = (i: number) => (
+    <>
+      <option value="">{hasSections ? "次のページへ進む（いつもどおり）" : "そのまま続ける（いつもどおり）"}</option>
+      {targets(i).map((t) => (
+        <option key={t.value} value={t.value}>
+          {t.label}
+        </option>
+      ))}
+      <option value="__new">＋ 新しいページを作って、そこへ移動</option>
+    </>
+  );
+  // 「回答者の名前として使う」（誰でも回答可のフォーム）は、どれか1つに決めたら、ほかの質問には出さない
+  const nameKey = auth === "open" ? fields.find((x) => x.profile_key === "name")?.key : undefined;
   // セクションの終わりに出す「このセクションのあと」
   const afterSection = (sec: { uid: string; pos: number }, isLast: boolean) => {
     const value = sec.uid === "_start" ? firstNext : (fields.find((f) => f.uid === sec.uid)?.next ?? "");
@@ -499,8 +535,21 @@ export function FormBuilder({
               prev ? afterSection(prev, false) : null,
             <li key={f.key} className={`adm-fb__field${f.type === "SECTION" ? " is-section" : ""}${f.fresh ? " is-new" : ""}${moved === f.key ? " is-moved" : ""}`}>
               <header>
-                {f.type === "SECTION" ? <span className="adm-fb__secno"><i className="bi bi-file-earmark-text" aria-hidden="true" /> ページ {sectionNo(f.uid)}</span> : <span className="adm-fb__num">{i + 1}</span>}
-                <select value={f.type} onChange={(e) => update(f.key, { type: e.target.value as FieldType, fresh: false })} aria-label="回答形式">
+                {f.type === "SECTION" ? (
+                  <span className="adm-fb__secno">
+                    <i className="bi bi-file-earmark-text" aria-hidden="true" /> ページ {sectionNo(f.uid)}
+                  </span>
+                ) : (
+                  <span className="adm-fb__num">Q{fields.slice(0, i + 1).filter((x) => x.type !== "SECTION").length}</span>
+                )}
+                <select
+                  value={f.type}
+                  onChange={(e) => {
+                    const type = e.target.value as FieldType;
+                    update(f.key, { type, fresh: false, ...(CHOICE_TYPES.includes(type) && f.opts.length === 0 ? { opts: [newOpt(), newOpt()] } : {}) });
+                  }}
+                  aria-label="回答形式"
+                >
                   {FIELD_TYPES.map((t) => (
                     <option key={t.key} value={t.key}>
                       {t.label}
@@ -514,7 +563,7 @@ export function FormBuilder({
                   <button type="button" onClick={() => move(i, 1)} disabled={i === fields.length - 1} aria-label="下へ" title="下へ">
                     <i className="bi bi-arrow-down" aria-hidden="true" />
                   </button>
-                  <button type="button" onClick={() => setFields((list) => [...list.slice(0, i + 1), { ...f, key: newKey(), id: null, uid: newUid(), profile_key: "", fresh: true }, ...list.slice(i + 1)])} aria-label="複製" title="複製">
+                  <button type="button" onClick={() => setFields((list) => [...list.slice(0, i + 1), { ...f, key: newKey(), id: null, uid: newUid(), opts: f.opts.map((o) => newOpt(o.text, o.target)), profile_key: "", fresh: true }, ...list.slice(i + 1)])} aria-label="複製" title="複製">
                     <i className="bi bi-copy" aria-hidden="true" />
                   </button>
                   <button type="button" className="is-danger" onClick={() => setFields((list) => list.filter((x) => x.key !== f.key))} disabled={fields.length === 1} aria-label="削除" title="削除">
@@ -544,45 +593,88 @@ export function FormBuilder({
                     <span>質問文</span>
                     <input value={f.label} maxLength={2000} onChange={(e) => update(f.key, { label: e.target.value })} placeholder={`例：${FIELD_TYPE_LABEL[f.type] === "日付" ? "面談のご希望日" : "ご希望の職種"}`} />
                   </label>
-                  {CHOICE_TYPES.includes(f.type) && (
-                    <label>
-                      <span>選択肢（1行に1つ）</span>
-                      <textarea value={f.options} rows={Math.min(8, Math.max(3, f.options.split("\n").length + 1))} onChange={(e) => update(f.key, { options: e.target.value })} placeholder={"正社員\n契約社員\nパート・アルバイト"} />
-                    </label>
-                  )}
-                  {BRANCH_TYPES.includes(f.type) && (
-                    <div className={`adm-fb__branch${f.branchOn ? " is-on" : ""}`}>
-                      <label className="adm-fb__check">
-                        <input type="checkbox" checked={f.branchOn} onChange={(e) => update(f.key, { branchOn: e.target.checked })} />
-                        回答に応じて次の動きを変える（分岐）
-                      </label>
-                      {f.branchOn && !hasSections && <p className="adm-fb__branchnote">ページがまだ1つだけです。「＋ 新しいページを作って、そこへ移動」を選ぶか、下の「＋ 次のページを追加」でページを足すと、答えごとに進むページを変えられます。</p>}
-                      {f.branchOn && (
-                        <ul>
-                          {optionsOf(f).length === 0 && <li className="adm-muted">先に選択肢を入力してください。</li>}
-                          {optionsOf(f).map((o) => (
-                            <li key={o}>
-                              <span>{o}</span>
-                              <i className="bi bi-arrow-right" aria-hidden="true" />
-                              <select
-                                value={f.branches[o] ?? ""}
-                                onChange={(e) => (e.target.value === "__new" ? addPageFor(f.key, o) : update(f.key, { branches: { ...f.branches, [o]: e.target.value } }))}
-                                aria-label={`「${o}」を選んだときの動き`}
-                              >
-                                <option value="">{hasSections ? "次のページへ進む（いつもどおり）" : "そのまま続ける（いつもどおり）"}</option>
-                                {targets(i).map((t) => (
-                                  <option key={t.value} value={t.value}>
-                                    {t.label}
-                                  </option>
-                                ))}
-                                <option value="__new">＋ 新しいページを作って、そこへ移動</option>
-                              </select>
+                  {CHOICE_TYPES.includes(f.type) && (() => {
+                    const branchable = BRANCH_TYPES.includes(f.type);
+                    const mark = f.type === "MULTI_CHOICE" ? "bi-square" : f.type === "SELECT" ? "bi-caret-down-square" : "bi-circle";
+                    return (
+                      <div className={`adm-fb__choices${branchable && f.branchOn ? " is-branch" : ""}`}>
+                        <div className="adm-fb__choicehead">
+                          <span>選択肢</span>
+                          {branchable && (
+                            <label className="adm-fb__check adm-fb__branchtoggle">
+                              <input type="checkbox" checked={f.branchOn} onChange={(e) => update(f.key, { branchOn: e.target.checked })} />
+                              回答に応じて次の動きを変える（分岐）
+                            </label>
+                          )}
+                        </div>
+                        {branchable && f.branchOn && !hasSections && (
+                          <p className="adm-fb__branchnote">ページがまだ1つだけです。「次の動き」で「＋ 新しいページを作って、そこへ移動」を選ぶか、下の「＋ 次のページを追加」でページを足すと、答えごとに進むページを変えられます。</p>
+                        )}
+                        <ul className="adm-fb__opts">
+                          {f.opts.map((o, j) => (
+                            <li key={o.k} className="adm-fb__opt">
+                              <i className={`bi ${mark} adm-fb__optmark`} aria-hidden="true" />
+                              <input
+                                value={o.text}
+                                maxLength={200}
+                                placeholder={`選択肢 ${j + 1}`}
+                                autoFocus={focusOpt === o.k}
+                                onChange={(e) => setOpt(f.key, o.k, { text: e.target.value })}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                                    e.preventDefault();
+                                    addOpt(f.key, o.k);
+                                  }
+                                }}
+                                aria-label={`選択肢 ${j + 1}`}
+                              />
+                              {branchable && f.branchOn && (
+                                <select
+                                  value={o.target}
+                                  onChange={(e) => (e.target.value === "__new" ? addPageFor(f.key, o.k) : setOpt(f.key, o.k, { target: e.target.value }))}
+                                  aria-label={`「${o.text || `選択肢 ${j + 1}`}」を選んだときの次の動き`}
+                                >
+                                  {actionOptions(i)}
+                                </select>
+                              )}
+                              <button type="button" className="adm-fb__optdel" onClick={() => update(f.key, { opts: f.opts.filter((x) => x.k !== o.k) })} disabled={f.opts.length <= 1} aria-label="この選択肢を削除" title="削除">
+                                <i className="bi bi-x-lg" aria-hidden="true" />
+                              </button>
                             </li>
                           ))}
+                          {f.other && f.type !== "SELECT" && (
+                            <li className="adm-fb__opt is-other">
+                              <i className={`bi ${mark} adm-fb__optmark`} aria-hidden="true" />
+                              <span className="adm-fb__othertext">
+                                その他<small>（選ぶと、回答者が短い文で入力できます）</small>
+                              </span>
+                              {branchable && f.branchOn && (
+                                <select value={f.otherTarget} onChange={(e) => (e.target.value === "__new" ? addPageFor(f.key, OTHER_KEY) : update(f.key, { otherTarget: e.target.value }))} aria-label="「その他」を選んだときの次の動き">
+                                  {actionOptions(i)}
+                                </select>
+                              )}
+                              <button type="button" className="adm-fb__optdel" onClick={() => update(f.key, { other: false, otherTarget: "" })} aria-label="「その他」を外す" title="削除">
+                                <i className="bi bi-x-lg" aria-hidden="true" />
+                              </button>
+                            </li>
+                          )}
                         </ul>
-                      )}
-                    </div>
-                  )}
+                        <div className="adm-fb__optadd">
+                          <button type="button" onClick={() => addOpt(f.key)}>
+                            <i className="bi bi-plus-lg" aria-hidden="true" /> 選択肢を追加
+                          </button>
+                          {f.type !== "SELECT" && !f.other && (
+                            <>
+                              <span>または</span>
+                              <button type="button" onClick={() => update(f.key, { other: true })}>
+                                「その他」を追加
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <label>
                     <span>補足（入力欄の下に小さく出します。任意）</span>
                     <input value={f.help} maxLength={1000} onChange={(e) => update(f.key, { help: e.target.value })} />
@@ -592,7 +684,7 @@ export function FormBuilder({
                       <input type="checkbox" checked={f.required} onChange={(e) => update(f.key, { required: e.target.checked })} />
                       必須にする
                     </label>
-                    {!["FILE", "CONSENT", "MULTI_CHOICE"].includes(f.type) && (
+                    {!["FILE", "CONSENT", "MULTI_CHOICE"].includes(f.type) && (nameKey === undefined || nameKey === f.key) && (
                       <label className="adm-fb__map">
                         <span>{auth === "line" ? "求職者の基本情報への反映" : "回答者の名前として使う"}</span>
                         <select value={f.profile_key} onChange={(e) => update(f.key, { profile_key: e.target.value })}>

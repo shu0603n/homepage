@@ -65,7 +65,17 @@ export const FILES_TOTAL_MAX = 4.5 * 1024 * 1024;
 //   行き先：""＝いつもどおり（次のセクション）／"submit"＝フォームを送信／セクションの uid＝そのセクションへ
 //   next：セクションの区切り（SECTION）に付ける「このセクションのあと」の行き先
 //   branches：単一選択・プルダウンに付ける「この回答なら、ここへ」（選択肢 → 行き先）
-export type FieldLogic = { next?: string; branches?: Record<string, string> };
+//   other：選択肢の最後に「その他」（回答者が自由に入力）を出す（単一選択・複数選択）。分岐では branches["__other"] が「その他」の行き先
+export type FieldLogic = { next?: string; branches?: Record<string, string>; other?: boolean };
+
+// 「その他」の回答は「その他：入力した内容」（何も入れなければ「その他」）で保存する
+export const OTHER = "その他";
+export const OTHER_KEY = "__other";
+export const isOtherValue = (v: string) => v === OTHER || v.startsWith(`${OTHER}：`);
+export const otherText = (v: string) => (v.startsWith(`${OTHER}：`) ? v.slice(OTHER.length + 1) : "");
+export const otherValue = (text: string) => (text.trim() ? `${OTHER}：${text.trim().slice(0, 200)}` : OTHER);
+// その選択肢が分岐のどのキーに当たるか（選択肢そのもの／「その他」）
+const branchKey = (f: PublicField, v: string) => (f.options.includes(v) ? v : f.logic?.other && isOtherValue(v) ? OTHER_KEY : null);
 export type FormLogic = { first_next?: string }; // 最初のセクション（区切りより前）のあとの行き先
 
 export type PublicField = { id: number; uid: string; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; logic: FieldLogic | null };
@@ -80,7 +90,7 @@ export function checkAnswer(f: PublicField, v: AnswerValue | undefined): string 
   const empty = v === undefined || (typeof v === "string" ? v.trim() === "" || (f.type === "CONSENT" && v !== "true") : v.length === 0);
   if (empty) return f.required ? (f.type === "CONSENT" ? "同意が必要です" : "必須項目です") : null;
   if (f.type === "MULTI_CHOICE") {
-    if (!Array.isArray(v) || v.some((x) => !f.options.includes(x))) return "選択肢から選んでください";
+    if (!Array.isArray(v) || v.some((x) => branchKey(f, x) === null)) return "選択肢から選んでください";
     return null;
   }
   if (typeof v !== "string") return "入力内容を確認してください";
@@ -90,7 +100,7 @@ export function checkAnswer(f: PublicField, v: AnswerValue | undefined): string 
   switch (f.type) {
     case "SINGLE_CHOICE":
     case "SELECT":
-      return f.options.includes(s) ? null : "選択肢から選んでください";
+      return branchKey(f, s) !== null ? null : "選択肢から選んでください";
     case "EMAIL":
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) ? null : "メールアドレスの形式で入力してください";
     case "PHONE":
@@ -139,7 +149,8 @@ export function nextSection(sections: Section[], i: number, answers: Record<numb
   for (const f of sec.fields) {
     if (!BRANCH_TYPES.includes(f.type) || !f.logic?.branches) continue;
     const v = answers[f.id];
-    if (typeof v === "string" && v && f.logic.branches[v]) target = f.logic.branches[v];
+    const k = typeof v === "string" && v ? branchKey(f, v) : null;
+    if (k && f.logic.branches[k]) target = f.logic.branches[k];
   }
   if (!target) target = sec.next;
   if (target === "submit") return "submit";
