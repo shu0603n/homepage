@@ -5,7 +5,7 @@ import { FormBuilder } from "@/components/admin/FormsClient";
 import { TemplatePicker } from "@/components/admin/FormsPanels";
 import { getTemplate, listTemplates } from "@/lib/admin/forms";
 import { getAdminSession } from "@/lib/admin/session";
-import { builderOptions, templateToInitial, toInitial } from "../builder-props";
+import { builderOptions, templateSheetSummary, templateToInitial, toInitial } from "../builder-props";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +41,8 @@ export default async function NewFormPage({ searchParams }: { searchParams: Prom
           key={tpl ? `t${tpl.id}` : "blank"}
           initial={tpl ? templateToInitial(tpl, opts.tags.map((t) => t.id)) : toInitial(null, 0)}
           fromTemplate={tpl?.name}
+          templateId={tpl?.id}
+          templateSheet={tpl ? templateSheetSummary(tpl) : null}
           {...opts}
         />
       )}

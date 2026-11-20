@@ -1,8 +1,8 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { ensureAdminTables } from "@/lib/admin/store";
-import { getForm, listSubmissions, type FormDetail, type SubmissionRow } from "@/lib/admin/forms";
-import { a1, cellValue, isColumn, sheetInput, sourceLabel, type SheetColumn, type SheetField, type SheetSubmission } from "@/lib/sheet-columns";
+import { getForm, getTemplate, listSubmissions, type FormDetail, type SubmissionRow } from "@/lib/admin/forms";
+import { a1, cellValue, isColumn, sheetInput, sourceLabel, type SheetColumn, type SheetField, type SheetSubmission, type TemplateSheet } from "@/lib/sheet-columns";
 
 // フォームの回答を Google スプレッドシートに書き込む（フォーム管理の「スプレッドシート連携」）。
 //   ・会社の Google アカウントで一度「Google と連携」する（OAuth）。書き込みはそのアカウントの権限で行う
@@ -328,8 +328,8 @@ export async function syncSubmissions(formId: number, opts: { submissionId?: num
   }
   const result = await prisma.$transaction(
     async (tx) => {
-      // 同じフォームの書き込みは順番に（同じ行に重ねて書かないように）
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(${734000000 + formId})::text`;
+      // 同じシートへの書き込みは順番に（別のフォームが同じシートに書くときも、同じ行に重ねて書かないように）
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`${link.spreadsheet_id}!${link.sheet_name}`}))::text`;
       // 待っている間に、ほかの処理が書き終えた回答は除く
       const still = new Set(
         (
@@ -362,4 +362,38 @@ export async function pendingCount(formId: number): Promise<number> {
   const [r] = await prisma.$queryRaw<{ n: number }[]>`
     SELECT count(*)::int AS n FROM hp_form_submission WHERE form_id = ${formId} AND (sheet_status IS NULL OR sheet_status = 'error')`;
   return r?.n ?? 0;
+}
+
+// ---------- テンプレート ----------
+
+// フォームのいまの連携の設定を、テンプレートに入れる形にする（連携していなければ null）
+export async function sheetForTemplate(formId: number): Promise<TemplateSheet | null> {
+  const link = await getSheetLink(formId);
+  if (!link) return null;
+  return { spreadsheet_id: link.spreadsheet_id, spreadsheet_title: link.spreadsheet_title, sheet_name: link.sheet_name, header_row: link.header_row, columns: link.columns, enabled: link.enabled };
+}
+
+// テンプレートから作ったフォームに、スプレッドシート連携を引き継ぐ。
+//   same：テンプレートと同じスプレッドシート・シートに書く（列の設定もそのまま）
+//   new ：新しいスプレッドシートを作り、列の設定だけ引き継いで見出しを書く
+// 引き継げなかった（Google と連携していない など）ときは "failed"。フォームはそのまま作られている
+export async function applyTemplateSheet(formId: number, templateId: number, mode: "same" | "new", adminId: number): Promise<"ok" | "failed" | "none"> {
+  const [tpl, form] = await Promise.all([getTemplate(templateId), getForm(formId)]);
+  const t = tpl?.data.sheet;
+  if (!t || !form) return "none";
+  try {
+    if (mode === "same") {
+      await saveSheetTarget(formId, { spreadsheet_id: t.spreadsheet_id, spreadsheet_title: t.spreadsheet_title ?? "", sheet_name: t.sheet_name }, adminId);
+      await saveSheetSettings(formId, { header_row: t.header_row, columns: t.columns, enabled: t.enabled });
+    } else {
+      const s = await createSpreadsheet(`${form.title}（回答）`, t.sheet_name || "回答");
+      await saveSheetTarget(formId, { spreadsheet_id: s.id, spreadsheet_title: s.title, sheet_name: s.sheetName }, adminId);
+      await saveSheetSettings(formId, { header_row: t.header_row || 1, columns: t.columns, enabled: t.enabled });
+      if ((t.header_row || 1) > 0) await writeHeader(formId);
+    }
+    return "ok";
+  } catch (error) {
+    console.error("template sheet apply failed:", error);
+    return "failed";
+  }
 }

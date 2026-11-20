@@ -4,7 +4,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { FormBuilder } from "@/components/admin/FormsClient";
 import { getTemplate } from "@/lib/admin/forms";
 import { getAdminSession } from "@/lib/admin/session";
-import { builderOptions, templateToInitial } from "../../builder-props";
+import { builderOptions, templateSheetSummary, templateToInitial } from "../../builder-props";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +42,7 @@ export default async function EditTemplatePage({ params, searchParams }: { param
           key={tpl.updated_at.getTime()}
           initial={templateToInitial(tpl, opts.tags.map((t) => t.id))}
           template={{ id: tpl.id, name: tpl.name, description: tpl.description ?? "" }}
+          templateSheet={templateSheetSummary(tpl)}
           {...opts}
         />
       </div>

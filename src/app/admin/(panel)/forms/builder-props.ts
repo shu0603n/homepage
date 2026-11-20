@@ -33,6 +33,9 @@ export function toInitial(f: FormDetail | null, answers: number): BuilderInitial
 }
 
 // テンプレートの中身を、フォームの作成・編集の画面の形にする（質問の ID は無し。今は無いタグは外す）
+export const templateSheetSummary = (t: TemplateRow) =>
+  t.data.sheet ? { title: t.data.sheet.spreadsheet_title, sheet_name: t.data.sheet.sheet_name, columns: t.data.sheet.columns.length } : null;
+
 export function templateToInitial(t: TemplateRow, tagIds: number[]): BuilderInitial {
   const d = t.data;
   return {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminRequest } from "@/lib/admin/api";
-import { deleteTemplate, parseTemplateInput, saveTemplate } from "@/lib/admin/forms";
+import { deleteTemplate, getTemplate, parseTemplateInput, saveTemplate } from "@/lib/admin/forms";
 import { jsonError } from "@/lib/auth/http";
 
 // フォームのテンプレートの保存（PUT）・削除（DELETE）。テンプレートを消しても、それから作ったフォームはそのまま
@@ -16,6 +16,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!id) return jsonError("テンプレートが見つかりません。", 404);
   const t = parseTemplateInput(r.body);
   if (typeof t === "string") return jsonError(t, 400);
+  // スプレッドシート連携の設定：sheet: null なら外す。それ以外は今のまま残す（画面では書き込み先や列は直さない）
+  if (r.body.sheet !== null) t.data.sheet = (await getTemplate(id))?.data.sheet ?? null;
   if ((await saveTemplate(id, t, r.session.id)) === null) return jsonError("テンプレートが見つかりません。", 404);
   return NextResponse.json({ ok: true, id });
 }

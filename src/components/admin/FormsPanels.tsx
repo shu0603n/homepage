@@ -458,6 +458,11 @@ function TemplatesSection({ templates }: { templates: TemplateRow[] }) {
                 {t.description && <p>{t.description}</p>}
                 <p className="adm-forms__meta">
                   <ModePill mode={t.data.auth_mode} />
+                  {t.data.sheet && (
+                    <span className="adm-pill adm-pill--sheet">
+                      <i className="bi bi-file-earmark-spreadsheet" aria-hidden="true" /> スプレッドシート連携あり
+                    </span>
+                  )}
                   <span className="adm-forms__url">
                     質問 {questionCount(t)}件・更新 {dayOf(t.updated_at)}
                   </span>
@@ -501,6 +506,11 @@ export function TemplatePicker({ templates }: { templates: TemplateRow[] }) {
           <small>{t.description || `「${t.data.title}」のテンプレート`}</small>
           <span className="adm-forms__meta">
             <ModePill mode={t.data.auth_mode} />
+                  {t.data.sheet && (
+                    <span className="adm-pill adm-pill--sheet">
+                      <i className="bi bi-file-earmark-spreadsheet" aria-hidden="true" /> スプレッドシート連携あり
+                    </span>
+                  )}
             <span className="adm-forms__url">質問 {questionCount(t)}件</span>
           </span>
           <ol className="adm-tplpick__qs">

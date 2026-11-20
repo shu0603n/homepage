@@ -9,6 +9,9 @@ import { answerText, isInputType, isOtherValue, OTHER, OTHER_KEY, type FieldType
 //   mode：text＝書いたとおりの文字で入れる（式としては扱わない）／auto＝スプレッドシートに数値・日付として読ませる
 export type SheetColumn = { col: string; source: string; text?: string; mode?: "text" | "auto" };
 
+// テンプレートに取っておくスプレッドシート連携の設定（書き込み先と、どの列に何を入れるか）
+export type TemplateSheet = { spreadsheet_id: string; spreadsheet_title: string | null; sheet_name: string; header_row: number; columns: SheetColumn[]; enabled: boolean };
+
 export const BASIC_SOURCES = [
   { key: "submitted_at", label: "回答日時" },
   { key: "submitted_date", label: "回答日" },

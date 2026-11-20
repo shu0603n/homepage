@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { TemplateSheet } from "@/lib/sheet-columns";
 import { ensureAdminTables } from "@/lib/admin/store";
 import { addFriendTag, applyAutoTags, PROFILE_FIELDS, saveProfile, setStatus, STATUS_LABEL, type Profile } from "@/lib/admin/crm";
 import { upsertFriend } from "@/lib/admin/line";
@@ -410,7 +411,8 @@ export const authModeLabel = (m: string) => AUTH_MODE_LABEL[m] ?? m;
 // フォームの中身（質問・回答者の確かめ方・回答されたときの動き・説明文など）を名前を付けて取っておき、新しいフォームのもとにする。
 // URL の名前と公開の有無は、フォームごとに決めるものなので入れない。質問の ID も入れない（新しいフォームでは新しい質問になる）
 
-export type TemplateData = Omit<FormInput, "slug" | "is_published">;
+// sheet：スプレッドシート連携の設定も取っておいたとき（フォームを作るときに、引き継ぐかどうかを選べる）
+export type TemplateData = Omit<FormInput, "slug" | "is_published"> & { sheet?: TemplateSheet | null };
 export type TemplateRow = { id: number; name: string; description: string | null; data: TemplateData; updated_at: Date };
 
 export function parseTemplateInput(b: Record<string, unknown>): { name: string; description: string | null; data: TemplateData } | string {

@@ -9,11 +9,11 @@ import { AUTH_MODES, BRANCH_TYPES, CHOICE_TYPES, FIELD_TYPE_LABEL, FIELD_TYPES, 
 
 // フォーム管理の、画面で操作する部品（フォームの作成・編集、URL のコピー、QR コード、公開の切り替え、削除）
 
-async function send(url: string, method: string, body?: unknown): Promise<{ ok: boolean; id?: number; message?: string }> {
+async function send(url: string, method: string, body?: unknown): Promise<{ ok: boolean; id?: number; sheet?: string; message?: string }> {
   try {
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
-    const data = (await res.json().catch(() => null)) as { ok?: boolean; id?: number; message?: string } | null;
-    return res.ok && data?.ok ? { ok: true, id: data.id } : { ok: false, message: data?.message ?? "保存できませんでした。" };
+    const data = (await res.json().catch(() => null)) as { ok?: boolean; id?: number; sheet?: string; message?: string } | null;
+    return res.ok && data?.ok ? { ok: true, id: data.id, sheet: data.sheet } : { ok: false, message: data?.message ?? "保存できませんでした。" };
   } catch {
     return { ok: false, message: "通信に失敗しました。" };
   }
@@ -168,6 +168,9 @@ export function DeleteSubmissionButton({ id, formId }: { id: number; formId: num
 
 // ---------- フォームの作成・編集 ----------
 
+export type SheetSummary = { title: string | null; sheet_name: string; columns: number };
+const sheetText = (x: SheetSummary) => `「${x.title ?? "スプレッドシート"}」のシート「${x.sheet_name}」・${x.columns}列`;
+
 // uid：セクションの目印（分岐の行き先）。next：セクションの「このセクションのあと」。branchOn・branches：「回答に応じてセクションに移動」
 type Draft = {
   key: string;
@@ -218,6 +221,9 @@ export function FormBuilder({
   publicBase,
   template,
   fromTemplate,
+  templateId,
+  sheet,
+  templateSheet,
 }: {
   initial: BuilderInitial;
   tags: { id: number; name: string; color: string }[];
@@ -225,12 +231,19 @@ export function FormBuilder({
   publicBase: string;
   template?: { id: number | null; name: string; description: string }; // テンプレートを作る・直すとき
   fromTemplate?: string; // テンプレートから新しいフォームを作るとき：そのテンプレートの名前
+  templateId?: number; // テンプレートから作るとき：そのテンプレートの ID
+  sheet?: SheetSummary | null; // このフォームのスプレッドシート連携（「テンプレートとして保存」で一緒に入れられる）
+  templateSheet?: SheetSummary | null; // テンプレートに入っているスプレッドシート連携の設定
 }) {
   const router = useRouter();
   const isTemplate = template !== undefined;
   const [tplName, setTplName] = useState(template?.name ?? "");
   const [tplDesc, setTplDesc] = useState(template?.description ?? "");
-  const [saveAs, setSaveAs] = useState<{ name: string; description: string } | null>(null);
+  const [saveAs, setSaveAs] = useState<{ name: string; description: string; withSheet: boolean } | null>(null);
+  // テンプレートから作るとき：スプレッドシート連携を same＝同じシートに書く／new＝新しく作る（列の設定だけ）／none＝引き継がない
+  const [sheetMode, setSheetMode] = useState<"same" | "new" | "none">("same");
+  // テンプレートを直すとき：入っているスプレッドシート連携の設定を残すか
+  const [keepTplSheet, setKeepTplSheet] = useState(true);
   const [saveAsBusy, setSaveAsBusy] = useState(false);
   const [saveAsError, setSaveAsError] = useState("");
   const [notice, setNotice] = useState("");
@@ -313,7 +326,7 @@ export function FormBuilder({
     void _pub;
     return rest;
   }, [payload]);
-  const snapshot = JSON.stringify(isTemplate ? { tplName, tplDesc, templateData } : payload);
+  const snapshot = JSON.stringify(isTemplate ? { tplName, tplDesc, templateData, keepTplSheet } : payload);
   const [savedJson, setSavedJson] = useState(snapshot);
   const dirty = snapshot !== savedJson;
 
@@ -340,7 +353,7 @@ export function FormBuilder({
     setError("");
     if (isTemplate) {
       setBusy(true);
-      const body = { name: tplName, description: tplDesc, data: templateData };
+      const body = { name: tplName, description: tplDesc, data: templateData, ...(templateSheet && !keepTplSheet ? { sheet: null } : {}) };
       const r = template.id === null ? await send("/api/admin/form-templates/", "POST", body) : await send(`/api/admin/form-templates/${template.id}/`, "PUT", body);
       setBusy(false);
       if (!r.ok || !r.id) return setError(r.message ?? "保存できませんでした。");
@@ -351,11 +364,14 @@ export function FormBuilder({
     }
     if (!SLUG_RE.test(payload.slug)) return setError("URL の名前は、半角の英小文字・数字・ハイフンで 2〜60 文字にしてください（先頭は英数字）。");
     setBusy(true);
-    const r = initial.id === null ? await send("/api/admin/forms/", "POST", payload) : await send(`/api/admin/forms/${initial.id}/`, "PUT", payload);
+    const r =
+      initial.id === null
+        ? await send("/api/admin/forms/", "POST", { ...payload, ...(templateId && templateSheet ? { template_id: templateId, sheet_mode: sheetMode } : {}) })
+        : await send(`/api/admin/forms/${initial.id}/`, "PUT", payload);
     setBusy(false);
     if (!r.ok || !r.id) return setError(r.message ?? "保存できませんでした。");
     setSavedJson(snapshot);
-    router.replace(`/admin/forms/${r.id}/?saved=${Date.now()}`);
+    router.replace(`/admin/forms/${r.id}/?saved=${Date.now()}${r.sheet && r.sheet !== "none" ? `&sheet=${r.sheet}` : ""}`);
     router.refresh();
   }
 
@@ -363,7 +379,7 @@ export function FormBuilder({
     if (!saveAs) return;
     setSaveAsBusy(true);
     setSaveAsError("");
-    const r = await send("/api/admin/form-templates/", "POST", { name: saveAs.name, description: saveAs.description, data: templateData });
+    const r = await send("/api/admin/form-templates/", "POST", { name: saveAs.name, description: saveAs.description, data: templateData, ...(saveAs.withSheet && initial.id ? { sheet_from_form: initial.id } : {}) });
     setSaveAsBusy(false);
     if (!r.ok) return setSaveAsError(r.message ?? "保存できませんでした。");
     setNotice(`テンプレート「${saveAs.name}」を保存しました。新しいフォームを作るときに選べます。`);
@@ -506,6 +522,47 @@ export function FormBuilder({
           </label>
         </div>
       </section>
+
+      {templateSheet && !isTemplate && (
+        <section className="adm-card adm-fb__tplsheet">
+          <p className="adm-card__en">Spreadsheet</p>
+          <h2 className="adm-card__title">スプレッドシート連携（テンプレートから）</h2>
+          <p className="adm-card__help">テンプレートに、スプレッドシート連携の設定が入っています（{sheetText(templateSheet)}）。作るフォームに引き継ぐかを選んでください。あとから「スプレッドシート連携」のタブで変えられます。</p>
+          <div className="adm-fb__modes adm-fb__modes--3" role="radiogroup" aria-label="スプレッドシート連携の引き継ぎ">
+            {(
+              [
+                ["same", "bi-link-45deg", "同じシートに書き込む", "テンプレートと同じスプレッドシート・シートに、同じ列の設定で書き込みます。"],
+                ["new", "bi-file-earmark-plus", "新しいスプレッドシートを作る", "列の設定だけ引き継いで、このフォーム用のスプレッドシートを新しく作ります（見出しも書きます）。"],
+                ["none", "bi-x-circle", "引き継がない", "スプレッドシートには書き込みません。"],
+              ] as const
+            ).map(([key, icon, label, help]) => (
+              <button key={key} type="button" role="radio" aria-checked={sheetMode === key} className={`adm-fb__mode${sheetMode === key ? " is-on" : ""}`} onClick={() => setSheetMode(key)}>
+                <i className={`bi ${icon}`} aria-hidden="true" />
+                <strong>{label}</strong>
+                <small>{help}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      {templateSheet && isTemplate && (
+        <section className={`adm-card adm-fb__tplsheet${keepTplSheet ? "" : " is-off"}`}>
+          <p className="adm-card__en">Spreadsheet</p>
+          <h2 className="adm-card__title">スプレッドシート連携（引き継ぐ設定）</h2>
+          <div className="adm-sheet__target">
+            <span className="adm-sheet__sicon" aria-hidden="true">
+              <i className="bi bi-file-earmark-spreadsheet" />
+            </span>
+            <span>
+              <strong>{sheetText(templateSheet)}</strong>
+              <small>{keepTplSheet ? "このテンプレートからフォームを作るとき、引き継ぐかを選べます。" : "保存すると、テンプレートからこの設定を外します。"}</small>
+            </span>
+            <button type="button" className={`adm-chipbtn${keepTplSheet ? " is-danger" : ""}`} onClick={() => setKeepTplSheet(!keepTplSheet)}>
+              {keepTplSheet ? "テンプレートから外す" : "外すのをやめる"}
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="adm-card">
         <p className="adm-card__en">Notification</p>
@@ -800,7 +857,7 @@ export function FormBuilder({
             {initial.is_published ? "回答ページを開く" : "プレビュー"}
           </a>
         )}
-        <button type="button" className="adm-chipbtn" onClick={() => setSaveAs({ name: title, description: purpose })}>
+        <button type="button" className="adm-chipbtn" onClick={() => setSaveAs({ name: title, description: purpose, withSheet: !!sheet })}>
           <i className="bi bi-layers" aria-hidden="true" />
           テンプレートとして保存
         </button>
@@ -834,6 +891,12 @@ export function FormBuilder({
               説明（任意）
               <input value={saveAs.description} maxLength={500} onChange={(e) => setSaveAs({ ...saveAs, description: e.target.value })} />
             </label>
+            {sheet && (
+              <label className="adm-dialog__check">
+                <input type="checkbox" checked={saveAs.withSheet} onChange={(e) => setSaveAs({ ...saveAs, withSheet: e.target.checked })} />
+                スプレッドシート連携の設定も含める（{sheetText(sheet)}）
+              </label>
+            )}
             {saveAsError && <small className="adm-crm-error">{saveAsError}</small>}
             <div className="adm-dialog__foot">
               <button type="button" className="adm-chipbtn" onClick={() => setSaveAs(null)}>
