@@ -337,7 +337,25 @@ export async function syncSubmissions(formId: number, opts: { submissionId?: num
             SELECT id FROM hp_form_submission WHERE id = ANY(${ids}::int[]) AND (sheet_status IS NULL OR sheet_status = 'error')`
         ).map((r) => r.id),
       );
-      const subs = candidates.filter((s) => still.has(s.id)).sort((x, y) => x.submitted_at.getTime() - y.submitted_at.getTime() || x.id - y.id);
+      // 書く中身（答え・添付ファイル名）は、順番が来てから、この接続で読み直す
+      // （同時に回答が来たとき、先に読んだ中身が保存の途中のもの＝空にならないように）
+      const target = [...still];
+      const [answerRows, fileRows] = await Promise.all([
+        tx.$queryRaw<{ submission_id: number; field_id: number; value_text: string | null; value_json: unknown }[]>`
+          SELECT submission_id, field_id, value_text, value_json FROM hp_form_answer WHERE submission_id = ANY(${target}::int[])`,
+        tx.$queryRaw<{ id: number; submission_id: number; field_id: number; file_name: string; size: number }[]>`
+          SELECT id, submission_id, field_id, file_name, size FROM hp_form_file WHERE submission_id = ANY(${target}::int[]) ORDER BY id`,
+      ]);
+      const subs = candidates
+        .filter((s) => still.has(s.id))
+        .map((s) => {
+          const answers = new Map(answerRows.filter((a) => a.submission_id === s.id).map((a) => [a.field_id, { text: a.value_text, json: a.value_json }]));
+          // 回答者名が回答の「氏名」から決まる場合（ログインなしのフォーム）も、読み直した中身で決め直す
+          const nameField = form.fields.find((f) => f.profile_key === "name");
+          const answeredName = nameField ? answers.get(nameField.id)?.text : null;
+          return { ...s, answers, files: fileRows.filter((f) => f.submission_id === s.id), who: s.who === "（匿名）" && answeredName ? answeredName : s.who };
+        })
+        .sort((x, y) => x.submitted_at.getTime() - y.submitted_at.getTime() || x.id - y.id);
       if (subs.length === 0) return { written: 0, error: null as string | null };
       try {
         const first = await writeRows(form, link, subs);
