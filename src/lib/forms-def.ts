@@ -16,7 +16,7 @@ export const FIELD_TYPES = [
   { key: "FILE", label: "ファイル添付", icon: "bi-paperclip" },
   { key: "CONSENT", label: "同意チェック", icon: "bi-check2-square" },
   { key: "DESCRIPTION", label: "説明文（回答不要）", icon: "bi-info-circle" },
-  { key: "SECTION", label: "セクション（ページの区切り）", icon: "bi-layout-split" },
+  { key: "SECTION", label: "次のページ（ページの区切り）", icon: "bi-file-earmark-plus" },
 ] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number]["key"];

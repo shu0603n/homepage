@@ -2869,3 +2869,10 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .pf-back { display: inline-flex; align-items: center; gap: 4px; padding: 12px 22px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--navy); font: inherit; font-weight: 700; cursor: pointer; transition: background .2s, transform .2s var(--ease); }
 .pf-back:hover { background: var(--bg-soft); transform: translateX(-2px); }
 @media (max-width: 640px) { .pf-nav { flex-direction: column-reverse; } .pf-nav .btn { width: 100%; } }
+/* フォーム：「＋ 次のページを追加」と分岐の案内 */
+.adm-fb__addpage { display: grid; justify-items: center; gap: 2px; width: 100%; margin-top: 14px; padding: 14px; border: 2px dashed #9fcfd4; border-radius: 16px; background: #f4fbfb; color: var(--navy); font: inherit; font-weight: 700; cursor: pointer; transition: background .2s, border-color .2s, transform .2s var(--ease); }
+.adm-fb__addpage i { font-size: 20px; color: var(--teal); }
+.adm-fb__addpage small { font-size: 11px; font-weight: 500; color: var(--sub); }
+.adm-fb__addpage:hover { border-style: solid; background: var(--teal-soft); transform: translateY(-1px); }
+.adm-fb__branchnote { margin: 0; padding: 8px 12px; border-radius: 10px; background: #fff5dc; color: #6b4b00; font-size: 12px; line-height: 1.7; }
+.adm-fb__secno i { margin-right: 4px; }

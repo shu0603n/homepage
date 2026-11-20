@@ -366,9 +366,13 @@ export function FormBuilder({
   const sectionNo = (uid: string) => sections.findIndex((x) => x.uid === uid) + 1;
   // pos の位置から行ける先：それより後ろのセクションと「送信」
   const targets = (pos: number) => [
-    ...sections.filter((x) => x.pos > pos).map((x) => ({ value: x.uid, label: `セクション ${sectionNo(x.uid)}${x.title ? `「${x.title.slice(0, 20)}」` : ""}へ` })),
-    { value: "submit", label: "フォームを送信する" },
+    ...sections.filter((x) => x.pos > pos).map((x) => ({ value: x.uid, label: `ページ ${sectionNo(x.uid)}${x.title ? `「${x.title.slice(0, 20)}」` : ""}へ移動` })),
+    { value: "submit", label: "フォームを送信する（ここで終わり）" },
   ];
+  const addPageFor = (key: string, option: string) => {
+    const page = blank("SECTION");
+    setFields((list) => [...list.map((x) => (x.key === key ? { ...x, branches: { ...x.branches, [option]: page.uid } } : x)), page]);
+  };
   // セクションの終わりに出す「このセクションのあと」
   const afterSection = (sec: { uid: string; pos: number }, isLast: boolean) => {
     const value = sec.uid === "_start" ? firstNext : (fields.find((f) => f.uid === sec.uid)?.next ?? "");
@@ -376,12 +380,12 @@ export function FormBuilder({
     return (
       <li key={`after-${sec.uid}`} className="adm-fb__after">
         <i className="bi bi-signpost-split" aria-hidden="true" />
-        <span>セクション {sectionNo(sec.uid)} のあと</span>
+        <span>ページ {sectionNo(sec.uid)} のあと</span>
         {isLast ? (
-          <strong>フォームを送信する（最後のセクション）</strong>
+          <strong>フォームを送信する（最後のページ）</strong>
         ) : (
-          <select value={value} onChange={(e) => set(e.target.value)} aria-label={`セクション ${sectionNo(sec.uid)} のあと`}>
-            <option value="">次のセクションに進む</option>
+          <select value={value} onChange={(e) => set(e.target.value)} aria-label={`ページ ${sectionNo(sec.uid)} のあと`}>
+            <option value="">次のページに進む</option>
             {targets(sec.pos)
               .filter((t) => sections.findIndex((x) => x.uid === t.value) !== sections.findIndex((x) => x.uid === sec.uid) + 1)
               .map((t) => (
@@ -480,11 +484,11 @@ export function FormBuilder({
       <section className="adm-card">
         <p className="adm-card__en">Questions</p>
         <h2 className="adm-card__title">
-          質問<small>{fields.filter((f) => isInputType(f.type)).length}件{hasSections && `・セクション ${sections.length}`}</small>
+          質問<small>{fields.filter((f) => isInputType(f.type)).length}件{hasSections && `・${sections.length}ページ`}</small>
         </h2>
         {hasSections && (
           <p className="adm-card__help">
-            セクションごとに1ページずつ表示します。各セクションの終わりで「このセクションのあと」の行き先を、単一選択・プルダウンの質問では「回答に応じてセクションに移動」で、答えごとの行き先を決められます（Google フォームと同じ）。
+            回答ページでは1ページずつ表示し、「次へ」「戻る」で進みます。各ページの終わりで「ページのあと」の行き先を、単一選択・プルダウンの質問では「回答に応じた動き」で、答えごとに次のページ・別のページ・送信を決められます（Google フォームと同じ）。
           </p>
         )}
         <ol className="adm-fb__fields">
@@ -495,7 +499,7 @@ export function FormBuilder({
               prev ? afterSection(prev, false) : null,
             <li key={f.key} className={`adm-fb__field${f.type === "SECTION" ? " is-section" : ""}${f.fresh ? " is-new" : ""}${moved === f.key ? " is-moved" : ""}`}>
               <header>
-                {f.type === "SECTION" ? <span className="adm-fb__secno">セクション {sectionNo(f.uid)}</span> : <span className="adm-fb__num">{i + 1}</span>}
+                {f.type === "SECTION" ? <span className="adm-fb__secno"><i className="bi bi-file-earmark-text" aria-hidden="true" /> ページ {sectionNo(f.uid)}</span> : <span className="adm-fb__num">{i + 1}</span>}
                 <select value={f.type} onChange={(e) => update(f.key, { type: e.target.value as FieldType, fresh: false })} aria-label="回答形式">
                   {FIELD_TYPES.map((t) => (
                     <option key={t.key} value={t.key}>
@@ -521,7 +525,7 @@ export function FormBuilder({
               {f.type === "SECTION" ? (
                 <>
                   <label>
-                    <span>セクションのタイトル（ページの見出し。任意）</span>
+                    <span>ページのタイトル（ページの見出し。任意）</span>
                     <input value={f.label} maxLength={200} onChange={(e) => update(f.key, { label: e.target.value })} placeholder="例：ご経験について" />
                   </label>
                   <label>
@@ -546,12 +550,13 @@ export function FormBuilder({
                       <textarea value={f.options} rows={Math.min(8, Math.max(3, f.options.split("\n").length + 1))} onChange={(e) => update(f.key, { options: e.target.value })} placeholder={"正社員\n契約社員\nパート・アルバイト"} />
                     </label>
                   )}
-                  {BRANCH_TYPES.includes(f.type) && hasSections && (
+                  {BRANCH_TYPES.includes(f.type) && (
                     <div className={`adm-fb__branch${f.branchOn ? " is-on" : ""}`}>
                       <label className="adm-fb__check">
                         <input type="checkbox" checked={f.branchOn} onChange={(e) => update(f.key, { branchOn: e.target.checked })} />
-                        回答に応じてセクションに移動する
+                        回答に応じて次の動きを変える（分岐）
                       </label>
+                      {f.branchOn && !hasSections && <p className="adm-fb__branchnote">ページがまだ1つだけです。「＋ 新しいページを作って、そこへ移動」を選ぶか、下の「＋ 次のページを追加」でページを足すと、答えごとに進むページを変えられます。</p>}
                       {f.branchOn && (
                         <ul>
                           {optionsOf(f).length === 0 && <li className="adm-muted">先に選択肢を入力してください。</li>}
@@ -559,13 +564,18 @@ export function FormBuilder({
                             <li key={o}>
                               <span>{o}</span>
                               <i className="bi bi-arrow-right" aria-hidden="true" />
-                              <select value={f.branches[o] ?? ""} onChange={(e) => update(f.key, { branches: { ...f.branches, [o]: e.target.value } })} aria-label={`「${o}」を選んだときの行き先`}>
-                                <option value="">いつもどおり（このセクションのあとの行き先）</option>
+                              <select
+                                value={f.branches[o] ?? ""}
+                                onChange={(e) => (e.target.value === "__new" ? addPageFor(f.key, o) : update(f.key, { branches: { ...f.branches, [o]: e.target.value } }))}
+                                aria-label={`「${o}」を選んだときの動き`}
+                              >
+                                <option value="">{hasSections ? "次のページへ進む（いつもどおり）" : "そのまま続ける（いつもどおり）"}</option>
                                 {targets(i).map((t) => (
                                   <option key={t.value} value={t.value}>
                                     {t.label}
                                   </option>
                                 ))}
+                                <option value="__new">＋ 新しいページを作って、そこへ移動</option>
                               </select>
                             </li>
                           ))}
@@ -603,9 +613,14 @@ export function FormBuilder({
           })}
           {hasSections && sections.length > 0 && afterSection(sections[sections.length - 1], true)}
         </ol>
+        <button type="button" className="adm-fb__addpage" onClick={() => setFields((list) => [...list, blank("SECTION")])}>
+          <i className="bi bi-file-earmark-plus" aria-hidden="true" />
+          ＋ 次のページを追加
+          <small>ここから下の質問が次のページになります</small>
+        </button>
         <div className="adm-fb__add">
           <span>質問を追加：</span>
-          {FIELD_TYPES.map((t) => (
+          {FIELD_TYPES.filter((t) => t.key !== "SECTION").map((t) => (
             <button key={t.key} type="button" className="adm-chipbtn" onClick={() => setFields((list) => [...list, blank(t.key)])}>
               <i className={`bi ${t.icon}`} aria-hidden="true" />
               {t.label.replace(/（.*）/, "")}
