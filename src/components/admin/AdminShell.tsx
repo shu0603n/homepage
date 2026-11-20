@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { avatarUrl } from "@/components/admin/AdminAvatar";
 import { AdminMeMenu } from "@/components/admin/AdminMeMenu";
+import { AdminSessionKeeper } from "@/components/admin/AdminSessionKeeper";
 import type { AdminSession } from "@/lib/admin/session";
 import { countUnhandledInquiries, ROLE_NAMES } from "@/lib/admin/store";
 
@@ -83,6 +84,7 @@ export async function AdminShell({
           />
           <AdminLogoutButton />
         </div>
+        <AdminSessionKeeper />
       </aside>
 
       <div className="adm-body">
