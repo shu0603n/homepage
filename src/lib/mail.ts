@@ -11,7 +11,8 @@ export function isMailConfigured(): boolean {
   return Boolean(process.env.SES_SMTP_HOST && process.env.SES_SMTP_USER && process.env.SES_SMTP_PASS);
 }
 
-export async function sendMail(message: { to: string; subject: string; text: string }): Promise<void> {
+// html を付けると、HTML のメール（ボタンなど）として送る（text は HTML を表示できないメールソフト用にそのまま付ける）
+export async function sendMail(message: { to: string; subject: string; text: string; html?: string }): Promise<void> {
   const transporter = nodemailer.createTransport({
     host: process.env.SES_SMTP_HOST,
     port: 465,

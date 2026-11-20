@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-const sent: { to: string; subject: string; text: string }[] = [];
-vi.mock("@/lib/mail", () => ({ isMailConfigured: () => true, sendMail: async (m: { to: string; subject: string; text: string }) => void sent.push(m) }));
+const sent: { to: string; subject: string; text: string; html?: string }[] = [];
+vi.mock("@/lib/mail", () => ({ isMailConfigured: () => true, sendMail: async (m: { to: string; subject: string; text: string; html?: string }) => void sent.push(m) }));
+vi.mock("@/lib/admin/sheets", () => ({ getSheetLink: async () => ({ spreadsheet_id: "SHEETID123" }) }));
 vi.mock("@/lib/admin/forms", () => ({
   listSubmissions: async () => [
     {
@@ -49,6 +50,9 @@ describe("フォーム回答の通知メール", () => {
     expect(sent[0].text).not.toContain("答えなかった質問");
     expect(sent[0].text).not.toContain("ページ2");
     expect(sent[0].text).toContain("/admin/forms/3/answers/7/");
+    expect(sent[0].text).toContain("スプレッドシートを開く：https://docs.google.com/spreadsheets/d/SHEETID123/edit");
+    expect(sent[0].html).toContain('href="https://docs.google.com/spreadsheets/d/SHEETID123/edit"');
+    expect(sent[0].html!.indexOf("スプレッドシートを開く")).toBeLessThan(sent[0].html!.indexOf("回答の内容"));
   });
   it("通知がオフなら送らない", async () => {
     sent.length = 0;
