@@ -11,12 +11,14 @@ import { useEffect } from "react";
 //     うまくいかなければ fallback（ログイン画面）へ移る
 //   - ログイン画面：LINE アプリ内で開かれていれば試す（失敗してもそのままログイン画面を使える）
 
-type Liff = {
+export type Liff = {
   init: (config: { liffId: string }) => Promise<void>;
   isInClient: () => boolean;
   isLoggedIn: () => boolean;
   login: (config?: { redirectUri?: string }) => void;
   getIDToken: () => string | null;
+  getDecodedIDToken?: () => { exp?: number } | null;
+  logout?: () => void;
 };
 
 declare global {
@@ -27,7 +29,8 @@ declare global {
 
 const LIFF_SDK_URL = "https://static.line-scdn.net/liff/edge/2/sdk.js";
 
-function loadLiffSdk(): Promise<Liff> {
+// LIFF の SDK を読み込む（スタッフ登録との LINE 連携の画面 /jobs/line-link/ でも使う）
+export function loadLiffSdk(): Promise<Liff> {
   return new Promise((resolve, reject) => {
     if (window.liff) return resolve(window.liff);
     const script = document.createElement("script");

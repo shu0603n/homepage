@@ -39,7 +39,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
           </div>
           {session.staffId !== null && staff && (
             <div className="mb-48">
-              <LineFriendStep href={lineFriendUrl(session.staffId)} linked={Boolean(staff.line_user_id)} compact />
+              <LineFriendStep href={await lineFriendUrl(session.staffId, staff.mail)} linked={Boolean(staff.line_user_id)} compact />
             </div>
           )}
           <p className="lead-block">

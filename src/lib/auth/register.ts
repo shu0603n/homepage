@@ -27,7 +27,7 @@ function errorCode(error: unknown): string {
 export async function handleStaffRegistration(
   request: Request,
   method: "フォーム" | "来社",
-  onCreated?: (staffId: number) => Record<string, unknown>,
+  onCreated?: (staffId: number, mail: string) => Record<string, unknown> | Promise<Record<string, unknown>>,
 ): Promise<NextResponse> {
   if (!isSameOrigin(request)) return jsonError("不正なリクエストです。", 403);
 
@@ -51,7 +51,7 @@ export async function handleStaffRegistration(
     createdStaffId = staffId;
     stage = "M";
     await sendPasswordLinkMail(input.mail, input.name ?? null, await createPasswordLink(request, "set-password", staffId, input.mail));
-    return NextResponse.json({ ok: true, ...(onCreated ? onCreated(staffId) : {}) });
+    return NextResponse.json({ ok: true, ...(onCreated ? await onCreated(staffId, input.mail) : {}) });
   } catch (error) {
     // 案内メールを送れなかったときは、今回作ったスタッフ情報も取り消す（登録をやり直せるように）
     if (createdStaffId !== null) await deleteStaff(createdStaffId).catch((e) => console.error("rollback failed:", e));

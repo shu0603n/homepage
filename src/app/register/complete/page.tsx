@@ -49,7 +49,7 @@ export default async function RegisterCompletePage() {
             <p>スタッフ登録が完了しました。マイページにもログインした状態です。</p>
           </div>
 
-          <LineFriendStep href={lineFriendUrl(session.staffId)} linked={linked} />
+          <LineFriendStep href={await lineFriendUrl(session.staffId, staff?.mail ?? null)} linked={linked} />
 
           <p className="lead-block mypage-section">
             <Link className="text-arrow" href="/mypage/">

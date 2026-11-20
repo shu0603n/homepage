@@ -1563,6 +1563,9 @@ body:has(.page-hero) .h2-line::before { content: counter(sec, decimal-leading-ze
 .register-note { margin: 36px 0 0; font-size: 14px; text-align: center; color: var(--sub); }
 .register-sent { text-align: center; }
 .register-sent__icon { margin: 0; font-size: 48px; line-height: 1; color: var(--teal); }
+.register-sent__icon.is-ng { color: #b02a42; }
+.line-link-result { text-align: center; }
+.line-link-result__text { max-width: 480px; margin: 16px auto 24px; line-height: 1.9; }
 .register-sent__title { margin: 12px 0 0; font-family: var(--f-head); font-size: clamp(20px, 2.4vw, 26px); font-weight: 700; color: var(--navy-dd); }
 .register-sent__mail { display: inline-block; margin: 18px 0 0; padding: 8px 20px; border-radius: 999px; background: var(--bg-soft); font-weight: 700; color: var(--navy); word-break: break-all; }
 .register-sent__steps { max-width: 480px; margin: 28px auto 0; padding: 0; list-style: none; counter-reset: sent; text-align: left; }
