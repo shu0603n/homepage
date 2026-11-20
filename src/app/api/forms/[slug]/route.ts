@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { formatPhoneJP } from "@/lib/phone";
 import { getFormBySlug, isDuplicateOrFlood, publicFields, saveSubmission, type UploadedFile } from "@/lib/admin/forms";
 import { isSameOrigin, jsonError } from "@/lib/auth/http";
 import { isLineLoginEnabled, verifyLineIdToken } from "@/lib/auth/line";
@@ -75,7 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     const value = asValue(raw[String(f.id)]);
     const message = checkAnswer(f, value);
     if (message) errors[f.id] = message;
-    else if (value !== undefined) answers.set(f.id, value);
+    else if (value !== undefined) answers.set(f.id, f.type === "PHONE" && typeof value === "string" ? (formatPhoneJP(value) ?? value) : value);
   }
   if (total > FILES_TOTAL_MAX) return jsonError("添付ファイルの合計は 4.5MB 以下にしてください。", 400);
   if (Object.keys(errors).length > 0) return NextResponse.json({ ok: false, message: "入力内容をご確認ください。", errors }, { status: 400 });

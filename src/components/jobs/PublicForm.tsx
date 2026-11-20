@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Celebration } from "@/components/auth/Celebration";
+import { formatPhoneJP } from "@/lib/phone";
 import { loadLiffSdk } from "@/components/auth/LineAutoLogin";
 import { checkAnswer, FILE_MAX, FILE_TYPES, FILES_TOTAL_MAX, isOtherValue, nextSection, OTHER, otherText, otherValue, splitSections, type AnswerValue, type FormLogic, type PublicField } from "@/lib/forms-def";
 
@@ -361,12 +362,32 @@ function FieldInput({ f, value, file, invalid, onChange, onFile }: { f: PublicFi
           )}
         </div>
       );
+    case "PHONE":
+      // スタッフ登録と同じ：ハイフンなし・全角で入れても、欄から離れたときに「090-1234-5678」の形に整える
+      return (
+        <>
+          <input
+            {...common}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="例：090-1234-5678"
+            value={text}
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={(e) => {
+              const formatted = formatPhoneJP(e.target.value);
+              if (formatted && formatted !== e.target.value) onChange(formatted);
+            }}
+          />
+          <p className="form__help">ハイフンなしで入力しても、自動で「-」が付きます。</p>
+        </>
+      );
     default:
       return (
         <input
           {...common}
           type={INPUT_TYPE[f.type] ?? "text"}
-          inputMode={f.type === "NUMBER" ? "decimal" : f.type === "PHONE" ? "tel" : undefined}
+          inputMode={f.type === "NUMBER" ? "decimal" : undefined}
           autoComplete={AUTOCOMPLETE[f.type]}
           value={text}
           onChange={(e) => onChange(e.target.value)}

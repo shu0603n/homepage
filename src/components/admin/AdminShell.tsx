@@ -6,7 +6,6 @@ import { AdminLogoutButton } from '@/components/admin/AdminLogoutButton';
 import { avatarUrl } from '@/components/admin/AdminAvatar';
 import { AdminMeMenu } from '@/components/admin/AdminMeMenu';
 import { AdminSessionKeeper } from '@/components/admin/AdminSessionKeeper';
-import { LINEXT_NAV } from '@/lib/admin/linext';
 import type { AdminSession } from '@/lib/admin/session';
 import { countUnreadFriends } from '@/lib/admin/line';
 import { countUnhandledInquiries, ROLE_NAMES } from '@/lib/admin/store';
@@ -23,10 +22,10 @@ const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group:
   { key: 'tags', href: '/admin/?tab=tags', label: '計測タグ', icon: 'bi-tags', group: 'data', superOnly: true },
   { key: 'inquiries', href: '/admin/?tab=inquiries', label: 'お問い合わせ', icon: 'bi-envelope-paper', group: 'work' },
   { key: 'jobs', href: '/admin/?tab=jobs', label: '案件の反応', icon: 'bi-bar-chart-line', group: 'work' },
+  { key: 'forms', href: '/admin/?tab=forms', label: 'フォーム管理', icon: 'bi-ui-checks', group: 'work' },
   { key: 'friends', href: '/admin/?tab=friends', label: '友だち・求職者管理', icon: 'bi-people', group: 'line' },
   { key: 'chats', href: '/admin/?tab=chats', label: '個別チャット', icon: 'bi-chat-dots', group: 'line' },
-  { key: 'linetags', href: '/admin/?tab=linetags', label: 'タグ管理', icon: 'bi-bookmarks', group: 'line' },
-  { key: 'forms', href: '/admin/?tab=forms', label: 'フォーム管理', icon: 'bi-ui-checks', group: 'line' }
+  { key: 'linetags', href: '/admin/?tab=linetags', label: 'タグ管理', icon: 'bi-bookmarks', group: 'line' }
 ];
 // 上から「お仕事」（お問い合わせ・案件の反応）→「アクセスデータ」（アクセス分析など）の順。よく使うものを上に置く
 const GROUPS = [
@@ -99,21 +98,6 @@ export async function AdminShell({
                     )}
                   </Link>
                 ))}
-                {group === 'line' &&
-                  LINEXT_NAV.map((n) => (
-                    <a
-                      key={n.to}
-                      href={`/api/admin/linext/?to=${encodeURIComponent(n.to)}`}
-                      target="_blank"
-                      rel="noopener"
-                      title={n.label}
-                      className="adm-nav__item adm-nav__item--ext"
-                    >
-                      <i className={`bi ${n.icon}`} aria-hidden="true" />
-                      <span>{n.label}</span>
-                      <i className="bi bi-box-arrow-up-right adm-nav__ext" aria-label="新しいタブで開く" />
-                    </a>
-                  ))}
               </div>
             ))}
           </nav>

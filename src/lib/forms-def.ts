@@ -1,3 +1,5 @@
+import { formatPhoneJP } from "@/lib/phone";
+
 // フォーム管理（Linext から移植）で、管理画面・回答ページ・サーバーが共通に使う定義。
 // データベースには触れないので、画面（ブラウザ）からも読み込める
 
@@ -104,7 +106,7 @@ export function checkAnswer(f: PublicField, v: AnswerValue | undefined): string 
     case "EMAIL":
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) ? null : "メールアドレスの形式で入力してください";
     case "PHONE":
-      return /^[0-9０-９+\-－ ()（）]{8,30}$/.test(s) && s.replace(/\D/g, "").length >= 8 ? null : "電話番号を確認してください";
+      return formatPhoneJP(s) ? null : "電話番号を正しく入力してください（例：090-1234-5678）";
     case "NUMBER":
       return /^-?\d+(\.\d+)?$/.test(s) ? null : "数字で入力してください";
     case "DATE":
