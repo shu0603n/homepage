@@ -275,6 +275,11 @@ export const ADMIN_TABLES_SQL = [
     last_seen_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX IF NOT EXISTS hp_line_identity_staff_idx ON hp_line_identity (staff_id)`,
+  // フォームの分岐（2026-11-21 追加。Google フォームと同じ、セクションと「回答に応じてセクションに移動」）。
+  // uid：質問・セクションの目印（分岐の行き先に使う。並べ替えても変わらない）、logic：分岐の設定（lib/forms-def.ts の FieldLogic / FormLogic）
+  `ALTER TABLE hp_form_field ADD COLUMN IF NOT EXISTS uid VARCHAR(20)`,
+  `ALTER TABLE hp_form_field ADD COLUMN IF NOT EXISTS logic JSONB`,
+  `ALTER TABLE hp_form ADD COLUMN IF NOT EXISTS logic JSONB`,
   // フォームのテンプレート（2026-11-21 追加。lib/admin/forms.ts）。data はフォームの中身（質問・設定）の JSON
   `CREATE TABLE IF NOT EXISTS hp_form_template (
     id SERIAL PRIMARY KEY,
@@ -306,8 +311,10 @@ async function isUpToDate(): Promise<boolean> {
         OR (table_name = 'hp_line_friend_tag' AND column_name = 'assigned_at')
         OR (table_name = 'hp_form_file' AND column_name = 'data')
         OR (table_name = 'hp_line_identity' AND column_name = 'last_seen_at')
-        OR (table_name = 'hp_form_template' AND column_name = 'data'))`;
-  return rows[0]?.n === 10;
+        OR (table_name = 'hp_form_template' AND column_name = 'data')
+        OR (table_name = 'hp_form_field' AND column_name = 'logic')
+        OR (table_name = 'hp_form' AND column_name = 'logic'))`;
+  return rows[0]?.n === 12;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。

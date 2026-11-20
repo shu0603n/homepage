@@ -2839,3 +2839,33 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .adm-tplpick__qs li.is-more { list-style: none; margin-left: -16px; color: var(--sub); }
 .adm-fb__tpl { border: 2px solid var(--teal-soft); }
 .adm-fb__notice { flex-basis: 100%; margin: 0; padding: 8px 12px; border-radius: 10px; background: #e4f6ee; color: #136b47; font-size: 13px; animation: admFlash .3s var(--ease); }
+/* フォームの分岐：管理画面（セクション・このセクションのあと・回答に応じた行き先） */
+.adm-fb__field.is-section { border: 0; background: linear-gradient(135deg, #e9f5f6, #eef2fb); box-shadow: inset 4px 0 0 var(--teal); }
+.adm-fb__secno { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.adm-fb__after { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: -2px 0; padding: 10px 16px; border: 1px dashed #b9d9dd; border-radius: 14px; background: #fbfdfd; font-size: 13px; font-weight: 700; color: var(--navy-dd); animation: admFormIn .35s var(--ease) both; }
+.adm-fb__after > i { color: var(--teal); font-size: 16px; }
+.adm-fb__after select { width: auto !important; min-width: 240px; }
+.adm-fb__after strong { font-weight: 500; color: var(--sub); }
+.adm-fb__branch { display: grid; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--bg-soft); transition: background .25s; }
+.adm-fb__branch.is-on { background: #eef7f8; box-shadow: inset 0 0 0 1px #c6e3e6; }
+.adm-fb__branch ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.adm-fb__branch li { display: grid; grid-template-columns: minmax(80px, 200px) auto minmax(0, 1fr); align-items: center; gap: 10px; font-size: 13px; animation: admFormIn .3s var(--ease) both; }
+.adm-fb__branch li > span { overflow: hidden; font-weight: 700; color: var(--navy-dd); white-space: nowrap; text-overflow: ellipsis; }
+.adm-fb__branch li > i { color: var(--teal); }
+@media (max-width: 760px) { .adm-fb__branch li { grid-template-columns: minmax(0, 1fr) auto; } .adm-fb__branch li select { grid-column: 1 / -1; } .adm-fb__after select { min-width: 0; flex: 1; } }
+/* フォームの分岐：回答ページ（ページの進み具合・ページの切り替え） */
+.pf-progress { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
+.pf-progress__bar { flex: 1; height: 8px; border-radius: 999px; background: var(--bg-soft); overflow: hidden; }
+.pf-progress__bar span { display: block; height: 100%; border-radius: inherit; background: var(--grad); transition: width .5s var(--ease); }
+.pf-progress__text { font-family: var(--f-en); font-size: 13px; font-weight: 700; color: var(--sub); white-space: nowrap; }
+.pf-page--fwd { animation: pfSlideFwd .45s var(--ease) both; }
+.pf-page--back { animation: pfSlideBack .45s var(--ease) both; }
+@keyframes pfSlideFwd { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes pfSlideBack { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+.pf-section__title { margin: 24px 0 4px; padding-bottom: 10px; border-bottom: 2px solid var(--navy); font-family: var(--f-head); font-size: 20px; color: var(--navy-dd); }
+.pf-section__help { margin: 10px 0 0; color: var(--sub); line-height: 1.9; white-space: pre-wrap; }
+.pf-nav { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; }
+.pf-nav .btn { min-width: 220px; }
+.pf-back { display: inline-flex; align-items: center; gap: 4px; padding: 12px 22px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--navy); font: inherit; font-weight: 700; cursor: pointer; transition: background .2s, transform .2s var(--ease); }
+.pf-back:hover { background: var(--bg-soft); transform: translateX(-2px); }
+@media (max-width: 640px) { .pf-nav { flex-direction: column-reverse; } .pf-nav .btn { width: 100%; } }

@@ -1,6 +1,6 @@
 import { getForm, listSubmissions } from "@/lib/admin/forms";
 import { getAdminSession } from "@/lib/admin/session";
-import { answerText } from "@/lib/forms-def";
+import { answerText, isInputType } from "@/lib/forms-def";
 
 // 回答の CSV（Excel で開けるよう、先頭に BOM を付けた UTF-8）
 const cell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
@@ -11,7 +11,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const form = await getForm(Number((await params).id) || 0);
   if (!form) return new Response("フォームが見つかりません。", { status: 404 });
   const subs = await listSubmissions(form);
-  const fields = form.fields.filter((f) => f.type !== "DESCRIPTION" && (!f.deleted || subs.some((s) => s.answers.has(f.id) || s.files.some((x) => x.field_id === f.id))));
+  const fields = form.fields.filter((f) => isInputType(f.type) && (!f.deleted || subs.some((s) => s.answers.has(f.id) || s.files.some((x) => x.field_id === f.id))));
   const head = ["回答日時", "回答者", "LINE ユーザーID", "スタッフID", ...fields.map((f) => (f.deleted ? `${f.label}（削除した質問）` : f.label))];
   const rows = subs.map((s) => [
     jst(s.submitted_at),

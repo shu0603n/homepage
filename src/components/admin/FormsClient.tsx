@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
-import { AUTH_MODES, CHOICE_TYPES, FIELD_TYPE_LABEL, FIELD_TYPES, PROFILE_TARGETS, SLUG_RE, type AuthMode, type FieldType } from "@/lib/forms-def";
+import { AUTH_MODES, BRANCH_TYPES, CHOICE_TYPES, FIELD_TYPE_LABEL, FIELD_TYPES, isInputType, PROFILE_TARGETS, SLUG_RE, type AuthMode, type FieldLogic, type FieldType } from "@/lib/forms-def";
 
 // フォーム管理の、画面で操作する部品（フォームの作成・編集、URL のコピー、QR コード、公開の切り替え、削除）
 
@@ -167,7 +167,22 @@ export function DeleteSubmissionButton({ id, formId }: { id: number; formId: num
 
 // ---------- フォームの作成・編集 ----------
 
-type Draft = { key: string; id: number | null; type: FieldType; label: string; help: string; required: boolean; options: string; profile_key: string; fresh?: boolean };
+// uid：セクションの目印（分岐の行き先）。next：セクションの「このセクションのあと」。branchOn・branches：「回答に応じてセクションに移動」
+type Draft = {
+  key: string;
+  id: number | null;
+  uid: string;
+  type: FieldType;
+  label: string;
+  help: string;
+  required: boolean;
+  options: string;
+  profile_key: string;
+  next: string;
+  branchOn: boolean;
+  branches: Record<string, string>;
+  fresh?: boolean;
+};
 
 export type BuilderInitial = {
   id: number | null;
@@ -180,13 +195,16 @@ export type BuilderInitial = {
   done_message: string;
   on_submit_status: string;
   on_submit_tag_ids: number[];
-  fields: { id: number | null; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null }[];
+  first_next: string; // 最初のセクションのあとの行き先
+  fields: { id: number | null; uid?: string; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null; logic?: FieldLogic | null }[];
   answers: number;
 };
 
 let seq = 0;
 const newKey = () => `n${Date.now().toString(36)}${(seq++).toString(36)}`;
-const blank = (type: FieldType): Draft => ({ key: newKey(), id: null, type, label: "", help: "", required: false, options: "", profile_key: "", fresh: true });
+const newUid = () => Math.random().toString(36).slice(2, 10);
+const blank = (type: FieldType): Draft => ({ key: newKey(), id: null, uid: newUid(), type, label: "", help: "", required: false, options: "", profile_key: "", next: "", branchOn: false, branches: {}, fresh: true });
+const optionsOf = (d: Draft) => d.options.split("\n").map((o) => o.trim()).filter(Boolean);
 const randomSlug = () => `form-${Math.random().toString(36).slice(2, 8)}`;
 
 export function FormBuilder({
@@ -223,9 +241,23 @@ export function FormBuilder({
   const [tagIds, setTagIds] = useState<number[]>(initial.on_submit_tag_ids);
   const [fields, setFields] = useState<Draft[]>(() =>
     initial.fields.length > 0
-      ? initial.fields.map((f) => ({ key: f.id !== null ? `f${f.id}` : newKey(), id: f.id, type: f.type, label: f.label, help: f.help ?? "", required: f.required, options: f.options.join("\n"), profile_key: f.profile_key ?? "" }))
+      ? initial.fields.map((f) => ({
+          key: f.id !== null ? `f${f.id}` : newKey(),
+          id: f.id,
+          uid: f.uid || newUid(),
+          type: f.type,
+          label: f.label,
+          help: f.help ?? "",
+          required: f.required,
+          options: f.options.join("\n"),
+          profile_key: f.profile_key ?? "",
+          next: f.logic?.next ?? "",
+          branchOn: Object.keys(f.logic?.branches ?? {}).length > 0,
+          branches: f.logic?.branches ?? {},
+        }))
       : [{ ...blank("SHORT_TEXT"), label: "お名前", required: true, profile_key: "name", fresh: false }],
   );
+  const [firstNext, setFirstNext] = useState(initial.first_next);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [moved, setMoved] = useState<string | null>(null);
@@ -241,8 +273,14 @@ export function FormBuilder({
       done_message: doneMessage,
       on_submit_status: auth === "line" ? status || null : null,
       on_submit_tag_ids: auth === "line" ? tagIds : [],
+      logic: { first_next: firstNext },
       fields: fields.map((f) => ({
         id: f.id,
+        uid: f.uid,
+        logic: {
+          ...(f.type === "SECTION" && f.next ? { next: f.next } : {}),
+          ...(BRANCH_TYPES.includes(f.type) && f.branchOn ? { branches: Object.fromEntries(optionsOf(f).flatMap((o) => (f.branches[o] ? [[o, f.branches[o]]] : []))) } : {}),
+        },
         type: f.type,
         label: f.label,
         help: f.help,
@@ -251,7 +289,7 @@ export function FormBuilder({
         profile_key: auth === "line" || f.profile_key === "name" ? f.profile_key || null : null,
       })),
     }),
-    [title, slug, description, purpose, auth, published, doneMessage, status, tagIds, fields],
+    [title, slug, description, purpose, auth, published, doneMessage, status, tagIds, fields, firstNext],
   );
   // テンプレートに入れる中身（URL の名前・公開の有無は入れない）
   const templateData = useMemo(() => {
@@ -318,6 +356,45 @@ export function FormBuilder({
     window.setTimeout(() => setNotice(""), 6000);
   }
 
+  // セクション（ページ）：区切りより前が「セクション 1」。区切りが先頭にあるときは、その区切りがセクション 1
+  const sections = (() => {
+    const list: { uid: string; pos: number; title: string }[] = fields[0]?.type === "SECTION" ? [] : [{ uid: "_start", pos: -1, title: "" }];
+    fields.forEach((f, i) => f.type === "SECTION" && list.push({ uid: f.uid, pos: i, title: f.label }));
+    return list;
+  })();
+  const hasSections = fields.some((f) => f.type === "SECTION");
+  const sectionNo = (uid: string) => sections.findIndex((x) => x.uid === uid) + 1;
+  // pos の位置から行ける先：それより後ろのセクションと「送信」
+  const targets = (pos: number) => [
+    ...sections.filter((x) => x.pos > pos).map((x) => ({ value: x.uid, label: `セクション ${sectionNo(x.uid)}${x.title ? `「${x.title.slice(0, 20)}」` : ""}へ` })),
+    { value: "submit", label: "フォームを送信する" },
+  ];
+  // セクションの終わりに出す「このセクションのあと」
+  const afterSection = (sec: { uid: string; pos: number }, isLast: boolean) => {
+    const value = sec.uid === "_start" ? firstNext : (fields.find((f) => f.uid === sec.uid)?.next ?? "");
+    const set = (v: string) => (sec.uid === "_start" ? setFirstNext(v) : setFields((list) => list.map((f) => (f.uid === sec.uid ? { ...f, next: v } : f))));
+    return (
+      <li key={`after-${sec.uid}`} className="adm-fb__after">
+        <i className="bi bi-signpost-split" aria-hidden="true" />
+        <span>セクション {sectionNo(sec.uid)} のあと</span>
+        {isLast ? (
+          <strong>フォームを送信する（最後のセクション）</strong>
+        ) : (
+          <select value={value} onChange={(e) => set(e.target.value)} aria-label={`セクション ${sectionNo(sec.uid)} のあと`}>
+            <option value="">次のセクションに進む</option>
+            {targets(sec.pos)
+              .filter((t) => sections.findIndex((x) => x.uid === t.value) !== sections.findIndex((x) => x.uid === sec.uid) + 1)
+              .map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+          </select>
+        )}
+      </li>
+    );
+  };
+
   const url = `${publicBase}${payload.slug || "…"}/`;
   return (
     <div className="adm-stack adm-fb">
@@ -369,13 +446,19 @@ export function FormBuilder({
             <span>説明文（回答ページの上に出します。任意）</span>
             <textarea value={description} maxLength={5000} rows={3} onChange={(e) => setDescription(e.target.value)} />
           </label>
-          <label>
+          <label className="adm-fb__wide">
             <span>用途メモ（管理画面だけに出します。任意）</span>
             <input value={purpose} maxLength={200} onChange={(e) => setPurpose(e.target.value)} placeholder="例：友だち追加後の初回アンケート" />
           </label>
-          <label>
-            <span>送信後のメッセージ（任意）</span>
-            <input value={doneMessage} maxLength={2000} onChange={(e) => setDoneMessage(e.target.value)} placeholder="ご回答ありがとうございました。担当者よりご連絡いたします。" />
+          <label className="adm-fb__wide">
+            <span>送信後のメッセージ（送信が終わった画面に出します。改行もそのまま出ます。任意）</span>
+            <textarea
+              value={doneMessage}
+              maxLength={2000}
+              rows={Math.min(8, Math.max(3, doneMessage.split("\n").length + 1))}
+              onChange={(e) => setDoneMessage(e.target.value)}
+              placeholder={"ご回答ありがとうございました。\n内容を確認のうえ、担当者よりご連絡いたします。"}
+            />
           </label>
         </div>
       </section>
@@ -397,13 +480,22 @@ export function FormBuilder({
       <section className="adm-card">
         <p className="adm-card__en">Questions</p>
         <h2 className="adm-card__title">
-          質問<small>{fields.length}件</small>
+          質問<small>{fields.filter((f) => isInputType(f.type)).length}件{hasSections && `・セクション ${sections.length}`}</small>
         </h2>
+        {hasSections && (
+          <p className="adm-card__help">
+            セクションごとに1ページずつ表示します。各セクションの終わりで「このセクションのあと」の行き先を、単一選択・プルダウンの質問では「回答に応じてセクションに移動」で、答えごとの行き先を決められます（Google フォームと同じ）。
+          </p>
+        )}
         <ol className="adm-fb__fields">
-          {fields.map((f, i) => (
-            <li key={f.key} className={`adm-fb__field${f.fresh ? " is-new" : ""}${moved === f.key ? " is-moved" : ""}`}>
+          {fields.map((f, i) => {
+            // セクションの区切りの直前に、ひとつ前のセクションの「このセクションのあと」を出す
+            const prev = f.type === "SECTION" && i > 0 ? [...sections].reverse().find((x) => x.pos < i) : undefined;
+            return [
+              prev ? afterSection(prev, false) : null,
+            <li key={f.key} className={`adm-fb__field${f.type === "SECTION" ? " is-section" : ""}${f.fresh ? " is-new" : ""}${moved === f.key ? " is-moved" : ""}`}>
               <header>
-                <span className="adm-fb__num">{i + 1}</span>
+                {f.type === "SECTION" ? <span className="adm-fb__secno">セクション {sectionNo(f.uid)}</span> : <span className="adm-fb__num">{i + 1}</span>}
                 <select value={f.type} onChange={(e) => update(f.key, { type: e.target.value as FieldType, fresh: false })} aria-label="回答形式">
                   {FIELD_TYPES.map((t) => (
                     <option key={t.key} value={t.key}>
@@ -418,7 +510,7 @@ export function FormBuilder({
                   <button type="button" onClick={() => move(i, 1)} disabled={i === fields.length - 1} aria-label="下へ" title="下へ">
                     <i className="bi bi-arrow-down" aria-hidden="true" />
                   </button>
-                  <button type="button" onClick={() => setFields((list) => [...list.slice(0, i + 1), { ...f, key: newKey(), id: null, profile_key: "", fresh: true }, ...list.slice(i + 1)])} aria-label="複製" title="複製">
+                  <button type="button" onClick={() => setFields((list) => [...list.slice(0, i + 1), { ...f, key: newKey(), id: null, uid: newUid(), profile_key: "", fresh: true }, ...list.slice(i + 1)])} aria-label="複製" title="複製">
                     <i className="bi bi-copy" aria-hidden="true" />
                   </button>
                   <button type="button" className="is-danger" onClick={() => setFields((list) => list.filter((x) => x.key !== f.key))} disabled={fields.length === 1} aria-label="削除" title="削除">
@@ -426,7 +518,18 @@ export function FormBuilder({
                   </button>
                 </span>
               </header>
-              {f.type === "DESCRIPTION" ? (
+              {f.type === "SECTION" ? (
+                <>
+                  <label>
+                    <span>セクションのタイトル（ページの見出し。任意）</span>
+                    <input value={f.label} maxLength={200} onChange={(e) => update(f.key, { label: e.target.value })} placeholder="例：ご経験について" />
+                  </label>
+                  <label>
+                    <span>説明（任意）</span>
+                    <textarea value={f.help} rows={2} maxLength={3000} onChange={(e) => update(f.key, { help: e.target.value })} />
+                  </label>
+                </>
+              ) : f.type === "DESCRIPTION" ? (
                 <label>
                   <span>説明文（回答ページにそのまま出します）</span>
                   <textarea value={f.label} rows={3} maxLength={2000} onChange={(e) => update(f.key, { label: e.target.value })} />
@@ -442,6 +545,33 @@ export function FormBuilder({
                       <span>選択肢（1行に1つ）</span>
                       <textarea value={f.options} rows={Math.min(8, Math.max(3, f.options.split("\n").length + 1))} onChange={(e) => update(f.key, { options: e.target.value })} placeholder={"正社員\n契約社員\nパート・アルバイト"} />
                     </label>
+                  )}
+                  {BRANCH_TYPES.includes(f.type) && hasSections && (
+                    <div className={`adm-fb__branch${f.branchOn ? " is-on" : ""}`}>
+                      <label className="adm-fb__check">
+                        <input type="checkbox" checked={f.branchOn} onChange={(e) => update(f.key, { branchOn: e.target.checked })} />
+                        回答に応じてセクションに移動する
+                      </label>
+                      {f.branchOn && (
+                        <ul>
+                          {optionsOf(f).length === 0 && <li className="adm-muted">先に選択肢を入力してください。</li>}
+                          {optionsOf(f).map((o) => (
+                            <li key={o}>
+                              <span>{o}</span>
+                              <i className="bi bi-arrow-right" aria-hidden="true" />
+                              <select value={f.branches[o] ?? ""} onChange={(e) => update(f.key, { branches: { ...f.branches, [o]: e.target.value } })} aria-label={`「${o}」を選んだときの行き先`}>
+                                <option value="">いつもどおり（このセクションのあとの行き先）</option>
+                                {targets(i).map((t) => (
+                                  <option key={t.value} value={t.value}>
+                                    {t.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
                   <label>
                     <span>補足（入力欄の下に小さく出します。任意）</span>
@@ -468,8 +598,10 @@ export function FormBuilder({
                   </div>
                 </>
               )}
-            </li>
-          ))}
+            </li>,
+            ];
+          })}
+          {hasSections && sections.length > 0 && afterSection(sections[sections.length - 1], true)}
         </ol>
         <div className="adm-fb__add">
           <span>質問を追加：</span>

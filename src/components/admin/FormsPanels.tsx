@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CopyUrlButton, DeleteFormButton, DeleteSubmissionButton, DeleteTemplateButton, PublishToggle, QrButton } from "@/components/admin/FormsClient";
 import { authModeLabel, type FormDetail, type FormRow, type SubmissionRow, type TemplateRow } from "@/lib/admin/forms";
-import { answerText, CHOICE_TYPES, FIELD_TYPE_LABEL } from "@/lib/forms-def";
+import { answerText, CHOICE_TYPES, FIELD_TYPE_LABEL, isInputType } from "@/lib/forms-def";
 import { SITE } from "@/lib/site";
 
 // フォーム管理の画面（一覧・回答一覧・グラフ・回答の詳細）
@@ -137,7 +137,7 @@ export function FormHead({ form, count, current }: { form: FormDetail; count: nu
 }
 
 const shownFields = (form: FormDetail, subs: SubmissionRow[]) =>
-  form.fields.filter((f) => f.type !== "DESCRIPTION" && (!f.deleted || subs.some((s) => s.answers.has(f.id) || s.files.some((x) => x.field_id === f.id))));
+  form.fields.filter((f) => isInputType(f.type) && (!f.deleted || subs.some((s) => s.answers.has(f.id) || s.files.some((x) => x.field_id === f.id))));
 
 function AnswerCell({ s, f }: { s: SubmissionRow; f: FormDetail["fields"][number] }) {
   if (f.type === "FILE") {
@@ -381,7 +381,7 @@ export function SubmissionDetailPanel({ form, s }: { form: FormDetail; s: Submis
       <section className="adm-card">
         <dl className="adm-ansdetail">
           {fields.map((f) =>
-            f.type === "DESCRIPTION" ? null : (
+            !isInputType(f.type) ? null : (
               <div key={f.id}>
                 <dt>
                   {f.label}
@@ -418,7 +418,7 @@ export function SubmissionDetailPanel({ form, s }: { form: FormDetail; s: Submis
 // ---------- テンプレート ----------
 
 const dayOf = (d: Date) => new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "numeric", day: "numeric" }).format(d);
-const questionCount = (t: TemplateRow) => (t.data.fields ?? []).filter((f) => f.type !== "DESCRIPTION").length;
+const questionCount = (t: TemplateRow) => (t.data.fields ?? []).filter((f) => isInputType(f.type)).length;
 
 // フォームの一覧の下：テンプレートの一覧（作る・直す・消す）
 function TemplatesSection({ templates }: { templates: TemplateRow[] }) {
@@ -499,7 +499,7 @@ export function TemplatePicker({ templates }: { templates: TemplateRow[] }) {
           </span>
           <ol className="adm-tplpick__qs">
             {(t.data.fields ?? [])
-              .filter((f) => f.type !== "DESCRIPTION")
+              .filter((f) => isInputType(f.type))
               .slice(0, 4)
               .map((f, j) => (
                 <li key={j}>{f.label}</li>

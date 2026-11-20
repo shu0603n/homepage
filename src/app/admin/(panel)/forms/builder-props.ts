@@ -25,7 +25,8 @@ export function toInitial(f: FormDetail | null, answers: number): BuilderInitial
     done_message: f?.done_message ?? "",
     on_submit_status: f?.on_submit_status ?? "",
     on_submit_tag_ids: f?.on_submit_tag_ids ?? [],
-    fields: (f?.fields ?? []).filter((x) => !x.deleted).map((x) => ({ id: x.id, type: x.type, label: x.label, help: x.help, required: x.required, options: x.options, profile_key: x.profile_key })),
+    first_next: f?.logic?.first_next ?? "",
+    fields: (f?.fields ?? []).filter((x) => !x.deleted).map((x) => ({ id: x.id, uid: x.uid, type: x.type, label: x.label, help: x.help, required: x.required, options: x.options, profile_key: x.profile_key, logic: x.logic })),
     answers,
   };
 }
@@ -44,7 +45,8 @@ export function templateToInitial(t: TemplateRow, tagIds: number[]): BuilderInit
     done_message: d.done_message ?? "",
     on_submit_status: d.on_submit_status ?? "",
     on_submit_tag_ids: (d.on_submit_tag_ids ?? []).filter((id) => tagIds.includes(id)),
-    fields: (d.fields ?? []).map((f) => ({ id: null, type: f.type, label: f.label, help: f.help, required: f.required, options: f.options ?? [], profile_key: f.profile_key })),
+    first_next: d.logic?.first_next ?? "",
+    fields: (d.fields ?? []).map((f) => ({ id: null, uid: f.uid, type: f.type, label: f.label, help: f.help, required: f.required, options: f.options ?? [], profile_key: f.profile_key, logic: f.logic })),
     answers: 0,
   };
 }

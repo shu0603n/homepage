@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Celebration } from "@/components/auth/Celebration";
 import { loadLiffSdk } from "@/components/auth/LineAutoLogin";
-import { checkAnswer, FILE_MAX, FILE_TYPES, FILES_TOTAL_MAX, type AnswerValue, type PublicField } from "@/lib/forms-def";
+import { checkAnswer, FILE_MAX, FILE_TYPES, FILES_TOTAL_MAX, nextSection, splitSections, type AnswerValue, type FormLogic, type PublicField } from "@/lib/forms-def";
 
 // フォームの回答ページの中身（/jobs/forms/<slug>/。管理画面の「フォーム管理」で作ったもの。仕組みは lib/admin/forms.ts）。
-// LINE ログイン必須のフォームは、LIFF で LINE にログインしてから回答する（LINE アプリ内なら自動でログイン）
+// LINE ログイン必須のフォームは、LIFF で LINE にログインしてから回答する（LINE アプリ内なら自動でログイン）。
+// セクションの区切りがあるフォームは、1セクションずつページにして「次へ」「戻る」で進む。次のページは回答に応じて変わる（分岐。lib/forms-def.ts）
 type Line = { stage: "off" } | { stage: "loading" } | { stage: "login" } | { stage: "ready"; idToken: string; name: string | null; picture: string | null } | { stage: "error"; message: string };
 
 const INPUT_TYPE: Record<string, string> = { PHONE: "tel", EMAIL: "email", NUMBER: "text", DATE: "date", TIME: "time" };
 const AUTOCOMPLETE: Record<string, string> = { PHONE: "tel", EMAIL: "email", ADDRESS: "street-address" };
 
-export function PublicForm({ slug, fields, lineRequired, preview }: { slug: string; fields: PublicField[]; lineRequired: boolean; preview: boolean }) {
+export function PublicForm({ slug, fields, logic, lineRequired, preview }: { slug: string; fields: PublicField[]; logic: FormLogic | null; lineRequired: boolean; preview: boolean }) {
+  const sections = useMemo(() => splitSections(fields, logic), [fields, logic]);
+  const [path, setPath] = useState<number[]>([0]); // 通ってきたページ（最後がいまのページ）
+  const [dir, setDir] = useState<"fwd" | "back">("fwd");
+  const formRef = useRef<HTMLFormElement>(null);
   const [line, setLine] = useState<Line>(lineRequired ? { stage: "loading" } : { stage: "off" });
   const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
   const [files, setFiles] = useState<Record<number, File | null>>({});
@@ -66,12 +71,22 @@ export function PublicForm({ slug, fields, lineRequired, preview }: { slug: stri
     return null;
   }
 
+  const current = path[path.length - 1];
+  const page = sections[current];
+  const upcoming = nextSection(sections, current, answers);
+  const multi = sections.length > 1;
+
+  const goTo = (next: number[], d: "fwd" | "back") => {
+    setDir(d);
+    setPath(next);
+    setMessage("");
+    window.requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (preview) return setMessage("プレビューのため送信できません（公開すると回答できるようになります）。");
-    if (lineRequired && line.stage !== "ready") return setMessage("LINE でログインしてから回答してください。");
     const errs: Record<number, string> = {};
-    for (const f of fields) {
+    for (const f of page.fields) {
       const m = f.type === "FILE" ? fileError(f, files[f.id]) : checkAnswer(f, answers[f.id]);
       if (m) errs[f.id] = m;
     }
@@ -80,15 +95,21 @@ export function PublicForm({ slug, fields, lineRequired, preview }: { slug: stri
     setErrors(errs);
     if (Object.keys(errs).length > 0) {
       setMessage("入力内容をご確認ください。");
-      const first = fields.find((f) => errs[f.id]);
+      const first = page.fields.find((f) => errs[f.id]);
       if (first) document.getElementById(`pf-${first.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    // まだ続きがあるときは次のページへ
+    if (upcoming !== "submit") return goTo([...path, upcoming], "fwd");
+    if (preview) return setMessage("プレビューのため送信できません（公開すると回答できるようになります）。");
+    if (lineRequired && line.stage !== "ready") return setMessage("LINE でログインしてから回答してください。");
     setBusy(true);
     setMessage("");
+    const onPath = new Set(path.flatMap((i) => sections[i].fields.map((f) => f.id)));
+    const sendAnswers = Object.fromEntries(Object.entries(answers).filter(([id]) => onPath.has(Number(id))));
     const body = new FormData();
-    body.set("payload", JSON.stringify({ answers, idToken: line.stage === "ready" ? line.idToken : undefined, website: honeypot.current?.value ?? "" }));
-    for (const [id, file] of Object.entries(files)) if (file) body.set(`file_${id}`, file);
+    body.set("payload", JSON.stringify({ answers: sendAnswers, idToken: line.stage === "ready" ? line.idToken : undefined, website: honeypot.current?.value ?? "" }));
+    for (const [id, file] of Object.entries(files)) if (file && onPath.has(Number(id))) body.set(`file_${id}`, file);
     try {
       const res = await fetch(`/api/forms/${encodeURIComponent(slug)}/`, { method: "POST", body });
       const data = (await res.json().catch(() => null)) as { ok?: boolean; message?: string; errors?: Record<number, string>; done?: string | null } | null;
@@ -102,7 +123,12 @@ export function PublicForm({ slug, fields, lineRequired, preview }: { slug: stri
         liffRef.current.logout?.();
         setLine({ stage: "login" });
       }
-      if (data?.errors) setErrors(data.errors);
+      if (data?.errors) {
+        setErrors(data.errors);
+        // 確かめ直しで引っかかった質問のページへ戻る
+        const at = path.findIndex((i) => sections[i].fields.some((f) => data.errors![f.id]));
+        if (at >= 0 && at !== path.length - 1) goTo(path.slice(0, at + 1), "back");
+      }
       setMessage(data?.message ?? "送信できませんでした。時間をおいて再度お試しください。");
     } catch {
       setMessage("通信に失敗しました。電波の良いところで、もう一度お試しください。");
@@ -125,7 +151,7 @@ export function PublicForm({ slug, fields, lineRequired, preview }: { slug: stri
   }
 
   return (
-    <form className="form form--wide pf" onSubmit={onSubmit} noValidate>
+    <form ref={formRef} className="form form--wide pf" onSubmit={onSubmit} noValidate>
       {preview && (
         <p className="pf-preview">
           <i className="bi bi-eye" aria-hidden="true" /> プレビュー（非公開）：管理者だけが見ています。公開すると、この URL から回答できるようになります。
@@ -133,7 +159,20 @@ export function PublicForm({ slug, fields, lineRequired, preview }: { slug: stri
       )}
       {lineRequired && <LineBox line={line} onLogin={() => liffRef.current?.login({ redirectUri: window.location.href })} />}
 
-      {fields.map((f) =>
+      {multi && (
+        <div className="pf-progress" aria-label={`ページ ${current + 1} / ${sections.length}`}>
+          <span className="pf-progress__bar">
+            <span style={{ width: `${((current + 1) / sections.length) * 100}%` }} />
+          </span>
+          <span className="pf-progress__text">
+            ページ {current + 1} / {sections.length}
+          </span>
+        </div>
+      )}
+      <div key={current} className={`pf-page pf-page--${dir}`}>
+      {page.title && <h2 className="pf-section__title">{page.title}</h2>}
+      {page.help && <p className="pf-section__help">{page.help}</p>}
+      {page.fields.map((f) =>
         f.type === "DESCRIPTION" ? (
           <div key={f.id} className="pf-desc">
             {f.label}
@@ -165,6 +204,7 @@ export function PublicForm({ slug, fields, lineRequired, preview }: { slug: stri
           </div>
         ),
       )}
+      </div>
 
       <div className="pf-hp" aria-hidden="true">
         <label>
@@ -173,10 +213,21 @@ export function PublicForm({ slug, fields, lineRequired, preview }: { slug: stri
         </label>
       </div>
 
-      <div className="form__actions">
-        <button className="btn" type="submit" disabled={busy || (lineRequired && line.stage !== "ready" && !preview)}>
-          {busy ? "送信しています…" : "送信する"}
-        </button>
+      <div className={`form__actions${multi ? " pf-nav" : ""}`}>
+        {path.length > 1 && (
+          <button type="button" className="pf-back" onClick={() => goTo(path.slice(0, -1), "back")} disabled={busy}>
+            <i className="bi bi-chevron-left" aria-hidden="true" /> 戻る
+          </button>
+        )}
+        {upcoming !== "submit" ? (
+          <button className="btn" type="submit">
+            次へ
+          </button>
+        ) : (
+          <button className="btn" type="submit" disabled={busy || (lineRequired && line.stage !== "ready" && !preview)}>
+            {busy ? "送信しています…" : "送信する"}
+          </button>
+        )}
       </div>
       {message && (
         <p className="form__status is-ng" role="alert">

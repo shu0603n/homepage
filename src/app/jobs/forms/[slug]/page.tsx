@@ -44,7 +44,7 @@ export default async function FormPage({ params }: { params: Promise<{ slug: str
       <section className="section">
         <div className="container">
           {form.description && <div className="lead-block pf-lead">{form.description}</div>}
-          <PublicForm slug={form.slug} fields={publicFields(form)} lineRequired={form.auth_mode === "line"} preview={preview} />
+          <PublicForm slug={form.slug} fields={publicFields(form)} logic={form.logic} lineRequired={form.auth_mode === "line"} preview={preview} />
         </div>
       </section>
     </PageShell>

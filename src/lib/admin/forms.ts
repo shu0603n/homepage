@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ensureAdminTables } from "@/lib/admin/store";
 import { addFriendTag, applyAutoTags, PROFILE_FIELDS, saveProfile, setStatus, STATUS_LABEL, type Profile } from "@/lib/admin/crm";
 import { upsertFriend } from "@/lib/admin/line";
-import { AUTH_MODE_LABEL, CHOICE_TYPES, isFieldType, PROFILE_TARGET_LABEL, SLUG_RE, type AnswerValue, type AuthMode, type FieldType, type PublicField } from "@/lib/forms-def";
+import { AUTH_MODE_LABEL, BRANCH_TYPES, CHOICE_TYPES, isFieldType, isInputType, PROFILE_TARGET_LABEL, SLUG_RE, type AnswerValue, type AuthMode, type FieldLogic, type FieldType, type FormLogic, type PublicField } from "@/lib/forms-def";
 
 // フォーム管理（Linext のフォームを移植）。
 //   管理画面でフォーム（質問の並び）を作る → ホームページの /jobs/forms/<slug>/ が回答ページになる → 回答は管理画面で一覧・グラフ・CSV で見る。
@@ -23,7 +23,7 @@ export type FormRow = {
   last_at: Date | null;
 };
 
-export type FormFieldRow = { id: number; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null; deleted: boolean };
+export type FormFieldRow = { id: number; uid: string; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null; logic: FieldLogic | null; deleted: boolean };
 
 export type FormDetail = {
   id: number;
@@ -36,6 +36,7 @@ export type FormDetail = {
   done_message: string | null;
   on_submit_status: string | null;
   on_submit_tag_ids: number[];
+  logic: FormLogic | null;
   updated_at: Date;
   fields: FormFieldRow[];
 };
@@ -49,8 +50,10 @@ export async function listForms(): Promise<FormRow[]> {
     FROM hp_form f ORDER BY f.updated_at DESC, f.id DESC`;
 }
 
-const toField = (r: { id: number; type: string; label: string; help: string | null; required: boolean; options: unknown; profile_key: string | null; deleted_at: Date | null }): FormFieldRow => ({
+const toField = (r: { id: number; uid: string | null; type: string; label: string; help: string | null; required: boolean; options: unknown; profile_key: string | null; logic: unknown; deleted_at: Date | null }): FormFieldRow => ({
   id: r.id,
+  uid: r.uid ?? `f${r.id}`,
+  logic: r.logic && typeof r.logic === "object" ? (r.logic as FieldLogic) : null,
   type: (isFieldType(r.type) ? r.type : "SHORT_TEXT") as FieldType,
   label: r.label,
   help: r.help,
@@ -63,10 +66,10 @@ const toField = (r: { id: number; type: string; label: string; help: string | nu
 async function loadForm(where: Prisma.Sql): Promise<FormDetail | null> {
   await ensureAdminTables();
   const [f] = await prisma.$queryRaw<Omit<FormDetail, "fields">[]>`
-    SELECT id, slug, title, description, purpose, auth_mode, is_published, done_message, on_submit_status, on_submit_tag_ids, updated_at FROM hp_form WHERE ${where}`;
+    SELECT id, slug, title, description, purpose, auth_mode, is_published, done_message, on_submit_status, on_submit_tag_ids, logic, updated_at FROM hp_form WHERE ${where}`;
   if (!f) return null;
   const fields = await prisma.$queryRaw<Parameters<typeof toField>[0][]>`
-    SELECT id, type, label, help, required, options, profile_key, deleted_at FROM hp_form_field WHERE form_id = ${f.id} ORDER BY sort_order, id`;
+    SELECT id, uid, type, label, help, required, options, profile_key, logic, deleted_at FROM hp_form_field WHERE form_id = ${f.id} ORDER BY sort_order, id`;
   return { ...f, on_submit_tag_ids: f.on_submit_tag_ids ?? [], fields: fields.map(toField) };
 }
 
@@ -75,7 +78,7 @@ export const getFormBySlug = (slug: string) => loadForm(Prisma.sql`slug = ${slug
 
 // 回答ページに渡す質問（消した質問は出さない）
 export const publicFields = (f: FormDetail): PublicField[] =>
-  f.fields.filter((x) => !x.deleted).map((x) => ({ id: x.id, type: x.type, label: x.label, help: x.help, required: x.required, options: x.options }));
+  f.fields.filter((x) => !x.deleted).map((x) => ({ id: x.id, uid: x.uid, type: x.type, label: x.label, help: x.help, required: x.required, options: x.options, logic: x.logic }));
 
 // ---------- 作成・更新 ----------
 
@@ -89,7 +92,8 @@ export type FormInput = {
   done_message: string | null;
   on_submit_status: string | null;
   on_submit_tag_ids: number[];
-  fields: { id: number | null; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null }[];
+  logic: FormLogic;
+  fields: { id: number | null; uid: string; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null; logic: FieldLogic | null }[];
 };
 
 const s = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
@@ -113,22 +117,53 @@ export function parseFormInput(b: Record<string, unknown>): FormInput | string {
     const n = i + 1;
     if (!isFieldType(x.type)) return `質問${n}の回答形式を選んでください。`;
     const label = s(x.label, 2000);
-    if (!label) return x.type === "DESCRIPTION" ? `質問${n}（説明文）の文章を入力してください。` : `質問${n}の質問文を入力してください。`;
+    if (!label && x.type !== "SECTION") return x.type === "DESCRIPTION" ? `質問${n}（説明文）の文章を入力してください。` : `質問${n}の質問文を入力してください。`;
     const options = CHOICE_TYPES.includes(x.type)
       ? [...new Set((Array.isArray(x.options) ? x.options : []).map((o) => (typeof o === "string" ? o.trim().slice(0, 200) : "")).filter(Boolean))].slice(0, 100)
       : [];
-    if (CHOICE_TYPES.includes(x.type) && options.length === 0) return `質問${n}「${label.slice(0, 20)}」の選択肢を1つ以上入力してください。`;
-    const profileKey = typeof x.profile_key === "string" && PROFILE_TARGET_LABEL[x.profile_key] && !["DESCRIPTION", "FILE", "CONSENT", "MULTI_CHOICE"].includes(x.type) ? x.profile_key : null;
+    if (CHOICE_TYPES.includes(x.type) && options.length === 0) return `質問${n}「${(label ?? "").slice(0, 20)}」の選択肢を1つ以上入力してください。`;
+    const profileKey = typeof x.profile_key === "string" && PROFILE_TARGET_LABEL[x.profile_key] && isInputType(x.type) && !["FILE", "CONSENT", "MULTI_CHOICE"].includes(x.type) ? x.profile_key : null;
     fields.push({
       id: Number.isInteger(x.id) && (x.id as number) > 0 ? (x.id as number) : null,
+      uid: typeof x.uid === "string" && /^[A-Za-z0-9_]{1,20}$/.test(x.uid) && x.uid !== "_start" ? x.uid : "",
       type: x.type,
-      label,
-      help: s(x.help, 1000),
-      required: x.type === "DESCRIPTION" ? false : x.required === true,
+      label: label ?? "",
+      help: s(x.help, x.type === "SECTION" ? 3000 : 1000),
+      required: isInputType(x.type) ? x.required === true : false,
       options,
       profile_key: profileKey,
+      logic: x.logic && typeof x.logic === "object" ? (x.logic as FieldLogic) : null,
     });
   }
+  // 目印（uid）が無い・重なる質問には、新しい目印を付ける
+  const seen = new Set<string>();
+  for (const f of fields) {
+    if (!f.uid || seen.has(f.uid)) f.uid = Math.random().toString(36).slice(2, 10);
+    seen.add(f.uid);
+  }
+  // 分岐の行き先を整える：行き先は「その位置より後ろのセクション」か「送信」だけ。消したセクションなど、無い行き先は「いつもどおり」に戻す
+  const sectionPos = new Map(fields.flatMap((f, i) => (f.type === "SECTION" ? [[f.uid, i] as const] : [])));
+  const target = (t: unknown, from: number) => (t === "submit" ? "submit" : typeof t === "string" && (sectionPos.get(t) ?? -1) > from ? t : "");
+  for (const [i, f] of fields.entries()) {
+    const raw = f.logic;
+    const logic: FieldLogic = {};
+    if (f.type === "SECTION") {
+      const t = target(raw?.next, i);
+      if (t) logic.next = t;
+    }
+    if (BRANCH_TYPES.includes(f.type) && raw?.branches && typeof raw.branches === "object") {
+      const branches: Record<string, string> = {};
+      for (const o of f.options) {
+        const t = target((raw.branches as Record<string, unknown>)[o], i);
+        if (t) branches[o] = t;
+      }
+      if (Object.keys(branches).length > 0) logic.branches = branches;
+    }
+    f.logic = Object.keys(logic).length > 0 ? logic : null;
+  }
+  const formLogicRaw = b.logic && typeof b.logic === "object" ? (b.logic as Record<string, unknown>) : {};
+  const firstNext = target(formLogicRaw.first_next, -1);
+  if (!fields.some((f) => isInputType(f.type) || f.type === "DESCRIPTION")) return "質問を1つ以上追加してください。";
   const used = fields.map((f) => f.profile_key).filter(Boolean);
   if (new Set(used).size !== used.length) return "「基本情報への反映先」が同じ項目の質問が2つあります。1つにしてください。";
   return {
@@ -141,6 +176,7 @@ export function parseFormInput(b: Record<string, unknown>): FormInput | string {
     done_message: s(b.done_message, 2000),
     on_submit_status: auth === "line" ? status : null,
     on_submit_tag_ids: auth === "line" ? [...new Set(tagIds)] : [],
+    logic: firstNext ? { first_next: firstNext } : {},
     fields,
   };
 }
@@ -154,15 +190,15 @@ export async function saveForm(id: number | null, f: FormInput, adminId: number)
     let formId: number;
     if (id === null) {
       const [r] = await tx.$queryRaw<{ id: number }[]>`
-        INSERT INTO hp_form (slug, title, description, purpose, auth_mode, is_published, done_message, on_submit_status, on_submit_tag_ids, created_by)
-        VALUES (${f.slug}, ${f.title}, ${f.description}, ${f.purpose}, ${f.auth_mode}, ${f.is_published}, ${f.done_message}, ${f.on_submit_status}, ${f.on_submit_tag_ids}::int[], ${adminId})
+        INSERT INTO hp_form (slug, title, description, purpose, auth_mode, is_published, done_message, on_submit_status, on_submit_tag_ids, logic, created_by)
+        VALUES (${f.slug}, ${f.title}, ${f.description}, ${f.purpose}, ${f.auth_mode}, ${f.is_published}, ${f.done_message}, ${f.on_submit_status}, ${f.on_submit_tag_ids}::int[], ${JSON.stringify(f.logic)}::jsonb, ${adminId})
         RETURNING id`;
       formId = r.id;
     } else {
       const n = await tx.$executeRaw`
         UPDATE hp_form SET slug = ${f.slug}, title = ${f.title}, description = ${f.description}, purpose = ${f.purpose}, auth_mode = ${f.auth_mode},
           is_published = ${f.is_published}, done_message = ${f.done_message}, on_submit_status = ${f.on_submit_status},
-          on_submit_tag_ids = ${f.on_submit_tag_ids}::int[], updated_at = now()
+          on_submit_tag_ids = ${f.on_submit_tag_ids}::int[], logic = ${JSON.stringify(f.logic)}::jsonb, updated_at = now()
         WHERE id = ${id}`;
       if (n === 0) return "not_found" as const;
       formId = id;
@@ -172,16 +208,17 @@ export async function saveForm(id: number | null, f: FormInput, adminId: number)
     const kept = new Set<number>();
     for (const [i, x] of f.fields.entries()) {
       const opts = JSON.stringify(x.options);
+      const logic = x.logic ? JSON.stringify(x.logic) : null;
       if (x.id !== null && existing.includes(x.id)) {
         kept.add(x.id);
         await tx.$executeRaw`
           UPDATE hp_form_field SET sort_order = ${i}, type = ${x.type}, label = ${x.label}, help = ${x.help}, required = ${x.required},
-            options = ${opts}::jsonb, profile_key = ${x.profile_key}, deleted_at = NULL
+            options = ${opts}::jsonb, profile_key = ${x.profile_key}, uid = ${x.uid}, logic = ${logic}::jsonb, deleted_at = NULL
           WHERE id = ${x.id}`;
       } else {
         await tx.$executeRaw`
-          INSERT INTO hp_form_field (form_id, sort_order, type, label, help, required, options, profile_key)
-          VALUES (${formId}, ${i}, ${x.type}, ${x.label}, ${x.help}, ${x.required}, ${opts}::jsonb, ${x.profile_key})`;
+          INSERT INTO hp_form_field (form_id, sort_order, type, label, help, required, options, profile_key, uid, logic)
+          VALUES (${formId}, ${i}, ${x.type}, ${x.label}, ${x.help}, ${x.required}, ${opts}::jsonb, ${x.profile_key}, ${x.uid}, ${logic}::jsonb)`;
       }
     }
     for (const fid of existing.filter((e) => !kept.has(e))) {

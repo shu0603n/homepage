@@ -4,7 +4,7 @@ import { isSameOrigin, jsonError } from "@/lib/auth/http";
 import { isLineLoginEnabled, verifyLineIdToken } from "@/lib/auth/line";
 import { getSession } from "@/lib/auth/session";
 import { recordLineIdentity } from "@/lib/line-identity";
-import { checkAnswer, FILE_MAX, FILE_TYPES, FILES_TOTAL_MAX, type AnswerValue } from "@/lib/forms-def";
+import { checkAnswer, FILE_MAX, FILE_TYPES, FILES_TOTAL_MAX, isInputType, splitSections, visitedSections, type AnswerValue } from "@/lib/forms-def";
 
 // フォームの回答を受け付ける（回答ページ /jobs/forms/<slug>/ から送る。仕組みは lib/admin/forms.ts）。
 // 送る形：multipart/form-data。payload＝JSON { answers: { 質問ID: 値 }, idToken?: LIFF の ID トークン, website: 空（迷惑送信よけ） }、
@@ -51,8 +51,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const errors: Record<number, string> = {};
   const files: UploadedFile[] = [];
   let total = 0;
+  // 分岐：回答の内容から、通ったページ（セクション）を出し直す。通っていないページの質問は、必須でも確かめず、回答も保存しない
+  const asValue = (v: unknown) => (typeof v === "string" ? v : Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : undefined);
+  const sections = splitSections(fields, form.logic);
+  const given = Object.fromEntries(fields.map((f) => [f.id, asValue(raw[String(f.id)])]));
+  const onPath = new Set(visitedSections(sections, given).flatMap((i) => sections[i].fields.map((f) => f.id)));
   for (const f of fields) {
-    if (f.type === "DESCRIPTION") continue;
+    if (!isInputType(f.type) || !onPath.has(f.id)) continue;
     if (f.type === "FILE") {
       const file = data.get(`file_${f.id}`);
       if (!(file instanceof File) || file.size === 0) {
@@ -67,8 +72,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
       }
       continue;
     }
-    const v = raw[String(f.id)];
-    const value = typeof v === "string" ? v : Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : undefined;
+    const value = asValue(raw[String(f.id)]);
     const message = checkAnswer(f, value);
     if (message) errors[f.id] = message;
     else if (value !== undefined) answers.set(f.id, value);
