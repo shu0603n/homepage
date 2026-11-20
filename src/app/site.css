@@ -2918,3 +2918,46 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .pf-other > label { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; background: var(--bg-soft); cursor: pointer; transition: background .25s; }
 .pf-other.is-on > label { background: var(--teal-soft); }
 .form .pf-other__input { width: min(320px, 100%); min-height: 44px; padding: 8px 14px; animation: admFlash .3s var(--ease); }
+/* フォームのスプレッドシート連携 */
+.adm-sheet__account, .adm-sheet__target { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.adm-sheet__account > span:nth-child(2), .adm-sheet__target > span:nth-child(2) { display: grid; flex: 1; min-width: 220px; }
+.adm-sheet__account small, .adm-sheet__target small { font-size: 12px; color: var(--sub); }
+.adm-sheet__gicon, .adm-sheet__sicon { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 14px; background: #e8f0fe; color: #1a73e8; font-size: 22px; }
+.adm-sheet__gicon.is-off { background: var(--bg-soft); color: var(--sub); }
+.adm-sheet__sicon { background: #e6f4ea; color: #188038; }
+.adm-sheet__target a { font-weight: 700; color: var(--navy-dd); }
+.adm-sheet__existing { display: grid; gap: 12px; margin-top: 14px; }
+.adm-sheet__urlrow { display: flex; gap: 8px; }
+.adm-sheet__urlrow input { flex: 1; }
+.adm-sheet__found { display: grid; gap: 10px; padding: 14px 16px; border-radius: 14px; background: #e6f4ea; animation: admFlash .3s var(--ease); }
+.adm-sheet__found p { margin: 0; color: #0d652d; }
+.adm-sheet__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 16px; }
+.adm-sheet__ok { color: #136b47; font-size: 12px; font-weight: 700; }
+.adm-sheet__opts { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; margin-bottom: 14px; }
+.adm-sheet__opts label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: var(--navy-dd); }
+.adm-sheet__opts input { width: 90px; padding: 8px 10px; border: 1px solid #cfdbe2; border-radius: 10px; font: inherit; }
+.adm-sheet__opts small { font-weight: 400; color: var(--sub); font-size: 11px; }
+.adm-sheet__preview { margin: 0 0 16px; overflow-x: auto; border: 1px solid #d5e1e7; border-radius: 10px; }
+.adm-sheet__preview table { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+.adm-sheet__preview th, .adm-sheet__preview td { padding: 6px 10px; border: 1px solid #e3ebef; white-space: nowrap; text-align: left; }
+.adm-sheet__preview thead th, .adm-sheet__preview tbody th { background: #f1f4f6; color: var(--sub); font-weight: 700; text-align: center; }
+.adm-sheet__preview td { max-width: 220px; overflow: hidden; text-overflow: ellipsis; color: var(--sub); }
+.adm-sheet__preview td.is-head { color: var(--navy-dd); font-weight: 700; background: #f8fbfc; }
+.adm-sheet__cols { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.adm-sheet__cols li { display: grid; grid-template-columns: 70px minmax(0, 2fr) minmax(0, 1fr) 150px auto; align-items: end; gap: 10px; padding: 10px 12px; border: 1px solid #dbe6ec; border-radius: 12px; background: #fbfdfd; animation: admFormIn .3s var(--ease) both; }
+.adm-sheet__cols li.is-ng { border-color: #e7a7b5; background: #fff7f9; }
+.adm-sheet__cols li:not(:has(.adm-sheet__text)) { grid-template-columns: 70px minmax(0, 3fr) 150px auto; }
+.adm-sheet__cols label { display: grid; gap: 4px; font-size: 11px; font-weight: 700; color: var(--sub); }
+.adm-sheet__cols input, .adm-sheet__cols select { width: 100%; padding: 8px 10px; border: 1px solid #cfdbe2; border-radius: 10px; background: #fff; font: inherit; font-size: 13px; color: var(--ink); }
+.adm-sheet__col input { text-align: center; font-family: var(--f-en); font-weight: 700; text-transform: uppercase; }
+.adm-sheet__colbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.adm-sheet__status { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: 0 0 12px; }
+.adm-sheet__status div { padding: 12px 14px; border-radius: 12px; background: var(--bg-soft); }
+.adm-sheet__status dt { font-size: 12px; color: var(--sub); }
+.adm-sheet__status dd { margin: 2px 0 0; font-weight: 700; color: var(--navy-dd); }
+.adm-sheet__sync { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+@media (max-width: 760px) {
+  .adm-sheet__cols li, .adm-sheet__cols li:not(:has(.adm-sheet__text)) { grid-template-columns: 70px minmax(0, 1fr); }
+  .adm-sheet__cols li .adm-fb__tools { grid-column: 1 / -1; justify-content: flex-end; }
+}
+@media (max-width: 760px) { .adm-sheet__cols .adm-sheet__text, .adm-sheet__cols .adm-sheet__mode { grid-column: 1 / -1; } }

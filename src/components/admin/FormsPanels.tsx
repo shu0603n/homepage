@@ -103,7 +103,7 @@ function countSince(subs: SubmissionRow[], days: number) {
   return subs.filter((s) => s.submitted_at.getTime() > from).length;
 }
 
-export function FormHead({ form, count, current }: { form: FormDetail; count: number; current: "edit" | "answers" }) {
+export function FormHead({ form, count, current }: { form: FormDetail; count: number; current: "edit" | "answers" | "sheet" }) {
   return (
     <section className="adm-card adm-formhead">
       <div className="adm-formhead__who">
@@ -129,6 +129,9 @@ export function FormHead({ form, count, current }: { form: FormDetail; count: nu
           </Link>
           <Link href={`/admin/forms/${form.id}/answers/`} className={`adm-filter${current === "answers" ? " is-active" : ""}`}>
             <i className="bi bi-inboxes" aria-hidden="true" /> 回答 {count}件
+          </Link>
+          <Link href={`/admin/forms/${form.id}/sheet/`} className={`adm-filter${current === "sheet" ? " is-active" : ""}`}>
+            <i className="bi bi-file-earmark-spreadsheet" aria-hidden="true" /> スプレッドシート連携
           </Link>
         </nav>
       </div>

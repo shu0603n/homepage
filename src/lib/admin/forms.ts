@@ -323,6 +323,7 @@ export type SubmissionRow = {
   id: number;
   submitted_at: Date;
   line_user_id: string | null;
+  line_name: string | null; // 回答したときの LINE の表示名
   who: string; // 回答者の名前（LINE の友だち・スタッフ・回答の「氏名」から。わからなければ「（匿名）」）
   picture_url: string | null;
   staff_id: number | null;
@@ -363,6 +364,7 @@ export async function listSubmissions(form: FormDetail, opts: { id?: number; lin
       id: r.id,
       submitted_at: r.submitted_at,
       line_user_id: r.line_user_id,
+      line_name: r.display_name ?? r.line_name,
       who: r.profile_name ?? r.display_name ?? r.line_name ?? r.staff_name ?? answeredName ?? "（匿名）",
       picture_url: r.picture_url,
       staff_id: r.staff_id,

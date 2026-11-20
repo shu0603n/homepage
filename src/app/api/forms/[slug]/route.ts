@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { formatPhoneJP } from "@/lib/phone";
+import { syncSubmissions } from "@/lib/admin/sheets";
 import { getFormBySlug, isDuplicateOrFlood, publicFields, saveSubmission, type UploadedFile } from "@/lib/admin/forms";
 import { isSameOrigin, jsonError } from "@/lib/auth/http";
 import { isLineLoginEnabled, verifyLineIdToken } from "@/lib/auth/line";
@@ -85,13 +86,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     const guard = await isDuplicateOrFlood(form.id, lineUserId, form.auth_mode === "open" ? ip : null);
     if (guard === "dup") return NextResponse.json({ ok: true, done: form.done_message });
     if (guard === "flood") return jsonError("短い時間に送信が続いたため、受け付けを止めています。時間をおいてお試しください。", 429);
-    await saveSubmission(form, answers, files, {
+    const submissionId = await saveSubmission(form, answers, files, {
       lineUserId,
       lineName,
       staffId: staff?.staffId ?? null,
       ip,
       userAgent: request.headers.get("user-agent")?.slice(0, 500) ?? null,
     });
+    // スプレッドシート連携があれば書き込む（失敗しても回答は受け付ける。管理画面の「未送信の回答を書き込む」で書き直せる）
+    await syncSubmissions(form.id, { submissionId }).catch((error) => console.error("sheet sync failed:", error));
     return NextResponse.json({ ok: true, done: form.done_message });
   } catch (error) {
     console.error("form submission failed:", error);

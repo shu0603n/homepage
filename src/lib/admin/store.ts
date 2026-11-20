@@ -280,6 +280,35 @@ export const ADMIN_TABLES_SQL = [
   `ALTER TABLE hp_form_field ADD COLUMN IF NOT EXISTS uid VARCHAR(20)`,
   `ALTER TABLE hp_form_field ADD COLUMN IF NOT EXISTS logic JSONB`,
   `ALTER TABLE hp_form ADD COLUMN IF NOT EXISTS logic JSONB`,
+  // スプレッドシート連携（2026-11-21 追加。lib/admin/sheets.ts）。
+  // hp_google_account：連携した会社の Google アカウント（1件だけ。リフレッシュトークンは暗号化して保存）
+  // hp_form_sheet：フォームごとの書き込み先（スプレッドシート・シート・見出しの行・どの列に何を入れるか）
+  // hp_form_submission の sheet_*：その回答をシートに書いたか（ok／error）・書いた行・失敗の理由
+  `CREATE TABLE IF NOT EXISTS hp_google_account (
+    id SMALLINT PRIMARY KEY,
+    email VARCHAR(254),
+    refresh_token_enc TEXT NOT NULL,
+    scope TEXT,
+    connected_by INTEGER,
+    connected_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS hp_form_sheet (
+    form_id INTEGER PRIMARY KEY,
+    spreadsheet_id VARCHAR(100) NOT NULL,
+    spreadsheet_title VARCHAR(300),
+    sheet_name VARCHAR(200) NOT NULL,
+    header_row INTEGER NOT NULL DEFAULT 1,
+    columns JSONB NOT NULL DEFAULT '[]',
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    last_synced_at TIMESTAMPTZ(6),
+    last_error TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `ALTER TABLE hp_form_submission ADD COLUMN IF NOT EXISTS sheet_status VARCHAR(10)`,
+  `ALTER TABLE hp_form_submission ADD COLUMN IF NOT EXISTS sheet_row INTEGER`,
+  `ALTER TABLE hp_form_submission ADD COLUMN IF NOT EXISTS sheet_error TEXT`,
   // フォームのテンプレート（2026-11-21 追加。lib/admin/forms.ts）。data はフォームの中身（質問・設定）の JSON
   `CREATE TABLE IF NOT EXISTS hp_form_template (
     id SERIAL PRIMARY KEY,
@@ -313,8 +342,11 @@ async function isUpToDate(): Promise<boolean> {
         OR (table_name = 'hp_line_identity' AND column_name = 'last_seen_at')
         OR (table_name = 'hp_form_template' AND column_name = 'data')
         OR (table_name = 'hp_form_field' AND column_name = 'logic')
-        OR (table_name = 'hp_form' AND column_name = 'logic'))`;
-  return rows[0]?.n === 12;
+        OR (table_name = 'hp_form' AND column_name = 'logic')
+        OR (table_name = 'hp_google_account' AND column_name = 'refresh_token_enc')
+        OR (table_name = 'hp_form_sheet' AND column_name = 'columns')
+        OR (table_name = 'hp_form_submission' AND column_name = 'sheet_error'))`;
+  return rows[0]?.n === 15;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。
