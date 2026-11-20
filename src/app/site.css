@@ -2043,25 +2043,24 @@ body:has(.admin-shell) #main { padding-top: 0 !important; }
 .adm-auth__foot { display: flex; gap: 8px; margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--sub); }
 .adm-auth__copy { position: relative; margin: 0; font-family: var(--f-en); font-size: 11px; letter-spacing: .12em; color: rgba(255, 255, 255, .55); }
 
-/* ---------- スマホ・タブレット：メニューは上に横並び ---------- */
+/* ---------- スマホ・タブレット：上の帯（ロゴと ☰）。☰ でメニューを開閉する ---------- */
 @media (max-width: 960px) {
-  .adm { grid-template-columns: minmax(0, 1fr); }
-  .adm-side { position: sticky; z-index: 20; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; overflow: visible; }
+  .adm, .adm.is-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .adm-side { position: sticky; z-index: 20; height: auto; gap: 0; padding: 10px 16px; overflow: visible; }
   .adm-side::before { inset: auto 0 0 0; width: auto; height: 3px; }
+  .adm-side__top { width: 100%; }
   .adm-side__logo { padding: 0; }
-  .adm-side__logo img { width: 128px; }
+  .adm-side__logo .adm-side__logo-full { width: 128px; }
   .adm-side__logo span { display: none; }
-  .adm-nav { order: 3; flex: 1 1 100%; display: flex; gap: 6px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 4px; scrollbar-width: none; }
-  .adm-nav::-webkit-scrollbar { display: none; }
-  .adm-nav__group { display: contents; }
-  .adm-nav__label { display: none; }
-  .adm-nav__item { flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; font-size: 13px; }
+  .adm-side__toggle { display: none; }
+  .adm-side__burger { display: inline-grid; }
+  .adm-nav, .adm-side__foot { display: none; }
+  .adm.is-nav-open .adm-nav { display: grid; gap: 14px; max-height: calc(100vh - 130px); overflow-y: auto; padding: 14px 0 6px; animation: admNavDown .22s var(--ease); }
+  .adm.is-nav-open .adm-side__foot { display: block; padding: 12px 0 6px; }
   .adm-nav__item.is-active::before { display: none; }
-  .adm-side__foot { order: 2; margin-left: auto; display: flex; align-items: center; gap: 10px; padding: 0; border: 0; }
-  .adm-side__site { display: none; }
-  .adm-logout { padding: 6px 12px; font-size: 12px; }
-  .adm-body { padding: 24px 16px 56px; }
+  .adm-body { padding: 16px 16px 56px; }
 }
+@keyframes admNavDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @media (max-width: 640px) {
   .adm-card { padding: 22px 18px; }
   .adm-summary { padding: 22px 20px; }
@@ -2354,4 +2353,62 @@ a.adm-jobs__title:hover { text-decoration: underline; }
   .adm-line.has-chat .adm-line__list { display: none; }
   .adm-line__back { display: inline-flex; }
   .adm-bubble { max-width: 86%; }
+}
+
+/* ---------- 管理ページ：開閉できる左のメニュー（AdminFrame）と、右上のアカウント ---------- */
+.adm { transition: grid-template-columns .3s var(--ease); }
+.adm-side__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.adm-side__logo .adm-side__logo-mark { display: none; width: 34px; height: 34px; }
+.adm-side__toggle { display: inline-grid; place-items: center; flex: 0 0 auto; width: 32px; height: 32px; border: 1px solid rgba(255, 255, 255, .18); border-radius: 10px; background: rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .8); font-size: 13px; cursor: pointer; transition: background .2s, color .2s, transform .3s var(--ease); }
+.adm-side__toggle:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+.adm-side__burger { display: none; place-content: center; gap: 4px; width: 40px; height: 40px; border: 0; border-radius: 12px; background: rgba(255, 255, 255, .08); cursor: pointer; }
+.adm-side__burger span { display: block; width: 18px; height: 2px; border-radius: 2px; background: #fff; transition: transform .25s var(--ease), opacity .2s; }
+.adm.is-nav-open .adm-side__burger span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.adm.is-nav-open .adm-side__burger span:nth-child(2) { opacity: 0; }
+.adm.is-nav-open .adm-side__burger span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+.adm-side__site span { white-space: nowrap; }
+@media (min-width: 961px) {
+  .adm.is-collapsed { grid-template-columns: 78px minmax(0, 1fr); }
+  .adm.is-collapsed .adm-side { padding: 22px 12px; align-items: center; }
+  .adm.is-collapsed .adm-side__top { flex-direction: column; gap: 14px; }
+  .adm.is-collapsed .adm-side__logo { padding: 0; }
+  .adm.is-collapsed .adm-side__logo-full, .adm.is-collapsed .adm-side__logo span { display: none; }
+  .adm.is-collapsed .adm-side__logo .adm-side__logo-mark { display: block; }
+  .adm.is-collapsed .adm-nav { width: 100%; gap: 10px; }
+  .adm.is-collapsed .adm-nav__label { height: 1px; margin: 4px 10px; padding: 0; overflow: hidden; background: rgba(255, 255, 255, .14); color: transparent; }
+  .adm.is-collapsed .adm-nav__item { justify-content: center; padding: 11px 0; }
+  .adm.is-collapsed .adm-nav__item > span, .adm.is-collapsed .adm-nav__ext { display: none; }
+  .adm.is-collapsed .adm-nav__item.is-active::before { left: -12px; }
+  .adm.is-collapsed .adm-nav__badge { position: absolute; top: 2px; right: 6px; min-width: 18px; padding: 0 5px; font-size: 10px; line-height: 18px; }
+  .adm.is-collapsed .adm-side__foot { width: 100%; }
+  .adm.is-collapsed .adm-side__site { justify-content: center; padding: 0; }
+  .adm.is-collapsed .adm-side__site span { display: none; }
+}
+/* 右上のアカウント（白い背景の上に置く） */
+.adm-topbar { display: flex; justify-content: flex-end; margin: -18px 0 18px; }
+.adm-topbar .adm-me-wrap { position: relative; }
+.adm-topbar button.adm-me { width: auto; max-width: 320px; padding: 6px 12px 6px 6px; border-radius: 999px; background: #fff; color: var(--navy-dd); box-shadow: var(--shadow-s); }
+.adm-topbar button.adm-me:hover { background: #fff; box-shadow: var(--shadow-s), 0 0 0 2px var(--teal-soft); }
+.adm-topbar .adm-me.is-current, .adm-topbar .adm-me-wrap.is-open .adm-me { background: #fff; box-shadow: var(--shadow-s), 0 0 0 2px var(--teal); }
+.adm-topbar .adm-me__avatar { width: 34px; height: 34px; font-size: 14px; }
+.adm-topbar .adm-me__text small { color: var(--sub); }
+.adm-topbar .adm-me__chev { color: var(--sub); }
+.adm-topbar .adm-me .adm-role--staff { background: var(--bg-soft); color: var(--navy); }
+.adm-topbar .adm-menu { left: auto; right: 0; bottom: auto; top: calc(100% + 10px); width: min(300px, calc(100vw - 32px)); animation-name: admMenuDown; }
+@keyframes admMenuDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.adm-menu__foot { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.adm-menu__foot .adm-logout { width: 100%; border-color: var(--line); color: var(--navy-dd); }
+.adm-menu__foot .adm-logout:hover { background: #fdecef; border-color: #f4c6cf; color: #b02a42; }
+@media (max-width: 640px) {
+  .adm-topbar { margin: -4px 0 14px; }
+  .adm-topbar button.adm-me { padding: 4px; }
+  .adm-topbar .adm-me__text, .adm-topbar .adm-me__chev { display: none; }
+}
+/* スマホ・タブレット（上の基本の指定より後に置いて、こちらを優先させる） */
+@media (max-width: 960px) {
+  .adm { align-content: start; }
+  .adm-side { display: block; }
+  .adm-side__top { min-height: 44px; }
+  .adm-side__toggle { display: none; }
+  .adm-side__burger { display: inline-grid; }
 }

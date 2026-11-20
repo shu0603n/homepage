@@ -25,7 +25,8 @@ export async function POST(request: Request) {
   if (!friend.is_friend) return jsonError("この方は友だちではない（ブロック中）ため、送れません。", 400);
 
   try {
-    await pushLineText(to, text);
+    // 相手の LINE には「担当者名 from 株式会社エモリスリンク」と出す（名前を登録していない管理者は「担当者」）
+    await pushLineText(to, text, session.name || "担当者");
   } catch (error) {
     console.error("LINE send failed:", error);
     const status = error instanceof LineSendError ? error.status : 0;

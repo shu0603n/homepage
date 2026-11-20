@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AdminAvatar } from "@/components/admin/AdminAvatar";
 
 // ログイン中の人のカード。押すと小窓が開き、「管理者」「パスワード変更」に進める。
-// 小窓の外を押すか Esc キーで閉じる。スマホでは上部の帯に頭文字の丸いボタンとして出る
+// 小窓の外を押すか Esc キーで閉じる。管理ページの右上に置く（スマホではアイコンだけ）。小窓のいちばん下にログアウト
 type Props = {
   name: string | null;
   email: string;
@@ -13,6 +13,7 @@ type Props = {
   roleLabel: string;
   avatar: string | null; // アイコン画像の URL（無ければ頭文字）
   current: "users" | "password" | null; // いま開いているページ（小窓の中の項目を強調する）
+  logout?: ReactNode; // 小窓のいちばん下に出すログアウトのボタン
 };
 
 const ITEMS = [
@@ -20,7 +21,7 @@ const ITEMS = [
   { key: "password", href: "/admin/password/", label: "パスワード変更", help: "自分のログイン用パスワードを変える", icon: "bi-key" },
 ] as const;
 
-export function AdminMeMenu({ name, email, role, roleLabel, avatar, current }: Props) {
+export function AdminMeMenu({ name, email, role, roleLabel, avatar, current, logout }: Props) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
@@ -70,6 +71,7 @@ export function AdminMeMenu({ name, email, role, roleLabel, avatar, current }: P
               </span>
             </Link>
           ))}
+          {logout && <div className="adm-menu__foot">{logout}</div>}
         </div>
       )}
     </div>

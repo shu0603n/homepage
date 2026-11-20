@@ -42,12 +42,14 @@ export class LineSendError extends Error {
   }
 }
 
-// 1人にテキストを送る（プッシュメッセージ。月の無料通数に数えられる）
-export async function pushLineText(userId: string, text: string): Promise<void> {
+// 1人にテキストを送る（プッシュメッセージ。月の無料通数に数えられる）。
+// senderName を渡すと、相手の LINE には「送信者名 from 株式会社エモリスリンク」と表示される（Linext と同じ。20文字まで。アイコンは公式アカウントのまま）
+export async function pushLineText(userId: string, text: string, senderName?: string | null): Promise<void> {
+  const name = senderName?.trim().slice(0, 20);
   const res = await fetch(`${API}/message/push`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
-    body: JSON.stringify({ to: userId, messages: [{ type: "text", text }] }),
+    body: JSON.stringify({ to: userId, messages: [{ type: "text", text, ...(name ? { sender: { name } } : {}) }] }),
     signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) {
