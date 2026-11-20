@@ -133,7 +133,7 @@ function Daily({ rows }: { rows: { date: string; users: number }[] }) {
 
 // ---------- アクセス分析のグラフ・表 ----------
 
-// 来た元ごとの色（多い順）。自然流入はグレー
+// 来た元ごとの色（多い順）。「直接・不明」はグレー
 const SOURCE_COLORS = ['#1f6feb', '#e5484d', '#f59e0b', '#8e4ec6', '#0ea5a4'];
 const sourceColor = (name: string, i: number) =>
   name === NATURAL ? '#a3b1bd' : name === 'その他' ? '#cbd5dd' : SOURCE_COLORS[i % SOURCE_COLORS.length];
@@ -181,8 +181,23 @@ function SourceDaily({ t }: { t: Ga4Traffic }) {
   );
 }
 
-// メディア別・キャンペーン別の表（アクセス・登録・登録率）
-function TrafficTable({ rows, empty }: { rows: TrafficRow[]; empty: string }) {
+// メディア（utm_medium）の名前を日本語にする。印（utm）のない訪問は Google が organic・referral などに分類する
+const MEDIUM_NAMES: Record<string, string> = {
+  organic: '検索エンジン（Google・Yahoo! など）',
+  referral: 'ほかのサイト・アプリのリンク',
+  [NATURAL]: '直接・不明（URL 入力・ブックマーク・LINE など）',
+  cpc: '検索広告',
+  paid_social: 'SNS 広告',
+  paidsocial: 'SNS 広告',
+  social: 'SNS',
+  email: 'メール',
+  line: 'LINE',
+  instagram: 'Instagram',
+  qr: 'QR コード'
+};
+
+// メディア別・キャンペーン別の表（アクセス・登録・登録率）。names があれば名前を日本語にし、元の名前を小さく添える
+function TrafficTable({ rows, empty, names }: { rows: TrafficRow[]; empty: string; names?: Record<string, string> }) {
   if (rows.length === 0) return <p className="adm-empty">{empty}</p>;
   return (
     <div className="adm-tablewrap">
@@ -198,7 +213,10 @@ function TrafficTable({ rows, empty }: { rows: TrafficRow[]; empty: string }) {
         <tbody>
           {rows.map((r) => (
             <tr key={r.name}>
-              <td>{r.name}</td>
+              <td>
+                {names?.[r.name.toLowerCase()] ?? r.name}
+                {names?.[r.name.toLowerCase()] && r.name !== NATURAL && <small className="adm-traffic__raw">{r.name}</small>}
+              </td>
               <td>{fmt(r.sessions)}</td>
               <td className={r.signups > 0 ? 'is-hit' : undefined}>{fmt(r.signups)}</td>
               <td>{r.sessions ? pct(r.signups / r.sessions) : '—'}</td>
@@ -474,33 +492,27 @@ export async function Ga4Panel() {
         <Daily rows={d.daily} />
       </Card>
 
-      {t ? (
-        <>
-          <Card
-            en="Traffic"
-            title="来た元ごとの日別アクセス"
-            help="日ごとの訪問の回数を、来た元（utm_source）で色分けしています。広告や SNS のリンクに付けた印で分けており、印のない訪問は「自然流入」です。棒にマウスを乗せると内訳が出ます。"
-            wide
-          >
-            <SourceDaily t={t} />
-          </Card>
+      <div className="adm-grid2">
+        <Card en="Hours" title="時間帯別アクセス（日本時間）" help="0〜23時台の訪問の回数です。いちばん多い時間帯を濃い色で示します。">
+          {t ? <Columns values={t.hours} labels={t.hours.map((_, h) => String(h))} name="時間帯別アクセス" /> : <TrafficUnavailable />}
+        </Card>
+        <Card en="Weekdays" title="曜日別アクセス" help="曜日ごとの訪問の回数です（28日間＝各曜日4回分の合計）。">
+          {t ? (
+            <Columns values={t.weekdays} labels={['日', '月', '火', '水', '木', '金', '土']} name="曜日別アクセス" />
+          ) : (
+            <TrafficUnavailable />
+          )}
+        </Card>
+      </div>
 
-          <Card
-            en="Media"
-            title="メディア別（utm_medium）"
-            help="「登録」は、その訪問の中でスタッフ登録の申し込みまで進んだ回数です。登録率 ＝ 登録 ÷ アクセス。"
-            wide
-          >
-            <TrafficTable rows={t.mediums} empty="まだデータがありません。" />
-          </Card>
-
-          <Card en="Campaign" title="キャンペーン別（utm_campaign）" help="広告・投稿ごとに付けたキャンペーン名で分けています。" wide>
-            <TrafficTable rows={t.campaigns} empty="キャンペーン名の付いたリンクからの訪問は、まだありません。" />
-          </Card>
-        </>
-      ) : (
-        <TrafficUnavailable />
-      )}
+      <Card
+        en="Traffic"
+        title="来た元ごとの日別アクセス"
+        help="日ごとの訪問の回数を、来た元（utm_source）で色分けしています。広告や SNS のリンクに付けた印（utm）で分けており、印がないときは Google が判断した来た元（google など）になります。「直接・不明」は来た元が分からない訪問です。棒にマウスを乗せると内訳が出ます。"
+        wide
+      >
+        {t ? <SourceDaily t={t} /> : <TrafficUnavailable />}
+      </Card>
 
       <div className="adm-grid2">
         <Card en="Pages" title="よく見られたページ" help="どのページがよく読まれているかが分かります（上位10）。">
@@ -510,6 +522,28 @@ export async function Ga4Panel() {
           <Bars rows={d.channels.map((c) => ({ label: CHANNELS[c.name] ?? c.name, value: c.sessions }))} unit="回" />
         </Card>
       </div>
+
+      <Card
+        en="Campaign"
+        title="キャンペーン別（utm_campaign）"
+        help="広告・投稿ごとに付けたキャンペーン名で分けています。「登録」は、その訪問の中でスタッフ登録の申し込みまで進んだ回数です。登録率 ＝ 登録 ÷ アクセス。"
+        wide
+      >
+        {t ? (
+          <TrafficTable rows={t.campaigns} empty="キャンペーン名の付いたリンクからの訪問は、まだありません。" />
+        ) : (
+          <TrafficUnavailable />
+        )}
+      </Card>
+
+      <Card
+        en="Media"
+        title="メディア別（utm_medium）"
+        help="訪問の種類です。リンクに印（utm_medium）を付けた広告・SNS はその名前で、印のない訪問は Google の分類（検索・ほかのサイト・直接）で表示します。かっこ内は Google での元の名前です。"
+        wide
+      >
+        {t ? <TrafficTable rows={t.mediums} empty="まだデータがありません。" names={MEDIUM_NAMES} /> : <TrafficUnavailable />}
+      </Card>
 
       <div className="adm-grid2">
         <Card
@@ -521,19 +555,6 @@ export async function Ga4Panel() {
         </Card>
         <Card en="Devices" title="使っている端末" help="スマホから見ている人が多い場合は、スマホでの見やすさが特に大切です。">
           <DeviceShare rows={d.devices} />
-        </Card>
-      </div>
-
-      <div className="adm-grid2">
-        <Card en="Hours" title="時間帯別アクセス（日本時間）" help="0〜23時台の訪問の回数です。いちばん多い時間帯を濃い色で示します。">
-          {t ? <Columns values={t.hours} labels={t.hours.map((_, h) => String(h))} name="時間帯別アクセス" /> : <TrafficUnavailable />}
-        </Card>
-        <Card en="Weekdays" title="曜日別アクセス" help="曜日ごとの訪問の回数です（28日間＝各曜日4回分の合計）。">
-          {t ? (
-            <Columns values={t.weekdays} labels={['日', '月', '火', '水', '木', '金', '土']} name="曜日別アクセス" />
-          ) : (
-            <TrafficUnavailable />
-          )}
         </Card>
       </div>
       {fetched(ga.fetchedAt)}

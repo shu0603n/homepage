@@ -115,11 +115,12 @@ export type Ga4Data = {
 };
 
 // アクセス分析（どこから来て、いつ来て、登録につながったか）。「アクセス」は訪問の回数（セッション数）。
-// 来た元は URL の utm_source / utm_medium / utm_campaign（広告や SNS のリンクに付けている印）で分ける。印のない訪問は「自然流入」。
+// 来た元は URL の utm_source / utm_medium / utm_campaign（広告や SNS のリンクに付けている印）で分ける。印のない訪問は GA4 が判断した値
+// （google / organic など）になり、それも分からない訪問は「直接・不明」。
 // 「登録」はスタッフ登録フォームの申し込み（送信後に /register/?sent=1 が表示された回数）。その訪問の来た元に結び付けて数える
 export type TrafficRow = { name: string; sessions: number; signups: number };
 export type Ga4Traffic = {
-  sources: string[]; // 日別グラフの色分け（多い順。最後が「自然流入」）
+  sources: string[]; // 日別グラフの色分け（多い順。最後が「直接・不明」）
   daily: { date: string; values: number[] }[]; // values は sources と同じ順
   mediums: TrafficRow[];
   campaigns: TrafficRow[];
@@ -129,7 +130,7 @@ export type Ga4Traffic = {
   signupsTotal: number;
 };
 
-export const NATURAL = "自然流入";
+export const NATURAL = "直接・不明"; // 来た元が分からない訪問（GA4 の (direct)・(none)・(not set)）
 const SIGNUP_PATH = "/register/?sent=";
 
 type ReportRow = { dimensionValues?: { value: string }[]; metricValues?: { value: string }[] };
@@ -229,9 +230,9 @@ async function getTraffic(base: string, range: { startDate: string; endDate: str
   const [weekR, signupR] = b.reports;
   const dim = (r: ReportRow, i = 0) => r.dimensionValues?.[i]?.value ?? "";
   const val = (r: ReportRow) => num(r.metricValues?.[0]?.value);
-  const label = (v: string) => (!v || v === "(not set)" || v === "(none)" ? NATURAL : v);
+  const label = (v: string) => (!v || v === "(not set)" || v === "(none)" || v === "(direct)" ? NATURAL : v);
 
-  // 日別×来た元：多い順に4つまで色分けし、残りは「その他」、印なしは「自然流入」
+  // 日別×来た元：多い順に4つまで色分けし、残りは「その他」、来た元が分からない訪問は「直接・不明」
   const totals = new Map<string, number>();
   for (const r of dailyR.rows ?? []) totals.set(label(dim(r, 1)), (totals.get(label(dim(r, 1))) ?? 0) + val(r));
   const top = [...totals].filter(([n]) => n !== NATURAL).sort((x, y) => y[1] - x[1]).map(([n]) => n);
@@ -261,7 +262,8 @@ async function getTraffic(base: string, range: { startDate: string; endDate: str
     const m = new Map<string, number>();
     for (const r of rep.rows ?? []) m.set(label(dim(r)), (m.get(label(dim(r))) ?? 0) + val(r));
     return [...m]
-      .filter(([n]) => !(dropNatural && n === NATURAL))
+      // キャンペーン別では、印のない訪問（(organic)・(referral) などかっこ付きの値）を除く
+      .filter(([n]) => !(dropNatural && (n === NATURAL || /^(.*)$/.test(n))))
       .map(([name, s]) => ({ name, sessions: s, signups: signups.get(name) ?? 0 }))
       .sort((x, y) => y.sessions - x.sessions);
   };
