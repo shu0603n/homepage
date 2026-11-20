@@ -7,7 +7,7 @@ import { Ga4Panel, GtmPanel, InquiriesPanel, ScPanel } from "@/components/admin/
 import { JobStatsPanel } from "@/components/admin/JobStatsPanel";
 import { ChatsPanel, FriendsPanel, TagsPanel } from "@/components/admin/CrmPanels";
 import { FormsListPanel } from "@/components/admin/FormsPanels";
-import { listForms } from "@/lib/admin/forms";
+import { listForms, listTemplates } from "@/lib/admin/forms";
 import { listCandidates, listCategories, listChats, listTags } from "@/lib/admin/crm";
 import { isMessagingConfigured } from "@/lib/line-messaging";
 import { getAdminSession } from "@/lib/admin/session";
@@ -125,9 +125,12 @@ async function LineTagsTab() {
 
 // フォーム管理（一覧）
 async function FormsTab() {
-  const forms = await listForms().catch((error) => {
-    console.error("form list failed:", error);
-    return null;
-  });
-  return <FormsListPanel forms={forms} />;
+  const [forms, templates] = await Promise.all([
+    listForms().catch((error) => {
+      console.error("form list failed:", error);
+      return null;
+    }),
+    listTemplates().catch(() => []),
+  ]);
+  return <FormsListPanel forms={forms} templates={templates} />;
 }

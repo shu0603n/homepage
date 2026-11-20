@@ -1,5 +1,5 @@
 import { CANDIDATE_STATUSES, listTags } from "@/lib/admin/crm";
-import type { FormDetail } from "@/lib/admin/forms";
+import type { FormDetail, TemplateRow } from "@/lib/admin/forms";
 import type { BuilderInitial } from "@/components/admin/FormsClient";
 import { SITE } from "@/lib/site";
 
@@ -27,5 +27,24 @@ export function toInitial(f: FormDetail | null, answers: number): BuilderInitial
     on_submit_tag_ids: f?.on_submit_tag_ids ?? [],
     fields: (f?.fields ?? []).filter((x) => !x.deleted).map((x) => ({ id: x.id, type: x.type, label: x.label, help: x.help, required: x.required, options: x.options, profile_key: x.profile_key })),
     answers,
+  };
+}
+
+// テンプレートの中身を、フォームの作成・編集の画面の形にする（質問の ID は無し。今は無いタグは外す）
+export function templateToInitial(t: TemplateRow, tagIds: number[]): BuilderInitial {
+  const d = t.data;
+  return {
+    id: null,
+    title: d.title ?? "",
+    slug: "",
+    description: d.description ?? "",
+    purpose: d.purpose ?? "",
+    auth_mode: d.auth_mode === "open" ? "open" : "line",
+    is_published: false,
+    done_message: d.done_message ?? "",
+    on_submit_status: d.on_submit_status ?? "",
+    on_submit_tag_ids: (d.on_submit_tag_ids ?? []).filter((id) => tagIds.includes(id)),
+    fields: (d.fields ?? []).map((f) => ({ id: null, type: f.type, label: f.label, help: f.help, required: f.required, options: f.options ?? [], profile_key: f.profile_key })),
+    answers: 0,
   };
 }

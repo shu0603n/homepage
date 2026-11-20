@@ -180,7 +180,7 @@ export type BuilderInitial = {
   done_message: string;
   on_submit_status: string;
   on_submit_tag_ids: number[];
-  fields: { id: number; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null }[];
+  fields: { id: number | null; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null }[];
   answers: number;
 };
 
@@ -194,13 +194,24 @@ export function FormBuilder({
   tags,
   statuses,
   publicBase,
+  template,
+  fromTemplate,
 }: {
   initial: BuilderInitial;
   tags: { id: number; name: string; color: string }[];
   statuses: { key: string; label: string }[];
   publicBase: string;
+  template?: { id: number | null; name: string; description: string }; // テンプレートを作る・直すとき
+  fromTemplate?: string; // テンプレートから新しいフォームを作るとき：そのテンプレートの名前
 }) {
   const router = useRouter();
+  const isTemplate = template !== undefined;
+  const [tplName, setTplName] = useState(template?.name ?? "");
+  const [tplDesc, setTplDesc] = useState(template?.description ?? "");
+  const [saveAs, setSaveAs] = useState<{ name: string; description: string } | null>(null);
+  const [saveAsBusy, setSaveAsBusy] = useState(false);
+  const [saveAsError, setSaveAsError] = useState("");
+  const [notice, setNotice] = useState("");
   const [title, setTitle] = useState(initial.title);
   const [slug, setSlug] = useState(initial.slug || (initial.id === null ? randomSlug() : ""));
   const [description, setDescription] = useState(initial.description);
@@ -212,7 +223,7 @@ export function FormBuilder({
   const [tagIds, setTagIds] = useState<number[]>(initial.on_submit_tag_ids);
   const [fields, setFields] = useState<Draft[]>(() =>
     initial.fields.length > 0
-      ? initial.fields.map((f) => ({ key: `f${f.id}`, id: f.id, type: f.type, label: f.label, help: f.help ?? "", required: f.required, options: f.options.join("\n"), profile_key: f.profile_key ?? "" }))
+      ? initial.fields.map((f) => ({ key: f.id !== null ? `f${f.id}` : newKey(), id: f.id, type: f.type, label: f.label, help: f.help ?? "", required: f.required, options: f.options.join("\n"), profile_key: f.profile_key ?? "" }))
       : [{ ...blank("SHORT_TEXT"), label: "お名前", required: true, profile_key: "name", fresh: false }],
   );
   const [busy, setBusy] = useState(false);
@@ -242,8 +253,16 @@ export function FormBuilder({
     }),
     [title, slug, description, purpose, auth, published, doneMessage, status, tagIds, fields],
   );
-  const [savedJson, setSavedJson] = useState(() => JSON.stringify(payload));
-  const dirty = JSON.stringify(payload) !== savedJson;
+  // テンプレートに入れる中身（URL の名前・公開の有無は入れない）
+  const templateData = useMemo(() => {
+    const { slug: _slug, is_published: _pub, ...rest } = payload;
+    void _slug;
+    void _pub;
+    return rest;
+  }, [payload]);
+  const snapshot = JSON.stringify(isTemplate ? { tplName, tplDesc, templateData } : payload);
+  const [savedJson, setSavedJson] = useState(snapshot);
+  const dirty = snapshot !== savedJson;
 
   // 保存しないまま画面を離れようとしたら確かめる
   useEffect(() => {
@@ -266,27 +285,76 @@ export function FormBuilder({
 
   async function save() {
     setError("");
+    if (isTemplate) {
+      setBusy(true);
+      const body = { name: tplName, description: tplDesc, data: templateData };
+      const r = template.id === null ? await send("/api/admin/form-templates/", "POST", body) : await send(`/api/admin/form-templates/${template.id}/`, "PUT", body);
+      setBusy(false);
+      if (!r.ok || !r.id) return setError(r.message ?? "保存できませんでした。");
+      setSavedJson(snapshot);
+      router.replace(`/admin/forms/templates/${r.id}/?saved=${Date.now()}`);
+      router.refresh();
+      return;
+    }
     if (!SLUG_RE.test(payload.slug)) return setError("URL の名前は、半角の英小文字・数字・ハイフンで 2〜60 文字にしてください（先頭は英数字）。");
     setBusy(true);
     const r = initial.id === null ? await send("/api/admin/forms/", "POST", payload) : await send(`/api/admin/forms/${initial.id}/`, "PUT", payload);
     setBusy(false);
     if (!r.ok || !r.id) return setError(r.message ?? "保存できませんでした。");
-    setSavedJson(JSON.stringify(payload));
+    setSavedJson(snapshot);
     router.replace(`/admin/forms/${r.id}/?saved=${Date.now()}`);
     router.refresh();
+  }
+
+  async function saveAsTemplate() {
+    if (!saveAs) return;
+    setSaveAsBusy(true);
+    setSaveAsError("");
+    const r = await send("/api/admin/form-templates/", "POST", { name: saveAs.name, description: saveAs.description, data: templateData });
+    setSaveAsBusy(false);
+    if (!r.ok) return setSaveAsError(r.message ?? "保存できませんでした。");
+    setNotice(`テンプレート「${saveAs.name}」を保存しました。新しいフォームを作るときに選べます。`);
+    setSaveAs(null);
+    window.setTimeout(() => setNotice(""), 6000);
   }
 
   const url = `${publicBase}${payload.slug || "…"}/`;
   return (
     <div className="adm-stack adm-fb">
+      {fromTemplate && (
+        <p className="adm-alert is-ok adm-flash">
+          <i className="bi bi-layers" aria-hidden="true" />
+          <span>
+            テンプレート「{fromTemplate}」の中身を入れました。自由に直してから「作成する」を押してください（テンプレート自体は変わりません）。
+          </span>
+        </p>
+      )}
+      {isTemplate && (
+        <section className="adm-card adm-fb__tpl">
+          <p className="adm-card__en">Template</p>
+          <h2 className="adm-card__title">テンプレート</h2>
+          <p className="adm-card__help">ここで作った質問と設定を、新しいフォームを作るときのもとにできます。URL の名前と公開は、フォームを作るときに決めます。</p>
+          <div className="adm-fb__grid">
+            <label>
+              <span>テンプレートの名前</span>
+              <input value={tplName} maxLength={100} onChange={(e) => setTplName(e.target.value)} placeholder="例：面談希望アンケート（基本形）" />
+            </label>
+            <label>
+              <span>説明（管理画面だけに出します。任意）</span>
+              <input value={tplDesc} maxLength={500} onChange={(e) => setTplDesc(e.target.value)} placeholder="例：友だち追加後に送る、いちばん基本の形" />
+            </label>
+          </div>
+        </section>
+      )}
       <section className="adm-card">
         <p className="adm-card__en">Settings</p>
-        <h2 className="adm-card__title">フォームの設定</h2>
+        <h2 className="adm-card__title">{isTemplate ? "フォームの設定（このテンプレートから作るフォームに入ります）" : "フォームの設定"}</h2>
         <div className="adm-fb__grid">
           <label className="adm-fb__wide">
             <span>タイトル（回答ページの見出し）</span>
             <input value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} placeholder="例：面談のご希望日アンケート" />
           </label>
+          {!isTemplate && (
           <label className="adm-fb__wide">
             <span>URL の名前（半角の英小文字・数字・ハイフン）</span>
             <span className="adm-fb__slug">
@@ -296,6 +364,7 @@ export function FormBuilder({
             </span>
             {initial.answers > 0 && <em className="adm-fb__note">URL の名前を変えると、前の URL（配った QR コードなど）では開けなくなります。</em>}
           </label>
+          )}
           <label className="adm-fb__wide">
             <span>説明文（回答ページの上に出します。任意）</span>
             <textarea value={description} maxLength={5000} rows={3} onChange={(e) => setDescription(e.target.value)} />
@@ -455,6 +524,12 @@ export function FormBuilder({
       )}
 
       <div className="adm-fb__bar">
+        {isTemplate ? (
+          <span className="adm-fb__url">
+            <i className="bi bi-layers" aria-hidden="true" /> テンプレート{tplName ? `「${tplName}」` : ""}
+          </span>
+        ) : (
+          <>
         <button type="button" role="switch" aria-checked={published} className={`adm-switch${published ? " is-on" : ""}`} onClick={() => setPublished(!published)}>
           <span className="adm-switch__knob" />
           <span className="adm-switch__label">{published ? "公開する" : "非公開"}</span>
@@ -468,16 +543,75 @@ export function FormBuilder({
             {initial.is_published ? "回答ページを開く" : "プレビュー"}
           </a>
         )}
+        <button type="button" className="adm-chipbtn" onClick={() => setSaveAs({ name: title, description: purpose })}>
+          <i className="bi bi-layers" aria-hidden="true" />
+          テンプレートとして保存
+        </button>
+          </>
+        )}
         <button type="button" className="adm-chipbtn adm-chipbtn--primary adm-fb__save" onClick={save} disabled={busy}>
           <i className={`bi ${busy ? "bi-hourglass-split" : "bi-check2"}`} aria-hidden="true" />
-          {busy ? "保存しています…" : initial.id === null ? "作成する" : dirty ? "保存する" : "保存済み"}
+          {busy ? "保存しています…" : isTemplate ? (template.id === null ? "テンプレートを作成する" : dirty ? "テンプレートを保存する" : "保存済み") : initial.id === null ? "作成する" : dirty ? "保存する" : "保存済み"}
         </button>
         {error && (
           <p className="adm-fb__error" role="alert">
             {error}
           </p>
         )}
+        {notice && (
+          <p className="adm-fb__notice" role="status">
+            <i className="bi bi-check-circle-fill" aria-hidden="true" /> {notice}
+          </p>
+        )}
       </div>
+      {saveAs && (
+        <div className="adm-dialog" role="dialog" aria-modal="true" aria-label="テンプレートとして保存" onClick={(e) => e.target === e.currentTarget && setSaveAs(null)}>
+          <div className="adm-dialog__box">
+            <h2>テンプレートとして保存</h2>
+            <p className="adm-muted">いま画面に入っている質問と設定を、テンプレートとして取っておきます（URL の名前と公開は入りません）。このフォーム自体は保存されないので、フォームの変更は「保存する」で保存してください。</p>
+            <label>
+              テンプレートの名前
+              <input autoFocus value={saveAs.name} maxLength={100} onChange={(e) => setSaveAs({ ...saveAs, name: e.target.value })} />
+            </label>
+            <label>
+              説明（任意）
+              <input value={saveAs.description} maxLength={500} onChange={(e) => setSaveAs({ ...saveAs, description: e.target.value })} />
+            </label>
+            {saveAsError && <small className="adm-crm-error">{saveAsError}</small>}
+            <div className="adm-dialog__foot">
+              <button type="button" className="adm-chipbtn" onClick={() => setSaveAs(null)}>
+                やめる
+              </button>
+              <button type="button" className="adm-chipbtn adm-chipbtn--primary" onClick={saveAsTemplate} disabled={saveAsBusy}>
+                <i className="bi bi-layers" aria-hidden="true" />
+                {saveAsBusy ? "保存しています…" : "テンプレートとして保存"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export function DeleteTemplateButton({ id, name }: { id: number; name: string }) {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  return (
+    <>
+      <button
+        type="button"
+        className="adm-linkbtn is-danger"
+        onClick={async () => {
+          if (!window.confirm(`テンプレート「${name}」を削除します。これから作ったフォームはそのまま残ります。よろしいですか？`)) return;
+          const r = await send(`/api/admin/form-templates/${id}/`, "DELETE");
+          if (!r.ok) return setError(r.message ?? "");
+          router.refresh();
+        }}
+      >
+        削除
+      </button>
+      {error && <small className="adm-crm-error">{error}</small>}
+    </>
   );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { CopyUrlButton, DeleteFormButton, DeleteSubmissionButton, PublishToggle, QrButton } from "@/components/admin/FormsClient";
-import { authModeLabel, type FormDetail, type FormRow, type SubmissionRow } from "@/lib/admin/forms";
+import { CopyUrlButton, DeleteFormButton, DeleteSubmissionButton, DeleteTemplateButton, PublishToggle, QrButton } from "@/components/admin/FormsClient";
+import { authModeLabel, type FormDetail, type FormRow, type SubmissionRow, type TemplateRow } from "@/lib/admin/forms";
 import { answerText, CHOICE_TYPES, FIELD_TYPE_LABEL } from "@/lib/forms-def";
 import { SITE } from "@/lib/site";
 
@@ -28,7 +28,7 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
 
 // ---------- 一覧 ----------
 
-export function FormsListPanel({ forms }: { forms: FormRow[] | null }) {
+export function FormsListPanel({ forms, templates }: { forms: FormRow[] | null; templates: TemplateRow[] }) {
   if (!forms) return <p className="adm-alert is-ng">フォームの一覧を読み込めませんでした。時間をおいて開き直してください。</p>;
   return (
     <div className="adm-stack">
@@ -44,7 +44,8 @@ export function FormsListPanel({ forms }: { forms: FormRow[] | null }) {
           <i className="bi bi-ui-checks" aria-hidden="true" />
           フォームはまだありません。「新しいフォームを作る」から始めましょう。
         </div>
-      ) : (
+      ) : null}
+      {forms.length > 0 && (
         <ul className="adm-forms">
           {forms.map((f, i) => (
             <li key={f.id} className={`adm-forms__item${f.is_published ? "" : " is-off"}`} style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}>
@@ -87,6 +88,7 @@ export function FormsListPanel({ forms }: { forms: FormRow[] | null }) {
           ))}
         </ul>
       )}
+      <TemplatesSection templates={templates} />
     </div>
   );
 }
@@ -409,6 +411,103 @@ export function SubmissionDetailPanel({ form, s }: { form: FormDetail; s: Submis
           )}
         </dl>
       </section>
+    </div>
+  );
+}
+
+// ---------- テンプレート ----------
+
+const dayOf = (d: Date) => new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "numeric", day: "numeric" }).format(d);
+const questionCount = (t: TemplateRow) => (t.data.fields ?? []).filter((f) => f.type !== "DESCRIPTION").length;
+
+// フォームの一覧の下：テンプレートの一覧（作る・直す・消す）
+function TemplatesSection({ templates }: { templates: TemplateRow[] }) {
+  return (
+    <section className="adm-card adm-tpls" id="templates">
+      <div className="adm-crm-bar">
+        <div>
+          <p className="adm-card__en">Templates</p>
+          <h2 className="adm-card__title">
+            テンプレート<small>{templates.length}件</small>
+          </h2>
+        </div>
+        <Link href="/admin/forms/templates/new/" className="adm-chipbtn">
+          <i className="bi bi-plus-lg" aria-hidden="true" />
+          新しいテンプレート
+        </Link>
+      </div>
+      <p className="adm-card__help">
+        よく使う質問の並びと設定を取っておき、新しいフォームのもとにできます。フォームの編集画面の「テンプレートとして保存」からも登録できます。テンプレートから作ったフォームは、自由に直せます（テンプレート自体は変わりません）。
+      </p>
+      {templates.length === 0 ? (
+        <p className="adm-empty">テンプレートはまだありません。</p>
+      ) : (
+        <ul className="adm-tpls__list">
+          {templates.map((t, i) => (
+            <li key={t.id} style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}>
+              <div className="adm-tpls__main">
+                <h3>
+                  <Link href={`/admin/forms/templates/${t.id}/`}>{t.name}</Link>
+                </h3>
+                {t.description && <p>{t.description}</p>}
+                <p className="adm-forms__meta">
+                  <ModePill mode={t.data.auth_mode} />
+                  <span className="adm-forms__url">
+                    質問 {questionCount(t)}件・更新 {dayOf(t.updated_at)}
+                  </span>
+                </p>
+              </div>
+              <div className="adm-forms__btns">
+                <Link href={`/admin/forms/new/?template=${t.id}`} className="adm-chipbtn adm-chipbtn--primary">
+                  <i className="bi bi-plus-lg" aria-hidden="true" />
+                  このテンプレートで作る
+                </Link>
+                <Link href={`/admin/forms/templates/${t.id}/`} className="adm-linkbtn">
+                  編集
+                </Link>
+                <DeleteTemplateButton id={t.id} name={t.name} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// 新しいフォームを作るとき：白紙から／テンプレートから を選ぶ
+export function TemplatePicker({ templates }: { templates: TemplateRow[] }) {
+  return (
+    <div className="adm-tplpick">
+      <Link href="/admin/forms/new/?blank=1" className="adm-tplpick__card is-blank">
+        <span className="adm-tplpick__icon" aria-hidden="true">
+          <i className="bi bi-file-earmark-plus" />
+        </span>
+        <strong>白紙から作る</strong>
+        <small>質問を1つずつ並べて作ります。</small>
+      </Link>
+      {templates.map((t, i) => (
+        <Link key={t.id} href={`/admin/forms/new/?template=${t.id}`} className="adm-tplpick__card" style={{ animationDelay: `${(i + 1) * 50}ms` }}>
+          <span className="adm-tplpick__icon" aria-hidden="true">
+            <i className="bi bi-layers" />
+          </span>
+          <strong>{t.name}</strong>
+          <small>{t.description || `「${t.data.title}」のテンプレート`}</small>
+          <span className="adm-forms__meta">
+            <ModePill mode={t.data.auth_mode} />
+            <span className="adm-forms__url">質問 {questionCount(t)}件</span>
+          </span>
+          <ol className="adm-tplpick__qs">
+            {(t.data.fields ?? [])
+              .filter((f) => f.type !== "DESCRIPTION")
+              .slice(0, 4)
+              .map((f, j) => (
+                <li key={j}>{f.label}</li>
+              ))}
+            {questionCount(t) > 4 && <li className="is-more">ほか {questionCount(t) - 4}件</li>}
+          </ol>
+        </Link>
+      ))}
     </div>
   );
 }

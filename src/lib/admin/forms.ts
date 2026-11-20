@@ -362,3 +362,52 @@ export async function listFriendSubmissions(lineUserId: string) {
 }
 
 export const authModeLabel = (m: string) => AUTH_MODE_LABEL[m] ?? m;
+
+// ---------- テンプレート ----------
+// フォームの中身（質問・回答者の確かめ方・回答されたときの動き・説明文など）を名前を付けて取っておき、新しいフォームのもとにする。
+// URL の名前と公開の有無は、フォームごとに決めるものなので入れない。質問の ID も入れない（新しいフォームでは新しい質問になる）
+
+export type TemplateData = Omit<FormInput, "slug" | "is_published">;
+export type TemplateRow = { id: number; name: string; description: string | null; data: TemplateData; updated_at: Date };
+
+export function parseTemplateInput(b: Record<string, unknown>): { name: string; description: string | null; data: TemplateData } | string {
+  const name = s(b.name, 100);
+  if (!name) return "テンプレートの名前を入力してください。";
+  const raw = b.data && typeof b.data === "object" ? (b.data as Record<string, unknown>) : null;
+  if (!raw) return "テンプレートの中身がありません。";
+  const parsed = parseFormInput({ ...raw, slug: "template", is_published: false });
+  if (typeof parsed === "string") return parsed;
+  const { slug: _slug, is_published: _pub, ...rest } = parsed;
+  void _slug;
+  void _pub;
+  return { name, description: s(b.description, 500), data: { ...rest, fields: rest.fields.map((f) => ({ ...f, id: null })) } };
+}
+
+export async function listTemplates(): Promise<TemplateRow[]> {
+  await ensureAdminTables();
+  return prisma.$queryRaw<TemplateRow[]>`SELECT id, name, description, data, updated_at FROM hp_form_template ORDER BY updated_at DESC, id DESC`;
+}
+
+export async function getTemplate(id: number): Promise<TemplateRow | null> {
+  await ensureAdminTables();
+  const [r] = await prisma.$queryRaw<TemplateRow[]>`SELECT id, name, description, data, updated_at FROM hp_form_template WHERE id = ${id}`;
+  return r ?? null;
+}
+
+export async function saveTemplate(id: number | null, t: { name: string; description: string | null; data: TemplateData }, adminId: number): Promise<number | null> {
+  await ensureAdminTables();
+  const data = JSON.stringify(t.data);
+  if (id === null) {
+    const [r] = await prisma.$queryRaw<{ id: number }[]>`
+      INSERT INTO hp_form_template (name, description, data, created_by) VALUES (${t.name}, ${t.description}, ${data}::jsonb, ${adminId}) RETURNING id`;
+    return r.id;
+  }
+  const n = await prisma.$executeRaw`
+    UPDATE hp_form_template SET name = ${t.name}, description = ${t.description}, data = ${data}::jsonb, updated_at = now() WHERE id = ${id}`;
+  return n > 0 ? id : null;
+}
+
+export async function deleteTemplate(id: number): Promise<boolean> {
+  await ensureAdminTables();
+  return (await prisma.$executeRaw`DELETE FROM hp_form_template WHERE id = ${id}`) > 0;
+}

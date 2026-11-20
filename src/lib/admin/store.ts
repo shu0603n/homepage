@@ -275,6 +275,16 @@ export const ADMIN_TABLES_SQL = [
     last_seen_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX IF NOT EXISTS hp_line_identity_staff_idx ON hp_line_identity (staff_id)`,
+  // フォームのテンプレート（2026-11-21 追加。lib/admin/forms.ts）。data はフォームの中身（質問・設定）の JSON
+  `CREATE TABLE IF NOT EXISTS hp_form_template (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    data JSONB NOT NULL,
+    created_by INTEGER,
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
 ];
 
 export type AdminRole = "super" | "staff";
@@ -295,8 +305,9 @@ async function isUpToDate(): Promise<boolean> {
         OR (table_name = 'hp_line_friend' AND column_name = 'last_action_at')
         OR (table_name = 'hp_line_friend_tag' AND column_name = 'assigned_at')
         OR (table_name = 'hp_form_file' AND column_name = 'data')
-        OR (table_name = 'hp_line_identity' AND column_name = 'last_seen_at'))`;
-  return rows[0]?.n === 9;
+        OR (table_name = 'hp_line_identity' AND column_name = 'last_seen_at')
+        OR (table_name = 'hp_form_template' AND column_name = 'data'))`;
+  return rows[0]?.n === 10;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。

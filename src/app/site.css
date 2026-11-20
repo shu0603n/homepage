@@ -2810,3 +2810,32 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .adm-newchat__who small { overflow: hidden; color: var(--sub); font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
 .adm-newchat__tag { padding: 2px 8px; border-radius: 999px; background: var(--bg-soft); color: var(--sub); font-size: 10px; font-weight: 700; white-space: nowrap; }
 .adm-newchat__none { padding: 16px 8px; color: var(--sub); font-size: 13px; text-align: center; }
+/* フォームのテンプレート */
+.adm-tpls { margin-top: 10px; }
+.adm-tpls .adm-crm-bar { align-items: flex-start; }
+.adm-tpls__list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.adm-tpls__list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 14px 18px; border-radius: 16px; background: var(--bg-soft); animation: admFormIn .4s var(--ease) both; transition: background .2s; }
+.adm-tpls__list li:hover { background: var(--teal-soft); }
+.adm-tpls__main { min-width: 0; }
+.adm-tpls__main h3 { margin: 0; font-size: 15px; font-weight: 900; }
+.adm-tpls__main h3 a { color: var(--navy-dd); text-decoration: none; }
+.adm-tpls__main h3 a:hover { text-decoration: underline; }
+.adm-tpls__main > p:not(.adm-forms__meta) { margin: 2px 0 0; font-size: 13px; color: var(--sub); }
+.adm-tpls__main .adm-forms__meta { margin-top: 6px; }
+.adm-tplpick { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.adm-tplpick__card { display: grid; align-content: start; gap: 8px; padding: 22px; border: 2px solid transparent; border-radius: var(--r); background: #fff; box-shadow: var(--shadow-s); color: var(--navy-dd); text-decoration: none; animation: admFormIn .45s var(--ease) both; transition: transform .25s var(--ease), border-color .25s, box-shadow .25s; }
+.admin-shell a.adm-tplpick__card { color: var(--navy-dd); text-decoration: none; }
+.adm-tplpick__card:hover { transform: translateY(-4px); border-color: var(--teal); box-shadow: 0 18px 38px -18px rgba(0, 54, 81, .4); }
+.adm-tplpick__card.is-blank { border: 2px dashed #b8c8d1; background: #fbfdfd; box-shadow: none; }
+.adm-tplpick__card.is-blank:hover { border-style: solid; }
+.adm-tplpick__icon { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--grad-cool); color: #fff; font-size: 20px; transition: transform .3s var(--ease); }
+.adm-tplpick__card:hover .adm-tplpick__icon { transform: rotate(-8deg) scale(1.08); }
+.adm-tplpick__card.is-blank .adm-tplpick__icon { background: var(--bg-soft); color: var(--navy); }
+.adm-tplpick__card strong { font-size: 16px; }
+.adm-tplpick__card small { font-size: 12px; line-height: 1.6; color: var(--sub); }
+.adm-tplpick__card .adm-forms__meta { margin: 0; }
+.adm-tplpick__qs { display: grid; gap: 2px; margin: 4px 0 0; padding: 10px 12px 10px 28px; border-radius: 12px; background: var(--bg-soft); font-size: 12px; color: var(--navy-dd); }
+.adm-tplpick__qs li { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.adm-tplpick__qs li.is-more { list-style: none; margin-left: -16px; color: var(--sub); }
+.adm-fb__tpl { border: 2px solid var(--teal-soft); }
+.adm-fb__notice { flex-basis: 100%; margin: 0; padding: 8px 12px; border-radius: 10px; background: #e4f6ee; color: #136b47; font-size: 13px; animation: admFlash .3s var(--ease); }
