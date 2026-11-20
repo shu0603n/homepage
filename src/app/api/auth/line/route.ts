@@ -3,6 +3,7 @@ import { isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { isLineLoginEnabled, verifyLineIdToken } from "@/lib/auth/line";
 import { LINE_PENDING_COOKIE, LINE_PENDING_COOKIE_OPTIONS, makeLinePendingToken } from "@/lib/auth/line-pending";
 import { createSession } from "@/lib/auth/session";
+import { recordLineIdentity } from "@/lib/line-identity";
 import { findStaffByLineUserId, isLoginBlocked, reactivateIfUnsubscribed } from "@/lib/auth/staff";
 
 // LINE（LIFF）からのログイン。LIFF_ID を設定するまでは無効（501）。
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
 
   const lineUserId = line.userId;
   const staff = await findStaffByLineUserId(lineUserId);
+  await recordLineIdentity({ userId: lineUserId, name: line.name, picture: line.picture, staffId: staff?.id ?? null, via: "login" });
   if (!staff) {
     // 続けてメールアドレスとパスワードでログインしたら、この LINE と連携する（lib/auth/line-pending.ts）
     const res = jsonError("LINE と連携済みのアカウントが見つかりません。", 404);

@@ -263,6 +263,18 @@ export const ADMIN_TABLES_SQL = [
     created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX IF NOT EXISTS hp_form_file_submission_idx ON hp_form_file (submission_id)`,
+  // ホームページで LINE ログイン・LINE 連携・フォーム回答をしたときに、LINE が確かめたその人の LINE の表示名とアイコンを覚えておく（2026-11-20 追加。lib/line-identity.ts）。
+  // 友だちでない人のプロフィールは公式アカウントからは取れないため、社内システムのスタッフ一覧の「LINE(友だち未確認)」で、どの LINE か分かるようにする
+  `CREATE TABLE IF NOT EXISTS hp_line_identity (
+    line_user_id VARCHAR(64) PRIMARY KEY,
+    display_name VARCHAR(200),
+    picture_url TEXT,
+    staff_id INTEGER,
+    last_via VARCHAR(20),
+    first_seen_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_line_identity_staff_idx ON hp_line_identity (staff_id)`,
 ];
 
 export type AdminRole = "super" | "staff";
@@ -282,8 +294,9 @@ async function isUpToDate(): Promise<boolean> {
         OR (table_name = 'hp_line_message' AND column_name = 'webhook_event_id')
         OR (table_name = 'hp_line_friend' AND column_name = 'last_action_at')
         OR (table_name = 'hp_line_friend_tag' AND column_name = 'assigned_at')
-        OR (table_name = 'hp_form_file' AND column_name = 'data'))`;
-  return rows[0]?.n === 8;
+        OR (table_name = 'hp_form_file' AND column_name = 'data')
+        OR (table_name = 'hp_line_identity' AND column_name = 'last_seen_at'))`;
+  return rows[0]?.n === 9;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。

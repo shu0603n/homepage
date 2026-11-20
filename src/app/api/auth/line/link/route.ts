@@ -3,6 +3,7 @@ import { isSameOrigin, jsonError, readJson } from "@/lib/auth/http";
 import { isLineLoginEnabled, verifyLineIdToken } from "@/lib/auth/line";
 import { linkStaffLine } from "@/lib/auth/line-pending";
 import { findStaffById, isLoginBlocked } from "@/lib/auth/staff";
+import { recordLineIdentity } from "@/lib/line-identity";
 import { LINE_FRIEND_ADD_URL, readLineLinkTicket } from "@/lib/line-friend";
 
 // スタッフ登録と LINE の連携（/jobs/line-link/ から呼ぶ。仕組みは lib/line-friend.ts）。
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
     if (!staff || staff.mail?.trim().toLowerCase() !== ticket.mail || isLoginBlocked(staff)) {
       return jsonError("ご登録の情報を確認できませんでした。お手数ですが、お電話にてお問い合わせください。", 400);
     }
+    await recordLineIdentity({ userId: line.userId, name: line.name, picture: line.picture, via: "link" });
     const result = await linkStaffLine(staff.id, line.userId);
     if (result !== "linked" && result !== "already") console.warn("staff LINE link skipped:", staff.id, result);
     return NextResponse.json({ ok: true, result, friendUrl: LINE_FRIEND_ADD_URL });

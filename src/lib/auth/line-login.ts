@@ -117,6 +117,6 @@ export async function finishLineLogin(request: Request, code: string, nonce: str
     console.error("LINE id_token verify failed:", verifyRes.status, await verifyRes.text().catch(() => ""));
     return null;
   }
-  const verified = (await verifyRes.json()) as { aud?: string; sub?: string; nonce?: string; name?: string };
-  return verified.aud === cred.channelId && verified.nonce === nonce && verified.sub ? { userId: verified.sub, name: verified.name ?? null } : null;
+  const verified = (await verifyRes.json()) as { aud?: string; sub?: string; nonce?: string; name?: string; picture?: string };
+  return verified.aud === cred.channelId && verified.nonce === nonce && verified.sub ? { userId: verified.sub, name: verified.name ?? null, picture: verified.picture ?? null } : null;
 }

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { finishLineLogin, LINE_STATE_COOKIE, readLineState, siteUrl } from "@/lib/auth/line-login";
 import { LINE_PENDING_COOKIE, LINE_PENDING_COOKIE_OPTIONS, makeLinePendingToken } from "@/lib/auth/line-pending";
 import { createSession } from "@/lib/auth/session";
+import { recordLineIdentity } from "@/lib/line-identity";
 import { findStaffByLineUserId, isLoginBlocked, reactivateIfUnsubscribed } from "@/lib/auth/staff";
 
 // LINE のログイン画面から戻ってくる先。
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
   const lineUserId = line.userId;
 
   const staff = await findStaffByLineUserId(lineUserId);
+  await recordLineIdentity({ userId: lineUserId, name: line.name, picture: line.picture, staffId: staff?.id ?? null, via: "login" });
   if (!staff) {
     // 続けてメールアドレスとパスワードでログインしたら、この LINE と連携する（lib/auth/line-pending.ts）
     const res = fail("not_linked");

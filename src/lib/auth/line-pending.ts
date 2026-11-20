@@ -1,4 +1,5 @@
 import { jwtVerify, SignJWT } from "jose";
+import { recordLineIdentity } from "@/lib/line-identity";
 import { prisma } from "@/lib/prisma";
 
 // 「LINE ではログインできたが、連携しているスタッフが見つからなかった」人を、
@@ -66,13 +67,18 @@ export type LineLinkResult = "linked" | "already" | "other_line" | "taken";
 //   taken      この LINE はほかのスタッフと連携済み
 export async function linkStaffLine(staffId: number, lineUserId: string): Promise<LineLinkResult> {
   const holder = await prisma.staff.findFirst({ where: { line_user_id: lineUserId }, select: { id: true } });
-  if (holder) return holder.id === staffId ? "already" : "taken";
+  if (holder) {
+    if (holder.id !== staffId) return "taken";
+    await recordLineIdentity({ userId: lineUserId, staffId, via: "link" });
+    return "already";
+  }
   // 「まだ連携していない」ことを条件に書き込む（同時に別の操作で連携された場合に上書きしない）
   const { count } = await prisma.staff.updateMany({
     where: { id: staffId, OR: [{ line_user_id: null }, { line_user_id: "" }] },
     data: { line_user_id: lineUserId, updated_at: new Date() },
   });
   if (count === 0) return "other_line";
+  await recordLineIdentity({ userId: lineUserId, staffId, via: "link" });
   await notifyLineRecruitHub(lineUserId);
   return "linked";
 }

@@ -3,6 +3,7 @@ import { getFormBySlug, isDuplicateOrFlood, publicFields, saveSubmission, type U
 import { isSameOrigin, jsonError } from "@/lib/auth/http";
 import { isLineLoginEnabled, verifyLineIdToken } from "@/lib/auth/line";
 import { getSession } from "@/lib/auth/session";
+import { recordLineIdentity } from "@/lib/line-identity";
 import { checkAnswer, FILE_MAX, FILE_TYPES, FILES_TOTAL_MAX, type AnswerValue } from "@/lib/forms-def";
 
 // フォームの回答を受け付ける（回答ページ /jobs/forms/<slug>/ から送る。仕組みは lib/admin/forms.ts）。
@@ -38,6 +39,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     if (!line) return jsonError("LINE のログインを確認できませんでした。ページを開き直して、もう一度お試しください。", 401);
     lineUserId = line.userId;
     lineName = line.name;
+    await recordLineIdentity({ userId: line.userId, name: line.name, picture: line.picture, via: "form" });
   }
   const staff = await getSession().catch(() => null);
   const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
