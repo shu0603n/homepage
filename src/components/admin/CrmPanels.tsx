@@ -192,18 +192,20 @@ export function FriendsPanel({
 
 // ---------- 友だち・求職者の詳細 ----------
 
-export function FriendDetailPanel({ c, admins, tags, tab }: { c: CandidateDetail; admins: Admin[]; tags: TagOpt[]; tab: string }) {
+export function FriendDetailPanel({ c, admins, tags, tab, forms }: { c: CandidateDetail; admins: Admin[]; tags: TagOpt[]; tab: string; forms: { id: number; form_id: number; title: string; submitted_at: Date }[] }) {
   const name = c.profile?.name ?? c.display_name ?? "（未登録）";
   const timeline = [
     ...(c.followed_at ? [{ date: c.followed_at, label: "友だち追加" }] : []),
     ...c.history.map((h) => ({ date: h.changed_at, label: `ステータス変更：${h.from_key ? (STATUS_LABEL[h.from_key] ?? h.from_key) : "未設定"} → ${STATUS_LABEL[h.to_key] ?? h.to_key}${h.changed_by_name ? `（${h.changed_by_name}）` : ""}` })),
     ...c.tags.map((t) => ({ date: t.assigned_at, label: `タグ付与：${t.name}` })),
     ...c.consents.map((x) => ({ date: x.consented_at, label: `${x.type === "TERMS" ? "利用規約" : "プライバシーポリシー"}に同意（v${x.version}）` })),
+    ...forms.map((x) => ({ date: x.submitted_at, label: `フォーム回答：${x.title}` })),
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
   const tabs = [
     ["profile", "基本情報"],
     ["timeline", "タイムライン"],
     ["tags", "タグ"],
+    ["forms", `フォーム回答（${forms.length}）`],
     ["consent", "同意履歴"],
   ] as const;
   const values = Object.fromEntries(PROFILE_FIELDS.map((f) => [f.key, c.profile?.[f.key] ?? ""]));
@@ -272,6 +274,27 @@ export function FriendDetailPanel({ c, admins, tags, tab }: { c: CandidateDetail
         <section className="adm-card">
           <h2 className="adm-card__title">タグ</h2>
           <TagEditor id={c.line_user_id} tags={c.tags} available={tags} />
+        </section>
+      )}
+      {tab === "forms" && (
+        <section className="adm-card">
+          <h2 className="adm-card__title">フォーム回答</h2>
+          {forms.length === 0 ? (
+            <p className="adm-muted">この方のフォーム回答はありません。</p>
+          ) : (
+            <ul className="adm-friendforms">
+              {forms.map((x) => (
+                <li key={x.id}>
+                  <Link href={`/admin/forms/${x.form_id}/answers/${x.id}/`}>
+                    <i className="bi bi-ui-checks" aria-hidden="true" />
+                    <strong>{x.title}</strong>
+                    <small>{dateTime(x.submitted_at)}</small>
+                    <i className="bi bi-chevron-right" aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
       {tab === "consent" && (

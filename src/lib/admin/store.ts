@@ -193,6 +193,76 @@ export const ADMIN_TABLES_SQL = [
     PRIMARY KEY (line_user_id, tag_id)
   )`,
   `CREATE INDEX IF NOT EXISTS hp_line_friend_tag_tag_idx ON hp_line_friend_tag (tag_id)`,
+  // フォーム管理（2026-11-20 追加。Linext から移植。仕組みは lib/admin/forms.ts）。
+  // フォーム・質問・回答・回答の中身・添付ファイル。質問を消しても回答が残っていれば deleted_at を入れて残す（回答を消さない）。
+  // linext_id：Linext から引き継いだ行の、Linext 側の ID（同じものを二重に取り込まないため）
+  `CREATE TABLE IF NOT EXISTS hp_form (
+    id SERIAL PRIMARY KEY,
+    slug VARCHAR(60) NOT NULL UNIQUE,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    purpose VARCHAR(200),
+    auth_mode VARCHAR(10) NOT NULL DEFAULT 'line',
+    is_published BOOLEAN NOT NULL DEFAULT false,
+    done_message TEXT,
+    on_submit_status VARCHAR(40),
+    on_submit_tag_ids INTEGER[] NOT NULL DEFAULT '{}',
+    created_by INTEGER,
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    linext_id VARCHAR(40)
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS hp_form_linext_key ON hp_form (linext_id)`,
+  `CREATE TABLE IF NOT EXISTS hp_form_field (
+    id SERIAL PRIMARY KEY,
+    form_id INTEGER NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    type VARCHAR(20) NOT NULL,
+    label TEXT NOT NULL,
+    help TEXT,
+    required BOOLEAN NOT NULL DEFAULT false,
+    options JSONB,
+    profile_key VARCHAR(40),
+    deleted_at TIMESTAMPTZ(6),
+    linext_id VARCHAR(40)
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_form_field_form_idx ON hp_form_field (form_id, sort_order)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS hp_form_field_linext_key ON hp_form_field (linext_id)`,
+  `CREATE TABLE IF NOT EXISTS hp_form_submission (
+    id SERIAL PRIMARY KEY,
+    form_id INTEGER NOT NULL,
+    line_user_id VARCHAR(64),
+    line_name VARCHAR(200),
+    staff_id INTEGER,
+    ip VARCHAR(64),
+    user_agent VARCHAR(500),
+    submitted_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    linext_id VARCHAR(40)
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_form_submission_form_idx ON hp_form_submission (form_id, submitted_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS hp_form_submission_line_idx ON hp_form_submission (line_user_id)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS hp_form_submission_linext_key ON hp_form_submission (linext_id)`,
+  `CREATE TABLE IF NOT EXISTS hp_form_answer (
+    id BIGSERIAL PRIMARY KEY,
+    submission_id INTEGER NOT NULL,
+    field_id INTEGER NOT NULL,
+    value_text TEXT,
+    value_json JSONB,
+    linext_id VARCHAR(40)
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_form_answer_submission_idx ON hp_form_answer (submission_id)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS hp_form_answer_linext_key ON hp_form_answer (linext_id)`,
+  `CREATE TABLE IF NOT EXISTS hp_form_file (
+    id SERIAL PRIMARY KEY,
+    submission_id INTEGER NOT NULL,
+    field_id INTEGER NOT NULL,
+    file_name VARCHAR(200) NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    size INTEGER NOT NULL,
+    data BYTEA NOT NULL,
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_form_file_submission_idx ON hp_form_file (submission_id)`,
 ];
 
 export type AdminRole = "super" | "staff";
@@ -211,8 +281,9 @@ async function isUpToDate(): Promise<boolean> {
         OR (table_name = 'hp_job_stat_daily' AND column_name = 'applications')
         OR (table_name = 'hp_line_message' AND column_name = 'webhook_event_id')
         OR (table_name = 'hp_line_friend' AND column_name = 'last_action_at')
-        OR (table_name = 'hp_line_friend_tag' AND column_name = 'assigned_at'))`;
-  return rows[0]?.n === 7;
+        OR (table_name = 'hp_line_friend_tag' AND column_name = 'assigned_at')
+        OR (table_name = 'hp_form_file' AND column_name = 'data'))`;
+  return rows[0]?.n === 8;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。

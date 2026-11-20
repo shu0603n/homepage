@@ -1,0 +1,483 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import QRCode from "qrcode";
+import { AUTH_MODES, CHOICE_TYPES, FIELD_TYPE_LABEL, FIELD_TYPES, PROFILE_TARGETS, SLUG_RE, type AuthMode, type FieldType } from "@/lib/forms-def";
+
+// フォーム管理の、画面で操作する部品（フォームの作成・編集、URL のコピー、QR コード、公開の切り替え、削除）
+
+async function send(url: string, method: string, body?: unknown): Promise<{ ok: boolean; id?: number; message?: string }> {
+  try {
+    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+    const data = (await res.json().catch(() => null)) as { ok?: boolean; id?: number; message?: string } | null;
+    return res.ok && data?.ok ? { ok: true, id: data.id } : { ok: false, message: data?.message ?? "保存できませんでした。" };
+  } catch {
+    return { ok: false, message: "通信に失敗しました。" };
+  }
+}
+
+// ---------- URL のコピー・QR コード ----------
+
+export function CopyUrlButton({ url, label = "URL をコピー" }: { url: string; label?: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      className={`adm-chipbtn${done ? " is-done" : ""}`}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(url);
+        } catch {
+          window.prompt("この URL をコピーしてください", url);
+        }
+        setDone(true);
+        window.setTimeout(() => setDone(false), 1600);
+      }}
+    >
+      <i className={`bi ${done ? "bi-check2" : "bi-link-45deg"}`} aria-hidden="true" />
+      {done ? "コピーしました" : label}
+    </button>
+  );
+}
+
+export function QrButton({ url, name }: { url: string; name: string }) {
+  const [open, setOpen] = useState(false);
+  const [src, setSrc] = useState("");
+  useEffect(() => {
+    if (!open) return;
+    QRCode.toDataURL(url, { width: 640, margin: 2, color: { dark: "#0b2a3c", light: "#ffffff" } }).then(setSrc, () => setSrc(""));
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, url]);
+  return (
+    <>
+      <button type="button" className="adm-chipbtn" onClick={() => setOpen(true)}>
+        <i className="bi bi-qr-code" aria-hidden="true" />
+        QR コード
+      </button>
+      {open && (
+        <div className="adm-dialog" role="dialog" aria-modal="true" aria-label="QR コード" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
+          <div className="adm-dialog__box adm-qr">
+            <h2>{name}</h2>
+            {src ? <img src={src} alt={`${name} の QR コード`} width={260} height={260} /> : <span className="adm-qr__wait" />}
+            <p className="adm-qr__url">{url}</p>
+            <div className="adm-dialog__foot">
+              <button type="button" className="adm-chipbtn" onClick={() => setOpen(false)}>
+                閉じる
+              </button>
+              {src && (
+                <a className="adm-chipbtn adm-chipbtn--primary" href={src} download={`QR_${name}.png`}>
+                  <i className="bi bi-download" aria-hidden="true" />
+                  画像を保存
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ---------- 一覧での操作 ----------
+
+export function PublishToggle({ id, published }: { id: number; published: boolean }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <span className="adm-switchwrap">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={published}
+        className={`adm-switch${published ? " is-on" : ""}`}
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError("");
+          const r = await send(`/api/admin/forms/${id}/`, "PATCH", { is_published: !published });
+          setBusy(false);
+          if (!r.ok) return setError(r.message ?? "");
+          router.refresh();
+        }}
+      >
+        <span className="adm-switch__knob" />
+        <span className="adm-switch__label">{published ? "公開中" : "非公開"}</span>
+      </button>
+      {error && <small className="adm-crm-error">{error}</small>}
+    </span>
+  );
+}
+
+export function DeleteFormButton({ id, title, answers }: { id: number; title: string; answers: number }) {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  return (
+    <>
+      <button
+        type="button"
+        className="adm-linkbtn is-danger"
+        title={answers > 0 ? "回答があるフォームは削除できません（非公開にしてください）" : undefined}
+        disabled={answers > 0}
+        onClick={async () => {
+          if (!window.confirm(`フォーム「${title}」を削除します。よろしいですか？`)) return;
+          const r = await send(`/api/admin/forms/${id}/`, "DELETE");
+          if (!r.ok) return setError(r.message ?? "");
+          router.refresh();
+        }}
+      >
+        削除
+      </button>
+      {error && <small className="adm-crm-error">{error}</small>}
+    </>
+  );
+}
+
+export function DeleteSubmissionButton({ id, formId }: { id: number; formId: number }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <span>
+      <button
+        type="button"
+        className="adm-chipbtn is-danger"
+        disabled={busy}
+        onClick={async () => {
+          if (!window.confirm("この回答を削除します（添付ファイルも消えます）。元に戻せません。よろしいですか？")) return;
+          setBusy(true);
+          const r = await send(`/api/admin/forms/submissions/${id}/`, "DELETE");
+          setBusy(false);
+          if (!r.ok) return setError(r.message ?? "");
+          router.replace(`/admin/forms/${formId}/answers/`);
+          router.refresh();
+        }}
+      >
+        <i className="bi bi-trash3" aria-hidden="true" />
+        この回答を削除
+      </button>
+      {error && <small className="adm-crm-error">{error}</small>}
+    </span>
+  );
+}
+
+// ---------- フォームの作成・編集 ----------
+
+type Draft = { key: string; id: number | null; type: FieldType; label: string; help: string; required: boolean; options: string; profile_key: string; fresh?: boolean };
+
+export type BuilderInitial = {
+  id: number | null;
+  title: string;
+  slug: string;
+  description: string;
+  purpose: string;
+  auth_mode: AuthMode;
+  is_published: boolean;
+  done_message: string;
+  on_submit_status: string;
+  on_submit_tag_ids: number[];
+  fields: { id: number; type: FieldType; label: string; help: string | null; required: boolean; options: string[]; profile_key: string | null }[];
+  answers: number;
+};
+
+let seq = 0;
+const newKey = () => `n${Date.now().toString(36)}${(seq++).toString(36)}`;
+const blank = (type: FieldType): Draft => ({ key: newKey(), id: null, type, label: "", help: "", required: false, options: "", profile_key: "", fresh: true });
+const randomSlug = () => `form-${Math.random().toString(36).slice(2, 8)}`;
+
+export function FormBuilder({
+  initial,
+  tags,
+  statuses,
+  publicBase,
+}: {
+  initial: BuilderInitial;
+  tags: { id: number; name: string; color: string }[];
+  statuses: { key: string; label: string }[];
+  publicBase: string;
+}) {
+  const router = useRouter();
+  const [title, setTitle] = useState(initial.title);
+  const [slug, setSlug] = useState(initial.slug || (initial.id === null ? randomSlug() : ""));
+  const [description, setDescription] = useState(initial.description);
+  const [purpose, setPurpose] = useState(initial.purpose);
+  const [auth, setAuth] = useState<AuthMode>(initial.auth_mode);
+  const [published, setPublished] = useState(initial.is_published);
+  const [doneMessage, setDoneMessage] = useState(initial.done_message);
+  const [status, setStatus] = useState(initial.on_submit_status);
+  const [tagIds, setTagIds] = useState<number[]>(initial.on_submit_tag_ids);
+  const [fields, setFields] = useState<Draft[]>(() =>
+    initial.fields.length > 0
+      ? initial.fields.map((f) => ({ key: `f${f.id}`, id: f.id, type: f.type, label: f.label, help: f.help ?? "", required: f.required, options: f.options.join("\n"), profile_key: f.profile_key ?? "" }))
+      : [{ ...blank("SHORT_TEXT"), label: "お名前", required: true, profile_key: "name", fresh: false }],
+  );
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [moved, setMoved] = useState<string | null>(null);
+
+  const payload = useMemo(
+    () => ({
+      title,
+      slug: slug.trim().toLowerCase(),
+      description,
+      purpose,
+      auth_mode: auth,
+      is_published: published,
+      done_message: doneMessage,
+      on_submit_status: auth === "line" ? status || null : null,
+      on_submit_tag_ids: auth === "line" ? tagIds : [],
+      fields: fields.map((f) => ({
+        id: f.id,
+        type: f.type,
+        label: f.label,
+        help: f.help,
+        required: f.required,
+        options: f.options.split("\n").map((o) => o.trim()).filter(Boolean),
+        profile_key: auth === "line" || f.profile_key === "name" ? f.profile_key || null : null,
+      })),
+    }),
+    [title, slug, description, purpose, auth, published, doneMessage, status, tagIds, fields],
+  );
+  const [savedJson, setSavedJson] = useState(() => JSON.stringify(payload));
+  const dirty = JSON.stringify(payload) !== savedJson;
+
+  // 保存しないまま画面を離れようとしたら確かめる
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const update = (key: string, patch: Partial<Draft>) => setFields((list) => list.map((f) => (f.key === key ? { ...f, ...patch } : f)));
+  const move = (i: number, d: -1 | 1) => {
+    const j = i + d;
+    if (j < 0 || j >= fields.length) return;
+    const next = [...fields];
+    [next[i], next[j]] = [next[j], next[i]];
+    setFields(next);
+    setMoved(fields[i].key);
+    window.setTimeout(() => setMoved(null), 600);
+  };
+
+  async function save() {
+    setError("");
+    if (!SLUG_RE.test(payload.slug)) return setError("URL の名前は、半角の英小文字・数字・ハイフンで 2〜60 文字にしてください（先頭は英数字）。");
+    setBusy(true);
+    const r = initial.id === null ? await send("/api/admin/forms/", "POST", payload) : await send(`/api/admin/forms/${initial.id}/`, "PUT", payload);
+    setBusy(false);
+    if (!r.ok || !r.id) return setError(r.message ?? "保存できませんでした。");
+    setSavedJson(JSON.stringify(payload));
+    router.replace(`/admin/forms/${r.id}/?saved=${Date.now()}`);
+    router.refresh();
+  }
+
+  const url = `${publicBase}${payload.slug || "…"}/`;
+  return (
+    <div className="adm-stack adm-fb">
+      <section className="adm-card">
+        <p className="adm-card__en">Settings</p>
+        <h2 className="adm-card__title">フォームの設定</h2>
+        <div className="adm-fb__grid">
+          <label className="adm-fb__wide">
+            <span>タイトル（回答ページの見出し）</span>
+            <input value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} placeholder="例：面談のご希望日アンケート" />
+          </label>
+          <label className="adm-fb__wide">
+            <span>URL の名前（半角の英小文字・数字・ハイフン）</span>
+            <span className="adm-fb__slug">
+              <small>{publicBase}</small>
+              <input value={slug} maxLength={60} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} placeholder="interview" />
+              <small>/</small>
+            </span>
+            {initial.answers > 0 && <em className="adm-fb__note">URL の名前を変えると、前の URL（配った QR コードなど）では開けなくなります。</em>}
+          </label>
+          <label className="adm-fb__wide">
+            <span>説明文（回答ページの上に出します。任意）</span>
+            <textarea value={description} maxLength={5000} rows={3} onChange={(e) => setDescription(e.target.value)} />
+          </label>
+          <label>
+            <span>用途メモ（管理画面だけに出します。任意）</span>
+            <input value={purpose} maxLength={200} onChange={(e) => setPurpose(e.target.value)} placeholder="例：友だち追加後の初回アンケート" />
+          </label>
+          <label>
+            <span>送信後のメッセージ（任意）</span>
+            <input value={doneMessage} maxLength={2000} onChange={(e) => setDoneMessage(e.target.value)} placeholder="ご回答ありがとうございました。担当者よりご連絡いたします。" />
+          </label>
+        </div>
+      </section>
+
+      <section className="adm-card">
+        <p className="adm-card__en">Respondent</p>
+        <h2 className="adm-card__title">回答者の確かめ方</h2>
+        <div className="adm-fb__modes" role="radiogroup" aria-label="回答者の確かめ方">
+          {AUTH_MODES.map((m) => (
+            <button key={m.key} type="button" role="radio" aria-checked={auth === m.key} className={`adm-fb__mode${auth === m.key ? " is-on" : ""}`} onClick={() => setAuth(m.key)}>
+              <i className={`bi ${m.key === "line" ? "bi-line" : "bi-globe2"}`} aria-hidden="true" />
+              <strong>{m.label}</strong>
+              <small>{m.help}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="adm-card">
+        <p className="adm-card__en">Questions</p>
+        <h2 className="adm-card__title">
+          質問<small>{fields.length}件</small>
+        </h2>
+        <ol className="adm-fb__fields">
+          {fields.map((f, i) => (
+            <li key={f.key} className={`adm-fb__field${f.fresh ? " is-new" : ""}${moved === f.key ? " is-moved" : ""}`}>
+              <header>
+                <span className="adm-fb__num">{i + 1}</span>
+                <select value={f.type} onChange={(e) => update(f.key, { type: e.target.value as FieldType, fresh: false })} aria-label="回答形式">
+                  {FIELD_TYPES.map((t) => (
+                    <option key={t.key} value={t.key}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="adm-fb__tools">
+                  <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label="上へ" title="上へ">
+                    <i className="bi bi-arrow-up" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => move(i, 1)} disabled={i === fields.length - 1} aria-label="下へ" title="下へ">
+                    <i className="bi bi-arrow-down" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => setFields((list) => [...list.slice(0, i + 1), { ...f, key: newKey(), id: null, profile_key: "", fresh: true }, ...list.slice(i + 1)])} aria-label="複製" title="複製">
+                    <i className="bi bi-copy" aria-hidden="true" />
+                  </button>
+                  <button type="button" className="is-danger" onClick={() => setFields((list) => list.filter((x) => x.key !== f.key))} disabled={fields.length === 1} aria-label="削除" title="削除">
+                    <i className="bi bi-trash3" aria-hidden="true" />
+                  </button>
+                </span>
+              </header>
+              {f.type === "DESCRIPTION" ? (
+                <label>
+                  <span>説明文（回答ページにそのまま出します）</span>
+                  <textarea value={f.label} rows={3} maxLength={2000} onChange={(e) => update(f.key, { label: e.target.value })} />
+                </label>
+              ) : (
+                <>
+                  <label>
+                    <span>質問文</span>
+                    <input value={f.label} maxLength={2000} onChange={(e) => update(f.key, { label: e.target.value })} placeholder={`例：${FIELD_TYPE_LABEL[f.type] === "日付" ? "面談のご希望日" : "ご希望の職種"}`} />
+                  </label>
+                  {CHOICE_TYPES.includes(f.type) && (
+                    <label>
+                      <span>選択肢（1行に1つ）</span>
+                      <textarea value={f.options} rows={Math.min(8, Math.max(3, f.options.split("\n").length + 1))} onChange={(e) => update(f.key, { options: e.target.value })} placeholder={"正社員\n契約社員\nパート・アルバイト"} />
+                    </label>
+                  )}
+                  <label>
+                    <span>補足（入力欄の下に小さく出します。任意）</span>
+                    <input value={f.help} maxLength={1000} onChange={(e) => update(f.key, { help: e.target.value })} />
+                  </label>
+                  <div className="adm-fb__row">
+                    <label className="adm-fb__check">
+                      <input type="checkbox" checked={f.required} onChange={(e) => update(f.key, { required: e.target.checked })} />
+                      必須にする
+                    </label>
+                    {!["FILE", "CONSENT", "MULTI_CHOICE"].includes(f.type) && (
+                      <label className="adm-fb__map">
+                        <span>{auth === "line" ? "求職者の基本情報への反映" : "回答者の名前として使う"}</span>
+                        <select value={f.profile_key} onChange={(e) => update(f.key, { profile_key: e.target.value })}>
+                          <option value="">{auth === "line" ? "反映しない" : "使わない"}</option>
+                          {PROFILE_TARGETS.filter((p) => auth === "line" || p.key === "name").map((p) => (
+                            <option key={p.key} value={p.key} disabled={fields.some((x) => x.key !== f.key && x.profile_key === p.key)}>
+                              {auth === "line" ? p.label : "回答者の名前"}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                </>
+              )}
+            </li>
+          ))}
+        </ol>
+        <div className="adm-fb__add">
+          <span>質問を追加：</span>
+          {FIELD_TYPES.map((t) => (
+            <button key={t.key} type="button" className="adm-chipbtn" onClick={() => setFields((list) => [...list, blank(t.key)])}>
+              <i className={`bi ${t.icon}`} aria-hidden="true" />
+              {t.label.replace(/（.*）/, "")}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {auth === "line" && (
+        <section className="adm-card">
+          <p className="adm-card__en">Actions</p>
+          <h2 className="adm-card__title">回答されたときに</h2>
+          <p className="adm-card__help">回答した人（LINE の友だち）に、自動でタグを付けたり、ステータスを変えたりします。「フォーム回答時」の自動付与タグも付きます。</p>
+          <div className="adm-fb__grid">
+            <div className="adm-fb__wide">
+              <span className="adm-fb__label">付けるタグ</span>
+              {tags.length === 0 ? (
+                <p className="adm-muted">
+                  タグがまだありません。<Link href="/admin/?tab=linetags">タグ管理</Link>で作れます。
+                </p>
+              ) : (
+                <div className="adm-fb__tags">
+                  {tags.map((t) => {
+                    const on = tagIds.includes(t.id);
+                    return (
+                      <button key={t.id} type="button" aria-pressed={on} className={`adm-fb__tag${on ? " is-on" : ""}`} style={{ ["--c" as string]: t.color }} onClick={() => setTagIds((ids) => (on ? ids.filter((x) => x !== t.id) : [...ids, t.id]))}>
+                        {on && <i className="bi bi-check-lg" aria-hidden="true" />}
+                        {t.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <label>
+              <span>変えるステータス</span>
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="">変えない</option>
+                {statuses.map((s) => (
+                  <option key={s.key} value={s.key}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </section>
+      )}
+
+      <div className="adm-fb__bar">
+        <button type="button" role="switch" aria-checked={published} className={`adm-switch${published ? " is-on" : ""}`} onClick={() => setPublished(!published)}>
+          <span className="adm-switch__knob" />
+          <span className="adm-switch__label">{published ? "公開する" : "非公開"}</span>
+        </button>
+        <span className="adm-fb__url" title={url}>
+          {published ? <i className="bi bi-globe2" aria-hidden="true" /> : <i className="bi bi-lock" aria-hidden="true" />} {url}
+        </span>
+        {initial.id !== null && (
+          <a className="adm-chipbtn" href={`/jobs/forms/${initial.slug}/`} target="_blank" rel="noopener">
+            <i className="bi bi-eye" aria-hidden="true" />
+            {initial.is_published ? "回答ページを開く" : "プレビュー"}
+          </a>
+        )}
+        <button type="button" className="adm-chipbtn adm-chipbtn--primary adm-fb__save" onClick={save} disabled={busy}>
+          <i className={`bi ${busy ? "bi-hourglass-split" : "bi-check2"}`} aria-hidden="true" />
+          {busy ? "保存しています…" : initial.id === null ? "作成する" : dirty ? "保存する" : "保存済み"}
+        </button>
+        {error && (
+          <p className="adm-fb__error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

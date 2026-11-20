@@ -6,6 +6,8 @@ import { AdminPanelSkeleton } from "@/components/admin/AdminSkeleton";
 import { Ga4Panel, GtmPanel, InquiriesPanel, ScPanel } from "@/components/admin/panels";
 import { JobStatsPanel } from "@/components/admin/JobStatsPanel";
 import { ChatsPanel, FriendsPanel, TagsPanel } from "@/components/admin/CrmPanels";
+import { FormsListPanel } from "@/components/admin/FormsPanels";
+import { listForms } from "@/lib/admin/forms";
 import { listCandidates, listCategories, listChats, listTags } from "@/lib/admin/crm";
 import { isMessagingConfigured } from "@/lib/line-messaging";
 import { getAdminSession } from "@/lib/admin/session";
@@ -23,6 +25,7 @@ const TABS: Record<Exclude<AdminNavKey, "users" | "password">, { en: string; tit
   friends: { en: "Friends", title: "友だち・求職者管理", lead: "LINE 公式アカウントの友だち（求職者）の一覧。ステータス・担当者・タグを管理します" },
   chats: { en: "Chats", title: "個別チャット", lead: "LINE 公式アカウントでの、一人ひとりとのメッセージのやり取り" },
   linetags: { en: "Tags", title: "タグ管理", lead: "友だち・求職者に付けるタグと、その分類（カテゴリ）" },
+  forms: { en: "Forms", title: "フォーム管理", lead: "アンケートや申し込みのフォームを作り、ホームページに回答ページを作って、誰がどう答えたかを確かめます" },
 };
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; filter?: string; days?: string; q?: string; status?: string; assignee?: string; friendStatus?: string; page?: string }> }) {
@@ -73,6 +76,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "friends" && <FriendsTab params={params} selfId={session.id} />}
       {tab === "chats" && <ChatsTab params={params} selfId={session.id} />}
       {tab === "linetags" && <LineTagsTab />}
+      {tab === "forms" && <FormsTab />}
       {tab === "inquiries" && (
         <InquiriesPanel inquiries={inquiries} filter={params.filter} admins={admins.map((a) => ({ id: a.id, label: a.name ?? a.email, email: a.email, avatar: avatarUrl(a.id, a.avatar_version) }))} selfId={session.id} />
       )}
@@ -85,7 +89,7 @@ async function adminOptions() {
   return (await listAdmins().catch(() => [])).map((a) => ({ id: a.id, label: a.name ?? a.email }));
 }
 
-const assigneeOf = (v?: string) => (v && /^d+$/.test(v) ? Number(v) : null);
+const assigneeOf = (v?: string) => (v && /^\d+$/.test(v) ? Number(v) : null);
 
 // 友だち・求職者管理（一覧）
 async function FriendsTab({ params, selfId }: { params: { q?: string; status?: string; assignee?: string; friendStatus?: string; page?: string }; selfId: number }) {
@@ -117,4 +121,13 @@ async function ChatsTab({ params, selfId }: { params: { q?: string; status?: str
 async function LineTagsTab() {
   const [tags, categories] = await Promise.all([listTags(), listCategories()]);
   return <TagsPanel tags={tags} categories={categories} />;
+}
+
+// フォーム管理（一覧）
+async function FormsTab() {
+  const forms = await listForms().catch((error) => {
+    console.error("form list failed:", error);
+    return null;
+  });
+  return <FormsListPanel forms={forms} />;
 }

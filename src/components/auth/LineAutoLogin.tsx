@@ -17,7 +17,7 @@ export type Liff = {
   isLoggedIn: () => boolean;
   login: (config?: { redirectUri?: string }) => void;
   getIDToken: () => string | null;
-  getDecodedIDToken?: () => { exp?: number } | null;
+  getDecodedIDToken?: () => { exp?: number; name?: string; picture?: string } | null;
   logout?: () => void;
 };
 

@@ -13,7 +13,7 @@ import { countUnhandledInquiries, ROLE_NAMES } from '@/lib/admin/store';
 
 // 管理ページの外枠：左にサイトと同じネイビーのメニュー（ロゴ・各ページ・ログイン中の人）、右に本文。
 // 本文の見出しは、ホームページと同じ「英字の小見出し＋日本語の大見出し」の形
-export type AdminNavKey = 'access' | 'search' | 'tags' | 'jobs' | 'inquiries' | 'friends' | 'chats' | 'linetags' | 'users' | 'password';
+export type AdminNavKey = 'access' | 'search' | 'tags' | 'jobs' | 'inquiries' | 'friends' | 'chats' | 'linetags' | 'forms' | 'users' | 'password';
 
 // 「管理者」「パスワード変更」は左のメニューには置かず、ログイン中の人のカードを押すと開く小窓（AdminMeMenu）に入れる。
 // superOnly：特級の管理者にだけ出す項目（一般の管理者には、メニューに出さず、開いても見られない）
@@ -25,7 +25,8 @@ const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group:
   { key: 'jobs', href: '/admin/?tab=jobs', label: '案件の反応', icon: 'bi-bar-chart-line', group: 'work' },
   { key: 'friends', href: '/admin/?tab=friends', label: '友だち・求職者管理', icon: 'bi-people', group: 'line' },
   { key: 'chats', href: '/admin/?tab=chats', label: '個別チャット', icon: 'bi-chat-dots', group: 'line' },
-  { key: 'linetags', href: '/admin/?tab=linetags', label: 'タグ管理', icon: 'bi-bookmarks', group: 'line' }
+  { key: 'linetags', href: '/admin/?tab=linetags', label: 'タグ管理', icon: 'bi-bookmarks', group: 'line' },
+  { key: 'forms', href: '/admin/?tab=forms', label: 'フォーム管理', icon: 'bi-ui-checks', group: 'line' }
 ];
 // 上から「お仕事」（お問い合わせ・案件の反応）→「アクセスデータ」（アクセス分析など）の順。よく使うものを上に置く
 const GROUPS = [
