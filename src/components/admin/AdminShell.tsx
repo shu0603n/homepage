@@ -4,6 +4,7 @@ import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { avatarUrl } from "@/components/admin/AdminAvatar";
 import { AdminMeMenu } from "@/components/admin/AdminMeMenu";
 import { AdminSessionKeeper } from "@/components/admin/AdminSessionKeeper";
+import { LINEXT_NAV } from "@/lib/admin/linext";
 import type { AdminSession } from "@/lib/admin/session";
 import { countUnhandledInquiries, ROLE_NAMES } from "@/lib/admin/store";
 
@@ -25,6 +26,9 @@ const GROUPS = [
   ["work", "お仕事"],
   ["data", "アクセスデータ"],
 ] as const;
+
+// LINE 公式アカウントの管理システム（Linext）への入口。新しいタブで開き、管理画面のログインのまま Linext にも自動でログインする
+// （/api/admin/linext/。Linext の権限は Linext の設定に従う）
 
 export async function AdminShell({
   session,
@@ -68,6 +72,16 @@ export async function AdminShell({
               ))}
             </div>
           ))}
+          <div className="adm-nav__group">
+            <p className="adm-nav__label">LINE（Linext）</p>
+            {LINEXT_NAV.map((n) => (
+              <a key={n.to} href={`/api/admin/linext/?to=${encodeURIComponent(n.to)}`} target="_blank" rel="noopener" className="adm-nav__item adm-nav__item--ext">
+                <i className={`bi ${n.icon}`} aria-hidden="true" />
+                <span>{n.label}</span>
+                <i className="bi bi-box-arrow-up-right adm-nav__ext" aria-label="新しいタブで開く" />
+              </a>
+            ))}
+          </div>
         </nav>
         <div className="adm-side__foot">
           <a className="adm-side__site" href="/" target="_blank" rel="noopener">
