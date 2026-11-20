@@ -36,6 +36,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (r instanceof Response) return r;
   const id = await formId(params);
   if (!id) return jsonError("フォームが見つかりません。", 404);
-  if ((await deleteForm(id)) === "has_answers") return jsonError("回答があるフォームは削除できません。受け付けを止めるときは「非公開」にしてください。", 409);
+  // ?with_answers=1：回答ごと削除（特級の管理者だけ）
+  const withAnswers = new URL(request.url).searchParams.get("with_answers") === "1";
+  if (withAnswers && r.session.role !== "super") return jsonError("回答ごとの削除は、特級の管理者だけができます。", 403);
+  if ((await deleteForm(id, { withAnswers })) === "has_answers") return jsonError("回答があるフォームは削除できません。受け付けを止めるときは「非公開」にしてください。", 409);
   return NextResponse.json({ ok: true });
 }

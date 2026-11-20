@@ -76,7 +76,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "friends" && <FriendsTab params={params} selfId={session.id} />}
       {tab === "chats" && <ChatsTab params={params} selfId={session.id} />}
       {tab === "linetags" && <LineTagsTab />}
-      {tab === "forms" && <FormsTab />}
+      {tab === "forms" && <FormsTab isSuper={session.role === "super"} />}
       {tab === "inquiries" && (
         <InquiriesPanel inquiries={inquiries} filter={params.filter} admins={admins.map((a) => ({ id: a.id, label: a.name ?? a.email, email: a.email, avatar: avatarUrl(a.id, a.avatar_version) }))} selfId={session.id} />
       )}
@@ -124,7 +124,7 @@ async function LineTagsTab() {
 }
 
 // フォーム管理（一覧）
-async function FormsTab() {
+async function FormsTab({ isSuper }: { isSuper: boolean }) {
   const [forms, templates] = await Promise.all([
     listForms().catch((error) => {
       console.error("form list failed:", error);
@@ -132,5 +132,5 @@ async function FormsTab() {
     }),
     listTemplates().catch(() => []),
   ]);
-  return <FormsListPanel forms={forms} templates={templates} />;
+  return <FormsListPanel forms={forms} templates={templates} isSuper={isSuper} />;
 }

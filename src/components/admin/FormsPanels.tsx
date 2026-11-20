@@ -28,7 +28,7 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
 
 // ---------- 一覧 ----------
 
-export function FormsListPanel({ forms, templates }: { forms: FormRow[] | null; templates: TemplateRow[] }) {
+export function FormsListPanel({ forms, templates, isSuper = false }: { forms: FormRow[] | null; templates: TemplateRow[]; isSuper?: boolean }) {
   if (!forms) return <p className="adm-alert is-ng">フォームの一覧を読み込めませんでした。時間をおいて開き直してください。</p>;
   return (
     <div className="adm-stack">
@@ -81,7 +81,7 @@ export function FormsListPanel({ forms, templates }: { forms: FormRow[] | null; 
                   <Link href={`/admin/forms/${f.id}/`} className="adm-linkbtn">
                     編集
                   </Link>
-                  <DeleteFormButton id={f.id} title={f.title} answers={f.count} />
+                  <DeleteFormButton id={f.id} title={f.title} answers={f.count} canDeleteAll={isSuper} />
                 </div>
               </div>
             </li>

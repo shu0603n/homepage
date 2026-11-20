@@ -114,7 +114,8 @@ export function PublishToggle({ id, published }: { id: number; published: boolea
   );
 }
 
-export function DeleteFormButton({ id, title, answers }: { id: number; title: string; answers: number }) {
+// フォームを消す。回答があるフォームは、特級の管理者だけが、フォーム名を入力して確かめたうえで回答ごと消せる
+export function DeleteFormButton({ id, title, answers, canDeleteAll = false }: { id: number; title: string; answers: number; canDeleteAll?: boolean }) {
   const router = useRouter();
   const [error, setError] = useState("");
   return (
@@ -122,11 +123,17 @@ export function DeleteFormButton({ id, title, answers }: { id: number; title: st
       <button
         type="button"
         className="adm-linkbtn is-danger"
-        title={answers > 0 ? "回答があるフォームは削除できません（非公開にしてください）" : undefined}
-        disabled={answers > 0}
+        title={answers > 0 && !canDeleteAll ? "回答があるフォームは削除できません（非公開にしてください。回答ごとの削除は特級の管理者ができます）" : undefined}
+        disabled={answers > 0 && !canDeleteAll}
         onClick={async () => {
-          if (!window.confirm(`フォーム「${title}」を削除します。よろしいですか？`)) return;
-          const r = await send(`/api/admin/forms/${id}/`, "DELETE");
+          if (answers > 0) {
+            const typed = window.prompt(
+              `フォーム「${title}」を、回答 ${answers} 件（添付ファイル・スプレッドシート連携の設定も）ごと削除します。元に戻せません。\n（スプレッドシートそのものと、書き込み済みの内容は残ります）\n\n削除するには、フォーム名「${title}」を入力してください。`,
+            );
+            if (typed === null) return;
+            if (typed.trim() !== title.trim()) return setError("フォーム名が違うため、削除しませんでした。");
+          } else if (!window.confirm(`フォーム「${title}」を削除します。よろしいですか？`)) return;
+          const r = await send(`/api/admin/forms/${id}/${answers > 0 ? "?with_answers=1" : ""}`, "DELETE");
           if (!r.ok) return setError(r.message ?? "");
           router.refresh();
         }}

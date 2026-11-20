@@ -242,12 +242,20 @@ export async function setFormPublished(id: number, published: boolean): Promise<
 }
 
 // 回答があるフォームは消さない（Linext と同じ。非公開にしてもらう）
-export async function deleteForm(id: number): Promise<"ok" | "has_answers"> {
+// withAnswers：回答（添付ファイル・スプレッドシート連携の設定も）ごと消す（特級の管理者が、フォーム名を入力して確かめたとき）。
+// スプレッドシートそのものと、書き込み済みの内容は消さない
+export async function deleteForm(id: number, opts: { withAnswers?: boolean } = {}): Promise<"ok" | "has_answers"> {
   await ensureAdminTables();
   const [r] = await prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM hp_form_submission WHERE form_id = ${id}`;
-  if ((r?.n ?? 0) > 0) return "has_answers";
-  await prisma.$executeRaw`DELETE FROM hp_form_field WHERE form_id = ${id}`;
-  await prisma.$executeRaw`DELETE FROM hp_form WHERE id = ${id}`;
+  if ((r?.n ?? 0) > 0 && !opts.withAnswers) return "has_answers";
+  await prisma.$transaction([
+    prisma.$executeRaw`DELETE FROM hp_form_answer WHERE submission_id IN (SELECT id FROM hp_form_submission WHERE form_id = ${id})`,
+    prisma.$executeRaw`DELETE FROM hp_form_file WHERE submission_id IN (SELECT id FROM hp_form_submission WHERE form_id = ${id})`,
+    prisma.$executeRaw`DELETE FROM hp_form_submission WHERE form_id = ${id}`,
+    prisma.$executeRaw`DELETE FROM hp_form_sheet WHERE form_id = ${id}`,
+    prisma.$executeRaw`DELETE FROM hp_form_field WHERE form_id = ${id}`,
+    prisma.$executeRaw`DELETE FROM hp_form WHERE id = ${id}`,
+  ]);
   return "ok";
 }
 
