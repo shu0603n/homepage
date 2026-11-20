@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ensureAdminTables } from "@/lib/admin/store";
 import { getLineProfile } from "@/lib/line-messaging";
+import { applyAutoTags } from "@/lib/admin/crm";
 
 // LINE 公式アカウントの友だち（hp_line_friend）と個別メッセージ（hp_line_message）。
 //   - 受信（Webhook）は /api/line/webhook/ が受け、ここに記録する（同じものを Linext にも転送して、移行中も Linext を動かし続ける）
@@ -59,6 +60,12 @@ export async function upsertFriend(userId: string, opts: { follow?: boolean; unf
       followed_at = COALESCE(EXCLUDED.followed_at, hp_line_friend.followed_at),
       unfollowed_at = CASE WHEN ${!!opts.unfollow} THEN EXCLUDED.unfollowed_at ELSE hp_line_friend.unfollowed_at END,
       profile_updated_at = COALESCE(EXCLUDED.profile_updated_at, hp_line_friend.profile_updated_at)`;
+  // 友だち追加：ステータスが未設定なら「友だち追加」に、最終反応日を更新し、自動付与のタグを付ける（Linext と同じ）
+  if (opts.follow) {
+    await prisma.$executeRaw`
+      UPDATE hp_line_friend SET status_key = COALESCE(status_key, 'friend_added'), last_action_at = now() WHERE line_user_id = ${userId}`;
+    await applyAutoTags(userId, "friend_add").catch((error) => console.error("auto tag failed:", error));
+  }
 }
 
 // 受信したメッセージを記録する（同じ受信の再送は1回だけ）。記録したら true
@@ -71,8 +78,10 @@ export async function recordIncoming(userId: string, eventId: string, type: stri
   if (n === 0) return false;
   const preview = short(type === "text" ? (text ?? "") : (MESSAGE_LABELS[type] ?? `［${type}］`));
   await prisma.$executeRaw`
-    UPDATE hp_line_friend SET last_message_at = ${at}, last_message_text = ${preview}, unread = unread + 1, is_friend = true
+    UPDATE hp_line_friend SET last_message_at = ${at}, last_message_text = ${preview}, unread = unread + 1, is_friend = true,
+      chat_status = 'UNHANDLED', last_action_at = ${at}, status_key = COALESCE(status_key, 'friend_added')
     WHERE line_user_id = ${userId}`;
+  await applyAutoTags(userId, "message_reply").catch((error) => console.error("auto tag failed:", error));
   return true;
 }
 

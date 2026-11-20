@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AutoSubmitSelect } from '@/components/admin/AutoSubmitSelect';
 import { JobStatsTable } from '@/components/admin/JobStatsTable';
 import { jobStats, type JobStatRow } from '@/lib/jobs-activity';
 
@@ -35,7 +36,7 @@ function Kpi({ icon, label, value, unit, help }: { icon: string; label: string; 
   );
 }
 
-export async function JobStatsPanel({ days: daysParam }: { days?: string }) {
+export async function JobStatsPanel({ days: daysParam, assignee }: { days?: string; assignee?: string }) {
   const key = PERIODS.some(([k]) => k === daysParam) ? (daysParam as (typeof PERIODS)[number][0]) : '30';
   const days = key === 'all' ? null : Number(key);
   let data: Awaited<ReturnType<typeof jobStats>>;
@@ -50,7 +51,10 @@ export async function JobStatsPanel({ days: daysParam }: { days?: string }) {
       </div>
     );
   }
-  const { rows, users } = data;
+  const { users, employees } = data;
+  // 案件の担当者で絞り込む（担当者は画面には出さない）。none＝担当者が設定されていない案件
+  const assigneeKey = assignee === 'none' || employees.some((e) => String(e.id) === assignee) ? assignee! : '';
+  const rows = assigneeKey === '' ? data.rows : data.rows.filter((r) => (assigneeKey === 'none' ? r.employeeId === null : String(r.employeeId) === assigneeKey));
   const sum = (f: (r: JobStatRow) => number) => rows.reduce((s, r) => s + f(r), 0);
   const total = {
     list: sum((r) => r.listViews),
@@ -68,11 +72,33 @@ export async function JobStatsPanel({ days: daysParam }: { days?: string }) {
       <div className="adm-toolbar">
         <nav className="adm-filters" aria-label="期間">
           {PERIODS.map(([k, label]) => (
-            <Link key={k} href={`/admin/?tab=jobs&days=${k}`} className={`adm-filter${key === k ? ' is-active' : ''}`}>
+            <Link key={k} href={`/admin/?tab=jobs&days=${k}${assigneeKey ? `&assignee=${assigneeKey}` : ''}`} className={`adm-filter${key === k ? ' is-active' : ''}`}>
               {label}
             </Link>
           ))}
         </nav>
+        <form className="adm-jobs-assignee" action="/admin/" method="get">
+          <input type="hidden" name="tab" value="jobs" />
+          <input type="hidden" name="days" value={key} />
+          <label>
+            <i className="bi bi-person-badge" aria-hidden="true" />
+            <span>案件の担当者</span>
+            <AutoSubmitSelect name="assignee" defaultValue={assigneeKey}>
+              <option value="">すべて</option>
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+              <option value="none">担当者なし</option>
+            </AutoSubmitSelect>
+          </label>
+          <noscript>
+            <button type="submit" className="adm-chipbtn">
+              絞り込む
+            </button>
+          </noscript>
+        </form>
       </div>
 
       <section className="adm-summary">

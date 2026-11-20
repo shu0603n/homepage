@@ -86,12 +86,15 @@ export type JobStatRow = {
   favorites: number; // いま「気になる」に入れている人数（期間に関係なく）
   favoritesInPeriod: number; // 期間中に「気になる」に入れた人数
   applications: number; // 期間中に、ホームページの応募ボタンから応募された数
+  employeeId: number | null; // 案件の担当者（社内システムの社員 id。画面には出さず、担当者での絞り込みに使う）
 };
+
+export type JobEmployee = { id: number; name: string };
 
 export type FavoriteUser = { kind: JobKind; jobId: number; staffId: number; name: string | null; mail: string | null; tel: string | null; createdAt: Date };
 
 // days：直近何日か（null なら全期間）
-export async function jobStats(days: number | null): Promise<{ rows: JobStatRow[]; users: FavoriteUser[] }> {
+export async function jobStats(days: number | null): Promise<{ rows: JobStatRow[]; users: FavoriteUser[]; employees: JobEmployee[] }> {
   await ensureAdminTables();
   const since = days ? new Date(Date.now() - days * 86_400_000) : new Date(0);
   const sinceDay = new Date(since.getTime() + 9 * 3600_000).toISOString().slice(0, 10);
@@ -116,7 +119,7 @@ export async function jobStats(days: number | null): Promise<{ rows: JobStatRow[
     const key = `${kind}-${id}`;
     let r = rows.get(key);
     if (!r) {
-      r = { kind, id, title: "", posted: false, listViews: 0, clicks: 0, detailViews: 0, favorites: 0, favoritesInPeriod: 0, applications: 0 };
+      r = { kind, id, title: "", posted: false, listViews: 0, clicks: 0, detailViews: 0, favorites: 0, favoritesInPeriod: 0, applications: 0, employeeId: null };
       rows.set(key, r);
     }
     return r;
@@ -130,24 +133,35 @@ export async function jobStats(days: number | null): Promise<{ rows: JobStatRow[
   const now = new Date();
   const [projects, recruits] = await Promise.all([
     projectIds.length
-      ? prisma.project.findMany({ where: { id: { in: projectIds } }, select: { id: true, project_title: true, hp_posting_flag: true, start_date: true, end_date: true } })
+      ? prisma.project.findMany({ where: { id: { in: projectIds } }, select: { id: true, project_title: true, hp_posting_flag: true, start_date: true, end_date: true, employee_id: true } })
       : [],
-    recruitIds.length ? prisma.recruit_project.findMany({ where: { id: { in: recruitIds } }, select: { id: true, title: true, is_recruiting: true } }) : [],
+    recruitIds.length ? prisma.recruit_project.findMany({ where: { id: { in: recruitIds } }, select: { id: true, title: true, is_recruiting: true, employee_id: true } }) : [],
   ]);
   for (const p of projects) {
     const r = rows.get(`project-${p.id}`)!;
     r.title = p.project_title ?? `案件 #${p.id}`;
+    r.employeeId = p.employee_id;
     r.posted = Boolean(p.hp_posting_flag) && (!p.start_date || p.start_date <= now) && (!p.end_date || p.end_date >= now);
   }
   for (const p of recruits) {
     const r = rows.get(`recruit-${p.id}`)!;
     r.title = p.title;
     r.posted = p.is_recruiting;
+    r.employeeId = p.employee_id;
   }
   for (const r of rows.values()) if (!r.title) r.title = `${r.kind === "project" ? "案件" : "求人"} #${r.id}（削除済み）`;
 
   const list = [...rows.values()].sort((a, b) => b.listViews - a.listViews || b.clicks - a.clicks || b.favorites - a.favorites);
+  // 担当者での絞り込み用：集計に出てくる案件の担当者（社員）の名前
+  const employeeIds = [...new Set(list.map((r) => r.employeeId).filter((v): v is number => v !== null))];
+  const employees: JobEmployee[] = employeeIds.length
+    ? (await prisma.employee.findMany({ where: { id: { in: employeeIds } }, select: { id: true, sei: true, mei: true }, orderBy: [{ sei_k: "asc" }, { id: "asc" }] })).map((e) => ({
+        id: e.id,
+        name: `${e.sei} ${e.mei}`.trim(),
+      }))
+    : [];
   return {
+    employees,
     rows: list,
     users: users.map((u) => ({ kind: u.job_kind, jobId: u.job_id, staffId: u.staff_id, name: u.name, mail: u.mail, tel: u.tel, createdAt: u.created_at })),
   };

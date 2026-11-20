@@ -57,21 +57,21 @@ export function LineChatComposer({ to, disabled }: { to: string; disabled: boole
   );
 }
 
-// 個別チャットを開いている間、15秒ごとに新しいメッセージを取りに行く（画面が見えているときだけ）。開いたときは一番下へ
-export function LineAutoRefresh() {
+// 開いている間、interval ミリ秒ごとに新しいメッセージを取りに行く（画面が見えているときだけ）。scroll なら開いたときにやり取りの一番下へ
+export function LineAutoRefresh({ interval = 15000, scroll = true }: { interval?: number; scroll?: boolean }) {
   const router = useRouter();
   const first = useRef(true);
   useEffect(() => {
     const list = document.querySelector(".adm-line__messages");
-    if (list && first.current) {
+    if (scroll && list && first.current) {
       list.scrollTop = list.scrollHeight;
       first.current = false;
     }
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") router.refresh();
-    }, 15000);
+    }, interval);
     return () => window.clearInterval(timer);
-  }, [router]);
+  }, [router, interval, scroll]);
   return null;
 }
 

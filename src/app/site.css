@@ -2412,3 +2412,154 @@ a.adm-jobs__title:hover { text-decoration: underline; }
   .adm-side__toggle { display: none; }
   .adm-side__burger { display: inline-grid; }
 }
+
+/* ---------- 管理画面：友だち・求職者管理／個別チャット／タグ管理（CrmPanels） ---------- */
+.adm-muted { color: var(--sub); font-size: 13px; }
+.adm-ok { font-size: 13px; font-weight: 700; color: #0f9488; }
+.adm-crm-error { display: block; margin-top: 4px; font-size: 12px; color: #b02a42; }
+.adm-chipbtn--primary { border-color: var(--navy); background: var(--navy); color: #fff; }
+.adm-chipbtn--primary:hover:not(:disabled) { background: var(--navy-dd); }
+.adm-chipbtn:disabled { opacity: .5; cursor: default; }
+.adm-linkbtn { padding: 0; border: 0; background: none; font: inherit; font-size: 13px; font-weight: 700; color: var(--navy) !important; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.adm-linkbtn.is-danger { color: #b02a42 !important; }
+.adm-pill.is-on { background: #e4f6ee; color: #136b47; }
+.adm-crm-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 14px; border-radius: var(--r); background: #fff; box-shadow: var(--shadow-s); }
+.adm-crm-filters input[type="search"] { flex: 1 1 260px; min-width: 0; padding: 9px 14px; border: 1px solid #cfdbe2; border-radius: 999px; font: inherit; font-size: 13px; background: var(--bg-soft); }
+.adm-crm-filters select, .adm-crm-select select, .adm-cats input, .adm-staffbox input, .adm-notes textarea, .adm-dialog__box input, .adm-dialog__box select, .adm-dialog__box textarea, .adm-profile input {
+  padding: 8px 12px; border: 1px solid #cfdbe2; border-radius: 10px; background: #fff; font: inherit; font-size: 13px; color: var(--navy-dd);
+}
+.adm-crm-count { margin: 0; font-size: 12px; color: var(--sub); }
+.adm-crm-tablewrap { border-radius: var(--r); background: #fff; box-shadow: var(--shadow-s); }
+.adm-crm-table td { vertical-align: middle; }
+.adm-crm-table tbody tr { transition: background .2s; }
+.adm-crm-table tbody tr:hover { background: #f8fbfc; }
+.adm-crm-table tr.is-unread { background: #f1fbf5; }
+.adm-crm-table tr.is-off { opacity: .55; }
+.adm-crm-table td:not(:first-child) { font-family: inherit; white-space: normal; }
+.adm-crm-who { display: flex; align-items: center; gap: 10px; color: var(--navy-dd) !important; text-decoration: none; }
+.adm-crm-who > span { display: grid; line-height: 1.4; }
+.adm-crm-who strong { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.adm-crm-who:hover strong { text-decoration: underline; }
+.adm-crm-who small { font-size: 11px; color: var(--sub); }
+.adm-crm-chat { position: relative; display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--sub) !important; text-decoration: none; transition: background .2s; }
+.adm-crm-chat:hover { background: var(--bg-soft); }
+.adm-crm-chat.is-unread { color: #06c755 !important; }
+.adm-crm-chat em { position: absolute; top: -2px; right: -4px; min-width: 17px; padding: 0 4px; border-radius: 999px; background: #06c755; color: #fff; font-size: 10px; font-style: normal; font-weight: 700; line-height: 17px; text-align: center; }
+.adm-crm-new { padding: 0 8px; border-radius: 999px; background: #fdecef; color: #b02a42; font-size: 11px; font-style: normal; font-weight: 700; }
+.adm-crm-last { max-width: 320px; }
+.adm-crm-last a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sub) !important; text-decoration: none; }
+.adm-crm-desc { max-width: 260px; color: var(--sub); }
+.adm-crm-ops { white-space: nowrap; }
+.adm-crm-ops > * + * { margin-left: 12px; }
+.adm-crm-select { display: inline-grid; }
+.adm-crm-select select { min-width: 132px; cursor: pointer; }
+.adm-ftags { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.adm-ftag { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 4px; width: auto; padding: 2px 10px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.7; white-space: nowrap; }
+.adm-ftag button { display: inline; width: auto; min-width: 0; margin: 0; padding: 0; border: 0; background: none; color: inherit; font-size: 13px; line-height: 1; opacity: .75; cursor: pointer; }
+.adm-ftag button:hover { opacity: 1; }
+.adm-ftags__plus { display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px dashed #b8c8d1; border-radius: 50%; background: #fff; color: var(--navy); font-size: 12px; cursor: pointer; }
+.adm-ftags__plus:hover { border-style: solid; background: var(--bg-soft); }
+.adm-ftags__add { padding: 4px 8px; border: 1px solid #cfdbe2; border-radius: 8px; font: inherit; font-size: 12px; }
+.adm-pager { display: flex; justify-content: center; align-items: center; gap: 18px; font-size: 13px; }
+.adm-pager a { font-weight: 700; color: var(--navy) !important; }
+.adm-crm-import { display: flex; justify-content: center; }
+.adm-crm-back { margin: 0; font-size: 13px; }
+.adm-crm-back a { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--navy) !important; text-decoration: none; }
+.adm-crm-head { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+.adm-crm-head__who { flex: 1 1 220px; display: grid; gap: 4px; justify-items: start; }
+.adm-crm-head__who h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 20px; color: var(--navy-dd); }
+.adm-crm-head__who p { margin: 0 0 4px; font-size: 13px; color: var(--sub); }
+.adm-crm-head__field { display: grid; gap: 4px; font-size: 12px; color: var(--sub); }
+.adm-crm-tabs .adm-filter { padding: 7px 16px; }
+.adm-profile { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; margin-top: 16px; }
+.adm-profile label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; color: var(--navy-dd); }
+.adm-profile input { width: 100%; font-weight: 400; }
+.adm-profile__foot { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; }
+.adm-staffbox { display: grid; gap: 10px; padding: 14px 16px; border-radius: 14px; background: var(--bg-soft); font-size: 13px; }
+.adm-staffbox p { margin: 0; color: var(--sub); }
+.adm-staffbox.is-linked { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #e8f8ee; color: #136b47; }
+.adm-staffbox.is-linked > span { flex: 1 1 220px; }
+.adm-staffbox__search { display: flex; gap: 8px; }
+.adm-staffbox__search input { flex: 1; min-width: 0; }
+.adm-staffbox__rows { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.adm-staffbox__rows li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-radius: 10px; background: #fff; }
+.adm-staffbox__rows li > span:first-child { display: grid; min-width: 0; }
+.adm-staffbox__rows small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--sub); }
+.adm-timeline { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.adm-timeline li { position: relative; padding-left: 20px; border-left: 2px solid var(--line); }
+.adm-timeline li::before { content: ""; position: absolute; left: -6px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 3px #fff; }
+.adm-timeline p { margin: 0; font-size: 14px; color: var(--navy-dd); }
+.adm-timeline small { font-size: 12px; color: var(--sub); }
+.adm-consents { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.adm-consents li { display: flex; align-items: center; gap: 10px; }
+.adm-consents small { color: var(--sub); }
+.adm-crm-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.adm-crm-bar p { margin: 0; }
+/* 個別チャット（やり取り）：左にやり取り、右に内部メモ */
+.adm-chat { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+.adm-chat__main { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: calc(100vh - 200px); min-height: 480px; overflow: hidden; border-radius: var(--r); background: #fff; box-shadow: var(--shadow-s); }
+.adm-chat__head { flex-wrap: wrap; }
+.adm-chat__back { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--navy) !important; }
+.adm-chat__back:hover { background: var(--bg-soft); }
+.adm-chat__who { flex: 1 1 160px; min-width: 0; }
+.adm-chat__who h2 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 16px; color: var(--navy-dd); }
+.adm-chat__who a { font-size: 12px; color: var(--sub) !important; }
+.adm-chat__controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.adm-chat__warn { margin: 0; padding: 0 16px 12px; font-size: 12px; color: #b02a42; }
+.adm-chat__side { position: sticky; top: 24px; }
+.adm-chat__side .adm-card__title small { margin-left: 6px; font-size: 12px; font-weight: 700; color: var(--sub); }
+.adm-notes { display: grid; gap: 12px; }
+.adm-notes form { display: grid; gap: 8px; justify-items: end; }
+.adm-notes textarea { width: 100%; resize: vertical; }
+.adm-notes ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; max-height: 50vh; overflow-y: auto; }
+.adm-notes li { padding: 10px 12px; border-radius: 10px; background: #fff9e6; box-shadow: inset 3px 0 0 #f5b301; }
+.adm-notes li p { margin: 0; font-size: 13px; white-space: pre-wrap; }
+.adm-notes li small { font-size: 11px; color: var(--sub); }
+/* タグの作成・編集の小窓 */
+.adm-dialog { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(0, 20, 30, .45); animation: admFade .15s ease-out; }
+@keyframes admFade { from { opacity: 0; } }
+.adm-dialog__box { display: grid; gap: 14px; width: min(480px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; padding: 24px; border-radius: 18px; background: #fff; box-shadow: 0 30px 70px -20px rgba(0, 20, 30, .5); animation: admMenuDown .2s var(--ease); }
+.adm-dialog__box h2 { margin: 0; font-size: 18px; color: var(--navy-dd); }
+.adm-dialog__box label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; color: var(--navy-dd); }
+.adm-dialog__box input, .adm-dialog__box select, .adm-dialog__box textarea { width: 100%; font-weight: 400; }
+.adm-dialog__color { display: flex; align-items: center; gap: 8px; }
+.adm-dialog__color input[type="color"] { width: 44px; height: 36px; padding: 2px; }
+.adm-dialog__color input:not([type="color"]) { width: 110px; }
+.adm-dialog__check { display: flex !important; align-items: center; gap: 8px; }
+.adm-dialog__check input { width: auto !important; }
+.adm-dialog__foot { display: flex; justify-content: flex-end; gap: 8px; }
+.adm-cats ul { display: grid; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+.adm-cats li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.adm-cats li input:first-child { flex: 1 1 200px; }
+.adm-cats__order { width: 72px; }
+.adm-cats li small { font-size: 12px; color: var(--sub); }
+.adm-cats__add { display: flex; gap: 8px; }
+.adm-cats__add input { flex: 1; }
+@media (max-width: 960px) {
+  .adm-chat { grid-template-columns: minmax(0, 1fr); }
+  .adm-chat__main { height: calc(100vh - 150px); }
+  .adm-chat__side { position: static; }
+}
+@media (max-width: 760px) {
+  /* 表は1件ずつのカードにする（横にスクロールさせない） */
+  .adm-crm-tablewrap { background: none; box-shadow: none; }
+  .adm-crm-table thead { display: none; }
+  .adm-crm-table, .adm-crm-table tbody, .adm-crm-table tr, .adm-crm-table td { display: block; width: 100%; }
+  .adm-crm-table tr { margin-bottom: 12px; padding: 14px 16px; border-radius: 16px; background: #fff; box-shadow: var(--shadow-s); }
+  .adm-crm-table td { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 8px; padding: 6px 0; border: 0; }
+  .adm-crm-table td::before { content: attr(data-label); font-size: 11px; font-weight: 700; color: var(--sub); }
+  .adm-crm-table td:first-child { display: block; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .adm-crm-table td:first-child::before { display: none; }
+  .adm-profile { grid-template-columns: minmax(0, 1fr); }
+  .adm-crm-last { max-width: none; }
+}
+
+/* 右上のアカウントは、スクロールしても見えるように上に固定する（中身の上に重なる。カード以外は下を押せるように） */
+.adm-topbar { position: sticky; top: 14px; z-index: 25; pointer-events: none; }
+.adm-topbar > * { pointer-events: auto; }
+.adm-topbar button.adm-me { box-shadow: 0 10px 28px -12px rgba(0, 38, 58, .35), 0 0 0 1px rgba(0, 54, 81, .06); }
+/* スマホ・タブレット：上の帯（ロゴと ☰）の中、☰ の左に置く */
+@media (max-width: 960px) { .adm-topbar { position: static; height: 0; margin: 0; } .adm-topbar .adm-me-wrap { position: fixed; top: 11px; right: 66px; z-index: 30; } .adm-topbar button.adm-me { padding: 3px; } }
+/* 案件の反応：案件の担当者での絞り込み */
+.adm-jobs-assignee label { display: inline-flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 999px; background: #fff; box-shadow: var(--shadow-s); font-size: 13px; font-weight: 700; color: var(--navy-dd); }
+.adm-jobs-assignee select { padding: 6px 10px; border: 1px solid #cfdbe2; border-radius: 999px; font: inherit; font-size: 13px; background: var(--bg-soft); cursor: pointer; }

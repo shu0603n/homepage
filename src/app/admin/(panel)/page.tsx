@@ -5,8 +5,8 @@ import { AdminShell, type AdminNavKey } from "@/components/admin/AdminShell";
 import { AdminPanelSkeleton } from "@/components/admin/AdminSkeleton";
 import { Ga4Panel, GtmPanel, InquiriesPanel, ScPanel } from "@/components/admin/panels";
 import { JobStatsPanel } from "@/components/admin/JobStatsPanel";
-import { LinePanel } from "@/components/admin/LinePanel";
-import { getFriend, listFriends, listMessages, markRead } from "@/lib/admin/line";
+import { ChatsPanel, FriendsPanel, TagsPanel } from "@/components/admin/CrmPanels";
+import { listCandidates, listCategories, listChats, listTags } from "@/lib/admin/crm";
 import { isMessagingConfigured } from "@/lib/line-messaging";
 import { getAdminSession } from "@/lib/admin/session";
 import { countUnhandledInquiries, listAdmins, listInquiries } from "@/lib/admin/store";
@@ -20,10 +20,12 @@ const TABS: Record<Exclude<AdminNavKey, "users" | "password">, { en: string; tit
   jobs: { en: "Job Insights", title: "案件の反応", lead: "ホームページの案件一覧での表示・クリック・閲覧の回数と、「気になる」・ホームページからの応募の数" },
   tags: { en: "Tags", title: "計測タグ", lead: "サイトで動いている計測用のタグ（Google タグ マネージャー）" },
   inquiries: { en: "Inquiries", title: "お問い合わせ", lead: "ホームページのお問い合わせフォームから届いた内容" },
-  line: { en: "LINE", title: "LINE 友だち・チャット", lead: "LINE 公式アカウントの友だちの一覧と、一人ひとりとのメッセージのやり取り" },
+  friends: { en: "Friends", title: "友だち・求職者管理", lead: "LINE 公式アカウントの友だち（求職者）の一覧。ステータス・担当者・タグを管理します" },
+  chats: { en: "Chats", title: "個別チャット", lead: "LINE 公式アカウントでの、一人ひとりとのメッセージのやり取り" },
+  linetags: { en: "Tags", title: "タグ管理", lead: "友だち・求職者に付けるタグと、その分類（カテゴリ）" },
 };
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; filter?: string; days?: string; u?: string; q?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; filter?: string; days?: string; q?: string; status?: string; assignee?: string; friendStatus?: string; page?: string }> }) {
   const session = await getAdminSession().catch(() => null);
   if (!session) redirect("/admin/login/");
   const params = await searchParams;
@@ -60,7 +62,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       )}
       {tab === "jobs" && (
         <Suspense fallback={<AdminPanelSkeleton kpis={5} cards={1} />}>
-          <JobStatsPanel days={params.days} />
+          <JobStatsPanel days={params.days} assignee={params.assignee} />
         </Suspense>
       )}
       {tab === "tags" && (
@@ -68,7 +70,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <GtmPanel />
         </Suspense>
       )}
-      {tab === "line" && <LineTab u={params.u} filter={params.filter} q={params.q} />}
+      {tab === "friends" && <FriendsTab params={params} selfId={session.id} />}
+      {tab === "chats" && <ChatsTab params={params} selfId={session.id} />}
+      {tab === "linetags" && <LineTagsTab />}
       {tab === "inquiries" && (
         <InquiriesPanel inquiries={inquiries} filter={params.filter} admins={admins.map((a) => ({ id: a.id, label: a.name ?? a.email, email: a.email, avatar: avatarUrl(a.id, a.avatar_version) }))} selfId={session.id} />
       )}
@@ -76,17 +80,41 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   );
 }
 
-// 「LINE 友だち・チャット」：一覧と、選んだ友だちのやり取り。開いたチャットは既読にする
-async function LineTab({ u, filter, q }: { u?: string; filter?: string; q?: string }) {
-  const userId = u && /^U[0-9a-f]{32}$/.test(u) ? u : null;
-  const [friends, selected, messages] = await Promise.all([
-    listFriends().catch((error) => {
-      console.error("LINE friend list failed:", error);
+// 管理者の一覧（担当者のプルダウン用）
+async function adminOptions() {
+  return (await listAdmins().catch(() => [])).map((a) => ({ id: a.id, label: a.name ?? a.email }));
+}
+
+const assigneeOf = (v?: string) => (v && /^d+$/.test(v) ? Number(v) : null);
+
+// 友だち・求職者管理（一覧）
+async function FriendsTab({ params, selfId }: { params: { q?: string; status?: string; assignee?: string; friendStatus?: string; page?: string }; selfId: number }) {
+  const [rows, admins, tags] = await Promise.all([
+    listCandidates({ q: params.q, status: params.status || undefined, assignee: assigneeOf(params.assignee), friendStatus: params.friendStatus || undefined }).catch((error) => {
+      console.error("candidate list failed:", error);
       return null;
     }),
-    userId ? getFriend(userId).catch(() => null) : null,
-    userId ? listMessages(userId).catch(() => []) : [],
+    adminOptions(),
+    listTags().catch(() => []),
   ]);
-  if (selected && selected.unread > 0) await markRead(selected.line_user_id).catch(() => {});
-  return <LinePanel friends={friends} selected={selected} messages={messages} filter={filter} q={q} configured={isMessagingConfigured()} />;
+  const tagOpts = tags.filter((t) => t.is_active).map((t) => ({ id: t.id, name: t.name, color: t.color, manual: t.is_manual_allowed }));
+  return <FriendsPanel rows={rows} admins={admins} tags={tagOpts} params={params} selfId={selfId} configured={isMessagingConfigured()} />;
+}
+
+// 個別チャット（一覧）
+async function ChatsTab({ params, selfId }: { params: { q?: string; status?: string; assignee?: string }; selfId: number }) {
+  const [rows, admins] = await Promise.all([
+    listChats({ q: params.q, status: params.status || undefined, assignee: assigneeOf(params.assignee) }).catch((error) => {
+      console.error("chat list failed:", error);
+      return null;
+    }),
+    adminOptions(),
+  ]);
+  return <ChatsPanel rows={rows} admins={admins} params={params} selfId={selfId} />;
+}
+
+// タグ管理
+async function LineTagsTab() {
+  const [tags, categories] = await Promise.all([listTags(), listCategories()]);
+  return <TagsPanel tags={tags} categories={categories} />;
 }

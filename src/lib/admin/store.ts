@@ -108,6 +108,91 @@ export const ADMIN_TABLES_SQL = [
   )`,
   `CREATE INDEX IF NOT EXISTS hp_line_message_user_idx ON hp_line_message (line_user_id, created_at)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS hp_line_message_event_key ON hp_line_message (webhook_event_id)`,
+  // 友だち・求職者管理／個別チャット／タグ管理（2026-11-20 追加。Linext から移植。仕組みは lib/admin/crm.ts）。
+  // 友だちごとの状態は hp_line_friend に列を足す（hp_ の表にだけ足す）。担当者は hp_admin_user の id（外部キーなし）
+  `ALTER TABLE hp_line_friend ADD COLUMN IF NOT EXISTS status_key VARCHAR(40)`,
+  `ALTER TABLE hp_line_friend ADD COLUMN IF NOT EXISTS assignee_id INTEGER`,
+  `ALTER TABLE hp_line_friend ADD COLUMN IF NOT EXISTS chat_status VARCHAR(20) NOT NULL DEFAULT 'UNHANDLED'`,
+  `ALTER TABLE hp_line_friend ADD COLUMN IF NOT EXISTS chat_assignee_id INTEGER`,
+  `ALTER TABLE hp_line_friend ADD COLUMN IF NOT EXISTS last_action_at TIMESTAMPTZ(6)`,
+  // 求職者のプロフィール（Linext の CandidateProfile と同じ項目）
+  `CREATE TABLE IF NOT EXISTS hp_line_profile (
+    line_user_id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(200),
+    name_kana VARCHAR(200),
+    phone VARCHAR(50),
+    email VARCHAR(254),
+    postal_code VARCHAR(20),
+    prefecture VARCHAR(50),
+    city VARCHAR(200),
+    nearest_station VARCHAR(200),
+    desired_job_type VARCHAR(200),
+    desired_work_location VARCHAR(200),
+    desired_employment_type VARCHAR(200),
+    desired_salary VARCHAR(200),
+    desired_start_timing VARCHAR(200),
+    updated_by INTEGER,
+    updated_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  // ステータスの変更履歴（タイムラインに出す）
+  `CREATE TABLE IF NOT EXISTS hp_line_status_history (
+    id SERIAL PRIMARY KEY,
+    line_user_id VARCHAR(64) NOT NULL,
+    from_key VARCHAR(40),
+    to_key VARCHAR(40) NOT NULL,
+    changed_by INTEGER,
+    changed_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_line_status_history_user_idx ON hp_line_status_history (line_user_id, changed_at)`,
+  // 個別チャットの内部メモ（相手には送られない）
+  `CREATE TABLE IF NOT EXISTS hp_line_note (
+    id SERIAL PRIMARY KEY,
+    line_user_id VARCHAR(64) NOT NULL,
+    admin_id INTEGER,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_line_note_user_idx ON hp_line_note (line_user_id, created_at)`,
+  // 同意履歴（Linext から引き継いだもの）
+  `CREATE TABLE IF NOT EXISTS hp_line_consent (
+    id SERIAL PRIMARY KEY,
+    line_user_id VARCHAR(64) NOT NULL,
+    type VARCHAR(40) NOT NULL,
+    version VARCHAR(40) NOT NULL,
+    consented_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    linext_id VARCHAR(40)
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_line_consent_user_idx ON hp_line_consent (line_user_id)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS hp_line_consent_linext_key ON hp_line_consent (linext_id)`,
+  // タグとタグのカテゴリ（linext_id は Linext から引き継いだときの元の id。同じものを二重に取り込まないため）
+  `CREATE TABLE IF NOT EXISTS hp_tag_category (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    linext_id VARCHAR(40)
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS hp_tag_category_linext_key ON hp_tag_category (linext_id)`,
+  `CREATE TABLE IF NOT EXISTS hp_tag (
+    id SERIAL PRIMARY KEY,
+    category_id INTEGER,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    color VARCHAR(20) NOT NULL DEFAULT '#4B9C6B',
+    is_manual_allowed BOOLEAN NOT NULL DEFAULT true,
+    auto_trigger VARCHAR(40),
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    linext_id VARCHAR(40)
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS hp_tag_linext_key ON hp_tag (linext_id)`,
+  `CREATE TABLE IF NOT EXISTS hp_line_friend_tag (
+    line_user_id VARCHAR(64) NOT NULL,
+    tag_id INTEGER NOT NULL,
+    assigned_by INTEGER,
+    assigned_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (line_user_id, tag_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS hp_line_friend_tag_tag_idx ON hp_line_friend_tag (tag_id)`,
 ];
 
 export type AdminRole = "super" | "staff";
@@ -124,8 +209,10 @@ async function isUpToDate(): Promise<boolean> {
         OR (table_name = 'hp_inquiry' AND column_name = 'memo_updated_by')
         OR (table_name = 'hp_job_favorite' AND column_name = 'staff_mail')
         OR (table_name = 'hp_job_stat_daily' AND column_name = 'applications')
-        OR (table_name = 'hp_line_message' AND column_name = 'webhook_event_id'))`;
-  return rows[0]?.n === 5;
+        OR (table_name = 'hp_line_message' AND column_name = 'webhook_event_id')
+        OR (table_name = 'hp_line_friend' AND column_name = 'last_action_at')
+        OR (table_name = 'hp_line_friend_tag' AND column_name = 'assigned_at'))`;
+  return rows[0]?.n === 7;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。
