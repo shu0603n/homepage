@@ -521,3 +521,89 @@ function CategoryRow({ c, busy, run }: { c: { id: number; name: string; sort_ord
     </li>
   );
 }
+
+// 個別チャットの「新規メッセージ」：送る相手（友だち）を選んで、その人とのチャット画面を開く（こちらから話しかけられる）
+type FriendHit = { line_user_id: string; display_name: string | null; picture_url: string | null; name: string | null; staff_name: string | null; has_chat: boolean };
+
+export function NewChatButton() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [rows, setRows] = useState<FriendHit[] | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/friend-search/?q=${encodeURIComponent(q)}`);
+        const data = (await res.json().catch(() => null)) as { ok?: boolean; rows?: FriendHit[]; message?: string } | null;
+        if (cancelled) return;
+        if (!res.ok || !data?.ok) return setError(data?.message ?? "探せませんでした。");
+        setError("");
+        setRows(data.rows ?? []);
+      } catch {
+        if (!cancelled) setError("通信に失敗しました。");
+      }
+    }, q ? 250 : 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [open, q]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  return (
+    <>
+      <button type="button" className="adm-chipbtn adm-chipbtn--primary" onClick={() => setOpen(true)}>
+        <i className="bi bi-pencil-square" aria-hidden="true" />
+        新規メッセージ
+      </button>
+      {open && (
+        <div className="adm-dialog" role="dialog" aria-modal="true" aria-label="新規メッセージ" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
+          <div className="adm-dialog__box adm-newchat">
+            <h2>新規メッセージ</h2>
+            <p className="adm-muted">送る相手を選んでください。LINE 公式アカウントの友だち（ブロックしていない人）に送れます。</p>
+            <input autoFocus type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="氏名・LINE名・フリガナ・電話番号で探す" aria-label="送る相手を探す" />
+            <ul className="adm-newchat__list">
+              {rows === null && !error && <li className="adm-newchat__none">読み込んでいます…</li>}
+              {rows?.length === 0 && <li className="adm-newchat__none">{q ? "見つかりませんでした。" : "友だちがまだいません。"}</li>}
+              {rows?.map((r, i) => {
+                const name = r.name ?? r.display_name ?? "（名前なし）";
+                return (
+                  <li key={r.line_user_id} style={{ animationDelay: `${Math.min(i, 12) * 25}ms` }}>
+                    <button type="button" onClick={() => router.push(`/admin/chats/${r.line_user_id}/`)}>
+                      <span className="adm-lineav" style={{ width: 36, height: 36, fontSize: 14 }} aria-hidden="true">
+                        {r.picture_url ? <img src={r.picture_url} alt="" loading="lazy" referrerPolicy="no-referrer" /> : (r.name ?? r.display_name ?? "?").slice(0, 1)}
+                      </span>
+                      <span className="adm-newchat__who">
+                        <strong>{name}</strong>
+                        <small>
+                          {[r.name && r.display_name ? `LINE：${r.display_name}` : null, r.staff_name ? `スタッフ：${r.staff_name}` : null].filter(Boolean).join("　") || "　"}
+                        </small>
+                      </span>
+                      <span className="adm-newchat__tag">{r.has_chat ? "やり取りあり" : "はじめて"}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {error && <small className="adm-crm-error">{error}</small>}
+            <div className="adm-dialog__foot">
+              <button type="button" className="adm-chipbtn" onClick={() => setOpen(false)}>
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

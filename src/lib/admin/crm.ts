@@ -392,6 +392,21 @@ export async function addNote(id: string, body: string, adminId: number): Promis
   await prisma.$executeRaw`INSERT INTO hp_line_note (line_user_id, admin_id, body) VALUES (${id}, ${adminId}, ${body})`;
 }
 
+// 個別チャットの「新規メッセージ」：送る相手（友だち）を探す。q が空なら、最近反応のあった友だちから。ブロック中の人は出さない
+export async function searchFriends(q: string) {
+  await ensureAdminTables();
+  const like = q.trim() ? `%${q.trim()}%` : null;
+  return prisma.$queryRaw<{ line_user_id: string; display_name: string | null; picture_url: string | null; name: string | null; staff_name: string | null; has_chat: boolean }[]>`
+    SELECT f.line_user_id, f.display_name, f.picture_url, p.name, s.name AS staff_name, (f.last_message_at IS NOT NULL) AS has_chat
+    FROM hp_line_friend f
+    LEFT JOIN hp_line_profile p ON p.line_user_id = f.line_user_id
+    LEFT JOIN LATERAL (SELECT name FROM staff WHERE staff.line_user_id = f.line_user_id ORDER BY id DESC LIMIT 1) s ON true
+    WHERE f.is_friend
+      AND (${like}::text IS NULL OR f.display_name ILIKE ${like} OR p.name ILIKE ${like} OR p.name_kana ILIKE ${like} OR p.phone ILIKE ${like} OR s.name ILIKE ${like})
+    ORDER BY COALESCE(f.last_action_at, f.last_message_at, f.followed_at, f.created_at) DESC NULLS LAST
+    LIMIT 30`;
+}
+
 export async function friendExists(id: string): Promise<boolean> {
   await ensureAdminTables();
   const [r] = await prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM hp_line_friend WHERE line_user_id = ${id}`;

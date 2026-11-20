@@ -181,22 +181,7 @@ function SourceDaily({ t }: { t: Ga4Traffic }) {
   );
 }
 
-// メディア（utm_medium）の名前を日本語にする。印（utm）のない訪問は Google が organic・referral などに分類する
-const MEDIUM_NAMES: Record<string, string> = {
-  organic: '検索エンジン（Google・Yahoo! など）',
-  referral: 'ほかのサイト・アプリのリンク',
-  [NATURAL]: '直接・不明（URL 入力・ブックマーク・LINE など）',
-  cpc: '検索広告',
-  paid_social: 'SNS 広告',
-  paidsocial: 'SNS 広告',
-  social: 'SNS',
-  email: 'メール',
-  line: 'LINE',
-  instagram: 'Instagram',
-  qr: 'QR コード'
-};
-
-// メディア別・キャンペーン別の表（アクセス・登録・登録率）。names があれば名前を日本語にし、元の名前を小さく添える
+// キャンペーン別の表（アクセス・登録・登録率）。names があれば名前を日本語にし、元の名前を小さく添える
 function TrafficTable({ rows, empty, names }: { rows: TrafficRow[]; empty: string; names?: Record<string, string> }) {
   if (rows.length === 0) return <p className="adm-empty">{empty}</p>;
   return (
@@ -536,15 +521,6 @@ export async function Ga4Panel() {
         )}
       </Card>
 
-      <Card
-        en="Media"
-        title="メディア別（utm_medium）"
-        help="訪問の種類です。リンクに印（utm_medium）を付けた広告・SNS はその名前で、印のない訪問は Google の分類（検索・ほかのサイト・直接）で表示します。かっこ内は Google での元の名前です。"
-        wide
-      >
-        {t ? <TrafficTable rows={t.mediums} empty="まだデータがありません。" names={MEDIUM_NAMES} /> : <TrafficUnavailable />}
-      </Card>
-
       <div className="adm-grid2">
         <Card
           en="Referrers"
@@ -773,8 +749,8 @@ function excerpt(message: string | null): string {
 
 const FORM_NAMES = { employers: '企業担当者様', seekers: 'お仕事をお探しの方' } as const;
 const FILTERS = [
-  ['', 'すべて'],
   ['open', '未対応'],
+  ['all', 'すべて'],
   ['done', '対応済み'],
   ['mine', '自分の担当'],
   ['employers', '企業担当者様'],
@@ -801,15 +777,17 @@ export function InquiriesPanel({
         <span>お問い合わせを読み込めませんでした。時間をおいて開き直してください。</span>
       </div>
     );
+  // 何も選ばれていなければ「未対応」を出す（いちばん使うため）
+  const current = FILTERS.some(([k]) => k === filter) ? filter! : 'open';
   const shown = inquiries.filter((i) =>
-    filter === 'open'
+    current === 'open'
       ? !i.handled
-      : filter === 'done'
+      : current === 'done'
         ? i.handled
-        : filter === 'mine'
+        : current === 'mine'
           ? i.assignee_id === selfId
-          : filter === 'employers' || filter === 'seekers'
-            ? i.form === filter
+          : current === 'employers' || current === 'seekers'
+            ? i.form === current
             : true
   );
   const open = inquiries.filter((i) => !i.handled).length;
@@ -818,11 +796,7 @@ export function InquiriesPanel({
       <div className="adm-toolbar">
         <nav className="adm-filters" aria-label="絞り込み">
           {FILTERS.map(([key, label]) => (
-            <Link
-              key={key}
-              href={`/admin/?tab=inquiries${key ? `&filter=${key}` : ''}`}
-              className={`adm-filter${(filter ?? '') === key ? ' is-active' : ''}`}
-            >
+            <Link key={key} href={`/admin/?tab=inquiries&filter=${key}`} className={`adm-filter${current === key ? ' is-active' : ''}`}>
               {label}
               {key === 'open' && open > 0 && <em>{open}</em>}
             </Link>
@@ -847,27 +821,29 @@ export function InquiriesPanel({
                     {i.name} 様
                   </span>
                   <span className="adm-inquiry__date">{dateTime(i.created_at)}</span>
-                  {i.assignee_id !== null &&
-                    (() => {
-                      // 担当者のアイコン（未登録なら名前の頭文字）。削除された管理者は人のマーク
-                      const a = adminById.get(i.assignee_id);
-                      return (
-                        <span className="adm-inquiry__assignee">
-                          {a ? (
-                            <AdminAvatar name={a.label} email={a.email} url={a.avatar} className="adm-inquiry__avatar" />
-                          ) : (
-                            <i className="bi bi-person" aria-hidden="true" />
-                          )}
-                          担当：{a?.label ?? '（削除された管理者）'}
-                        </span>
-                      );
-                    })()}
-                  {i.memo && (
-                    <span className="adm-inquiry__hasmemo">
-                      <i className="bi bi-sticky" aria-hidden="true" />
-                      メモあり
-                    </span>
-                  )}
+                  <span className="adm-inquiry__side">
+                    {i.assignee_id !== null &&
+                      (() => {
+                        // 担当者のアイコン（未登録なら名前の頭文字）。削除された管理者は人のマーク
+                        const a = adminById.get(i.assignee_id);
+                        return (
+                          <span className="adm-inquiry__assignee">
+                            {a ? (
+                              <AdminAvatar name={a.label} email={a.email} url={a.avatar} className="adm-inquiry__avatar" />
+                            ) : (
+                              <i className="bi bi-person" aria-hidden="true" />
+                            )}
+                            担当：{a?.label ?? '（削除された管理者）'}
+                          </span>
+                        );
+                      })()}
+                    {i.memo && (
+                      <span className="adm-inquiry__hasmemo">
+                        <i className="bi bi-sticky" aria-hidden="true" />
+                        メモあり
+                      </span>
+                    )}
+                  </span>
                   <span className="adm-inquiry__excerpt">{excerpt(i.message)}</span>
                 </summary>
                 <dl className="adm-inquiry__body">

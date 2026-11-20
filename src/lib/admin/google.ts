@@ -263,7 +263,7 @@ async function getTraffic(base: string, range: { startDate: string; endDate: str
     for (const r of rep.rows ?? []) m.set(label(dim(r)), (m.get(label(dim(r))) ?? 0) + val(r));
     return [...m]
       // キャンペーン別では、印のない訪問（(organic)・(referral) などかっこ付きの値）を除く
-      .filter(([n]) => !(dropNatural && (n === NATURAL || /^(.*)$/.test(n))))
+      .filter(([n]) => !(dropNatural && (n === NATURAL || /^\(.*\)$/.test(n))))
       .map(([name, s]) => ({ name, sessions: s, signups: signups.get(name) ?? 0 }))
       .sort((x, y) => y.sessions - x.sessions);
   };
