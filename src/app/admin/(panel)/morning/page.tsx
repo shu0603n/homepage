@@ -92,50 +92,53 @@ export default async function MorningPage({ searchParams }: { searchParams: Prom
           </MorningToday>
         )}
         <section className="adm-card">
-          <p className="adm-card__en">Members</p>
-          <h2 className="adm-card__title">担当した回数</h2>
-          <p className="adm-card__help">朝礼のあった日に担当した回数です（いなかった日・朝礼なしの日は数えません）。回数の少ない人から、新しいコメントの担当に選ばれます。当番から外す人（長期のお休みなど）は、右のスイッチで外せます。</p>
-          <div className="adm-tablewrap">
-            <table className="adm-table mg-members">
-              <thead>
-                <tr>
-                  <th>名前</th>
-                  <th>司会</th>
-                  <th>発表</th>
-                  <th>コメント</th>
-                  <th>合計</th>
-                  <th>最後に担当</th>
-                  <th>当番</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...v.members]
-                  .sort((a, b) => a.total - b.total || a.id - b.id)
-                  .map((m) => (
-                    <tr key={m.id} className={m.active ? undefined : "is-off"}>
-                      <td>{m.name}</td>
-                      <td>{m.mc}</td>
-                      <td>{m.presenter}</td>
-                      <td>{m.commenter}</td>
-                      <td>
-                        <strong>{m.total}</strong>
-                      </td>
-                      <td>{m.last ? dayLabel(m.last) : "－"}</td>
-                      <td>
-                        <MemberToggle id={m.id} active={m.active} />
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-        <section className="adm-card">
           <p className="adm-card__en">Holidays</p>
           <h2 className="adm-card__title">会社の休み</h2>
           <p className="adm-card__help">土日と祝日（振替休日を含む）は自動でお休みになります。それ以外の会社のお休み（年末年始・夏季休業など）をここに足すと、その日は朝礼がない日になります。</p>
           <HolidayEditor holidays={v.holidays} />
         </section>
+        {/* 担当した回数（特級の管理者だけ） */}
+        {session.role === "super" && (
+          <section className="adm-card">
+            <p className="adm-card__en">Members</p>
+            <h2 className="adm-card__title">担当した回数</h2>
+            <p className="adm-card__help">朝礼のあった日に担当した回数です（いなかった日・朝礼なしの日は数えません）。回数の少ない人から、新しいコメントの担当に選ばれます。当番から外す人（長期のお休みなど）は、右のスイッチで外せます。</p>
+            <div className="adm-tablewrap">
+              <table className="adm-table mg-members">
+                <thead>
+                  <tr>
+                    <th>名前</th>
+                    <th>司会</th>
+                    <th>発表</th>
+                    <th>コメント</th>
+                    <th>合計</th>
+                    <th>最後に担当</th>
+                    <th>当番</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...v.members]
+                    .sort((a, b) => a.total - b.total || a.id - b.id)
+                    .map((m) => (
+                      <tr key={m.id} className={m.active ? undefined : "is-off"}>
+                        <td>{m.name}</td>
+                        <td>{m.mc}</td>
+                        <td>{m.presenter}</td>
+                        <td>{m.commenter}</td>
+                        <td>
+                          <strong>{m.total}</strong>
+                        </td>
+                        <td>{m.last ? dayLabel(m.last) : "－"}</td>
+                        <td>
+                          <MemberToggle id={m.id} active={m.active} />
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
       </div>
     </AdminShell>
   );
