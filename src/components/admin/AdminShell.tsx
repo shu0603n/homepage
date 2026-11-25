@@ -23,7 +23,7 @@ const NAV: { key: AdminNavKey; href: string; label: string; icon: string; group:
   { key: 'inquiries', href: '/admin/?tab=inquiries', label: 'お問い合わせ', icon: 'bi-envelope-paper', group: 'work' },
   { key: 'jobs', href: '/admin/?tab=jobs', label: '案件の反応', icon: 'bi-bar-chart-line', group: 'work' },
   { key: 'forms', href: '/admin/?tab=forms', label: 'フォーム管理', icon: 'bi-ui-checks', group: 'work' },
-  { key: 'morning', href: '/admin/morning/', label: '朝礼', icon: 'bi-flower1', group: 'work', superOnly: true },
+  { key: 'morning', href: '/admin/?tab=morning', label: '朝礼', icon: 'bi-flower1', group: 'work', superOnly: true },
   { key: 'friends', href: '/admin/?tab=friends', label: '友だち・求職者管理', icon: 'bi-people', group: 'line' },
   { key: 'chats', href: '/admin/?tab=chats', label: '個別チャット', icon: 'bi-chat-dots', group: 'line' },
   { key: 'linetags', href: '/admin/?tab=linetags', label: 'タグ管理', icon: 'bi-bookmarks', group: 'line' }

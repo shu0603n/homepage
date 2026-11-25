@@ -28,6 +28,9 @@ export type MorningDay = {
 
 export class MorningError extends Error {}
 
+// 記録を付けるいちばん古い日（2026年9月以前の記録は使わない）
+const FIRST_DAY = "2026-10-01";
+
 async function companyHolidays(): Promise<Map<string, string>> {
   const rows = await prisma.$queryRaw<{ day: string; name: string | null }[]>`SELECT to_char(day, 'YYYY-MM-DD') AS day, name FROM hp_morning_holiday`;
   return new Map(rows.map((r) => [r.day, r.name ?? "会社の休み"]));
@@ -137,6 +140,7 @@ export async function assignDay(day: string, roles: { mc: number; presenter: num
   await ensureThroughToday();
   const today = todayJst();
   if (day > today) throw new MorningError("これからの日の当番は決められません。");
+  if (day < FIRST_DAY) throw new MorningError("2026年9月以前の日は登録できません。");
   if (offReason(day, await companyHolidays())) throw new MorningError("この日は朝礼のない日（土日・祝日・会社の休み）です。");
   const ids = [roles.mc, roles.presenter, roles.commenter];
   if (new Set(ids).size !== 3) throw new MorningError("司会・発表・コメントは、別々の人にしてください。");
@@ -154,6 +158,7 @@ export async function assignDay(day: string, roles: { mc: number; presenter: num
 export async function setPastSkipped(day: string, skip: boolean): Promise<void> {
   await ensureAdminTables();
   if (day >= todayJst()) throw new MorningError("今日の朝礼なしは、「今日の朝礼」の欄で変えてください。");
+  if (day < FIRST_DAY) throw new MorningError("2026年9月以前の日は登録できません。");
   const [d] = await readDays(prisma, "WHERE day = $1::date", day);
   if (!d) {
     // 記録のない過去の日は、当番を決めずに「朝礼なし」として登録する

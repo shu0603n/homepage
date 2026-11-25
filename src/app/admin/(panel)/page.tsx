@@ -7,6 +7,7 @@ import { Ga4Panel, GtmPanel, InquiriesPanel, ScPanel } from "@/components/admin/
 import { JobStatsPanel } from "@/components/admin/JobStatsPanel";
 import { ChatsPanel, FriendsPanel, TagsPanel } from "@/components/admin/CrmPanels";
 import { FormsListPanel } from "@/components/admin/FormsPanels";
+import { MorningTab } from "@/components/admin/MorningTab";
 import { listForms, listTemplates } from "@/lib/admin/forms";
 import { listCandidates, listCategories, listChats, listTags } from "@/lib/admin/crm";
 import { isMessagingConfigured } from "@/lib/line-messaging";
@@ -16,7 +17,8 @@ import { countUnhandledInquiries, listAdmins, listInquiries } from "@/lib/admin/
 export const dynamic = "force-dynamic";
 
 // 管理ページのトップ。?tab= で表示する内容を切り替える（左のメニューから選ぶ）。何も指定がなければ、いちばん使うお問い合わせを出す
-const TABS: Record<Exclude<AdminNavKey, "users" | "password" | "morning">, { en: string; title: string; lead: string }> = {
+const TABS: Record<Exclude<AdminNavKey, "users" | "password">, { en: string; title: string; lead: string }> = {
+  morning: { en: "Morning Meeting", title: "朝礼", lead: "発表かコメントを書くとつぼみが生え、両方そろうと花が咲きます。" },
   access: { en: "Analytics", title: "アクセス分析", lead: "ホームページに何人が来て、どのページを見ているか（Google アナリティクス）" },
   search: { en: "Search", title: "検索での見え方", lead: "Google の検索結果にどれだけ出て、どんな言葉で見つけてもらえているか（Search Console）" },
   jobs: { en: "Job Insights", title: "案件の反応", lead: "ホームページの案件一覧での表示・クリック・閲覧の回数と、「気になる」・ホームページからの応募の数" },
@@ -28,13 +30,13 @@ const TABS: Record<Exclude<AdminNavKey, "users" | "password" | "morning">, { en:
   forms: { en: "Forms", title: "フォーム管理", lead: "アンケートや申し込みのフォームを作り、ホームページに回答ページを作って、誰がどう答えたかを確かめます" },
 };
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; filter?: string; days?: string; q?: string; status?: string; assignee?: string; friendStatus?: string; page?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; filter?: string; days?: string; q?: string; status?: string; assignee?: string; friendStatus?: string; page?: string; month?: string }> }) {
   const session = await getAdminSession().catch(() => null);
   if (!session) redirect("/admin/login/");
   const params = await searchParams;
-  // 計測タグは特級の管理者だけ（一般の管理者が URL で開いても、お問い合わせを出す）
+  // 計測タグ・朝礼は特級の管理者だけ（一般の管理者が URL で開いても、お問い合わせを出す）
   const asked = params.tab && params.tab in TABS ? (params.tab as keyof typeof TABS) : "inquiries";
-  const tab = asked === "tags" && session.role !== "super" ? "inquiries" : asked;
+  const tab = (asked === "tags" || asked === "morning") && session.role !== "super" ? "inquiries" : asked;
   const head = TABS[tab];
 
   // データベースへの問い合わせは同時に送る（順番に待つより速い）。
@@ -77,6 +79,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "chats" && <ChatsTab params={params} selfId={session.id} />}
       {tab === "linetags" && <LineTagsTab />}
       {tab === "forms" && <FormsTab isSuper={session.role === "super"} />}
+      {tab === "morning" && (
+        <Suspense fallback={<AdminPanelSkeleton kpis={0} cards={2} />}>
+          <MorningTab session={session} month={params.month} />
+        </Suspense>
+      )}
       {tab === "inquiries" && (
         <InquiriesPanel inquiries={inquiries} filter={params.filter} admins={admins.map((a) => ({ id: a.id, label: a.name ?? a.email, email: a.email, avatar: avatarUrl(a.id, a.avatar_version) }))} selfId={session.id} />
       )}
