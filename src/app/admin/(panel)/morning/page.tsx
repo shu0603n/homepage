@@ -61,7 +61,7 @@ export default async function MorningPage({ searchParams }: { searchParams: Prom
   );
 
   return (
-    <AdminShell session={session} active="morning" en="Morning Meeting" title="朝礼" lead="発表かコメントを書くとつぼみが生え、両方そろうと花が咲きます。毎月、みんなで草原いっぱいに花を咲かせましょう。">
+    <AdminShell session={session} active="morning" en="Morning Meeting" title="朝礼" lead="発表かコメントを書くとつぼみが生え、両方そろうと花が咲きます。">
       <div className="adm-stack">
         <div className="mg-monthbar">
           <Link href={`/admin/morning/?month=${shift(month, -1)}`} className="adm-chipbtn">
