@@ -33,6 +33,17 @@ export async function getLineProfile(userId: string): Promise<LineProfile | null
   return (await res.json()) as LineProfile;
 }
 
+// 友だちかどうかを確かめる：ok＝友だち（プロフィールも返す）／gone＝ブロック中か友だちでない（LINE が 404 を返す）／error＝通信の失敗など（判断しない）
+export async function checkLineFriend(userId: string): Promise<{ status: "ok"; profile: LineProfile } | { status: "gone" } | { status: "error" }> {
+  try {
+    const res = await fetch(`${API}/profile/${encodeURIComponent(userId)}`, { headers: authHeaders(), signal: AbortSignal.timeout(5000) });
+    if (res.ok) return { status: "ok", profile: (await res.json()) as LineProfile };
+    return res.status === 404 ? { status: "gone" } : { status: "error" };
+  } catch {
+    return { status: "error" };
+  }
+}
+
 export class LineSendError extends Error {
   constructor(
     message: string,

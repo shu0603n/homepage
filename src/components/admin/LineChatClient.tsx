@@ -108,3 +108,48 @@ export function LineImportButton({ small = false }: { small?: boolean }) {
     </span>
   );
 }
+
+// 「ブロック状況を確認」：一覧の友だちを LINE に問い合わせて、ブロック中の印を付け直す（400 人ずつ、続きがあれば続けて確かめる）
+export function LineBlockCheckButton() {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  async function run() {
+    setBusy(true);
+    setNote("");
+    const total = { checked: 0, blocked: 0, newlyBlocked: 0, unblocked: 0, failed: 0 };
+    try {
+      let after: string | null = null;
+      for (let round = 0; round < 50; round++) {
+        const res: Response = await fetch("/api/admin/line/check-blocked/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ after }) });
+        const data = (await res.json().catch(() => null)) as ({ ok?: boolean; message?: string; next?: string | null } & typeof total) | null;
+        if (!res.ok || !data?.ok) throw new Error(data?.message ?? "確認に失敗しました。");
+        for (const k of Object.keys(total) as (keyof typeof total)[]) total[k] += data[k] ?? 0;
+        setNote(`確認中…（${total.checked + total.failed}人）`);
+        if (!data.next) break;
+        after = data.next;
+      }
+      setNote(
+        `${total.checked}人を確認しました。ブロック中（または友だちでない）：${total.blocked}人` +
+          (total.newlyBlocked ? `（新たに印を付けた人：${total.newlyBlocked}人）` : "") +
+          (total.unblocked ? `。友だちに戻っていた人：${total.unblocked}人` : "") +
+          (total.failed ? `。確認できなかった人：${total.failed}人（時間をおいてもう一度押してください）` : "") +
+          "。",
+      );
+      router.refresh();
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "確認に失敗しました。");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <span className="adm-line__importbtn is-small">
+      <button type="button" className="adm-chipbtn" onClick={run} disabled={busy}>
+        <i className={`bi ${busy ? "bi-hourglass-split" : "bi-person-slash"}`} aria-hidden="true" />
+        {busy ? "確認しています…" : "ブロック状況を確認"}
+      </button>
+      {note && <small>{note}</small>}
+    </span>
+  );
+}

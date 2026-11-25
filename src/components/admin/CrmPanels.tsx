@@ -10,7 +10,7 @@ import {
   TagEditor,
   CategoryManager
 } from '@/components/admin/CrmClient';
-import { LineAutoRefresh, LineChatComposer, LineImportButton } from '@/components/admin/LineChatClient';
+import { LineAutoRefresh, LineBlockCheckButton, LineChatComposer, LineImportButton } from '@/components/admin/LineChatClient';
 import {
   CANDIDATE_STATUSES,
   CHAT_STATUS_LABEL,
@@ -220,6 +220,7 @@ export function FriendsPanel({
       )}
       {configured && rows.length > 0 && (
         <div className="adm-crm-import">
+          <LineBlockCheckButton />
           <LineImportButton small />
         </div>
       )}

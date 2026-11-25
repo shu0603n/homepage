@@ -2971,3 +2971,4 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .adm-fb__tplsheet { border: 2px solid #cdeacf; }
 .adm-fb__tplsheet.is-off { opacity: .6; border-style: dashed; }
 .adm-pill--sheet { background: #e6f4ea; color: #137333; }
+.adm-crm-import { flex-wrap: wrap; align-items: flex-start; gap: 12px 20px; }

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ensureAdminTables } from "@/lib/admin/store";
-import { getLineProfile } from "@/lib/line-messaging";
+import { getLineProfile, checkLineFriend } from "@/lib/line-messaging";
 import { applyAutoTags } from "@/lib/admin/crm";
 
 // LINE 公式アカウントの友だち（hp_line_friend）と個別メッセージ（hp_line_message）。
@@ -171,4 +171,41 @@ export async function importExistingFriends(followerIds: string[] | null): Promi
     added++;
   }
   return { source, added, remaining: Math.max(0, todo.length - IMPORT_BATCH) };
+}
+
+// 「ブロック状況を確認」：一覧の友だち一人ひとりについて LINE に問い合わせ、ブロック中（または友だちでない）なら印を付ける。
+// Webhook を切り替える前にブロックした人は、ブロックの知らせが届いていないため、こうして確かめる。
+// 友だちに戻っていた人は印を外し、表示名・アイコンも新しくする。通信に失敗した人は、そのまま（判断しない）。
+// 1回で 400 人まで（after＝前回の続きから）。同時に 8 人ずつ問い合わせる
+const CHECK_BATCH = 400;
+export async function checkBlockedFriends(after: string | null): Promise<{ checked: number; blocked: number; newlyBlocked: number; unblocked: number; failed: number; next: string | null }> {
+  await ensureAdminTables();
+  const rows = await prisma.$queryRaw<{ line_user_id: string; is_friend: boolean }[]>`
+    SELECT line_user_id, is_friend FROM hp_line_friend WHERE (${after}::text IS NULL OR line_user_id > ${after})
+    ORDER BY line_user_id LIMIT ${CHECK_BATCH + 1}`;
+  const batch = rows.slice(0, CHECK_BATCH);
+  const result = { checked: 0, blocked: 0, newlyBlocked: 0, unblocked: 0, failed: 0, next: rows.length > CHECK_BATCH ? batch[batch.length - 1].line_user_id : null };
+  for (let i = 0; i < batch.length; i += 8) {
+    await Promise.all(
+      batch.slice(i, i + 8).map(async (f) => {
+        const r = await checkLineFriend(f.line_user_id);
+        if (r.status === "error") return void result.failed++;
+        result.checked++;
+        if (r.status === "gone") {
+          result.blocked++;
+          if (f.is_friend) {
+            result.newlyBlocked++;
+            await prisma.$executeRaw`UPDATE hp_line_friend SET is_friend = false, unfollowed_at = COALESCE(unfollowed_at, now()) WHERE line_user_id = ${f.line_user_id}`;
+          }
+          return;
+        }
+        if (!f.is_friend) result.unblocked++;
+        await prisma.$executeRaw`
+          UPDATE hp_line_friend SET is_friend = true, display_name = COALESCE(${r.profile.displayName ?? null}, display_name),
+            picture_url = COALESCE(${r.profile.pictureUrl ?? null}, picture_url), profile_updated_at = now()
+          WHERE line_user_id = ${f.line_user_id}`;
+      }),
+    );
+  }
+  return result;
 }
