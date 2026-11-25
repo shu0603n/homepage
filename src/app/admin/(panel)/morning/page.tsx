@@ -19,7 +19,9 @@ const toSpot = (day: string, off: string | null, r: MorningDay | null): Spot => 
   commenter: r?.commenter_id ?? null,
   absent: r?.absent_ids ?? [],
   presentation: r?.presentation ?? null,
+  presentationBy: r?.presentation_by ?? null,
   comment: r?.comment ?? null,
+  commentBy: r?.comment_by ?? null,
 });
 const shift = (month: string, n: number) => {
   const [y, m] = month.split("-").map(Number);

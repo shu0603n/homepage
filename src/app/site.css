@@ -3051,3 +3051,5 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .mg-holidays__add { display: flex; flex-wrap: wrap; gap: 8px; }
 .mg-holidays__add input { padding: 8px 10px; border: 1px solid #cfdbe2; border-radius: 10px; font: inherit; font-size: 13px; }
 .mg-entry__ops { display: flex; gap: 14px; }
+.mg-entry__ghost { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: #eef2f5; color: var(--sub); font-size: 11px; font-style: normal; }
+.mg-entry__proxy { margin: 0; padding: 6px 10px; border-radius: 8px; background: #fff5dc; color: #6b4b00; font-size: 12px; }

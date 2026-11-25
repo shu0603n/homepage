@@ -4,7 +4,7 @@ import { addCompanyHoliday, eraseEntry, MorningError, removeCompanyHoliday, setM
 import { jsonError } from "@/lib/auth/http";
 
 // 朝礼の操作（POST { action, ... }。いまは特級の管理者だけ）。仕組みは lib/admin/morning.ts
-//   write   発表・コメントを書く { day, kind: presentation | comment, text }（その日の担当の本人だけ）
+//   write   発表・コメントを書く { day, kind: presentation | comment, text }（その日の担当の本人。特級の管理者は代筆もできる）
 //   erase   発表・コメントを消す { day, kind }（特級の管理者）
 //   absent  今日いない人を変える { admin_id, absent }
 //   skip    今日を朝礼なしにする・戻す { skip }
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     switch (b.action) {
       case "write":
         if (!isDay(b.day) || (b.kind !== "presentation" && b.kind !== "comment") || typeof b.text !== "string") return jsonError("無効なリクエストです。", 400);
-        await writeEntry(b.day, b.kind, b.text, r.session.id);
+        await writeEntry(b.day, b.kind, b.text, r.session.id, r.session.role === "super");
         break;
       case "erase":
         // 朝礼のページをほかの管理者にも開いたときも、消せるのは特級の管理者だけ

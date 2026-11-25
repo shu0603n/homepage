@@ -20,8 +20,10 @@ export type MorningDay = {
   absent_ids: number[];
   presentation: string | null;
   presentation_at: Date | null;
+  presentation_by: number | null; // 書いた人（本人か、代筆した特級の管理者）
   comment: string | null;
   comment_at: Date | null;
+  comment_by: number | null;
 };
 
 export class MorningError extends Error {}
@@ -47,7 +49,7 @@ async function rotationMembers(): Promise<number[]> {
   return admins.map((a) => a.id).filter((id) => !out.has(id));
 }
 
-const DAY_COLS = `to_char(day, 'YYYY-MM-DD') AS day, status, mc_id, presenter_id, commenter_id, absent_ids, presentation, presentation_at, comment, comment_at`;
+const DAY_COLS = `to_char(day, 'YYYY-MM-DD') AS day, status, mc_id, presenter_id, commenter_id, absent_ids, presentation, presentation_at, presentation_by, comment, comment_at, comment_by`;
 type Tx = Pick<typeof prisma, "$queryRawUnsafe" | "$executeRaw" | "$queryRaw">;
 const readDays = (tx: Tx, where = "", ...params: unknown[]) =>
   tx.$queryRawUnsafe<MorningDay[]>(`SELECT ${DAY_COLS} FROM hp_morning_day ${where} ORDER BY day`, ...params);
@@ -90,7 +92,7 @@ export async function ensureThroughToday(): Promise<void> {
         await tx.$executeRaw`
           INSERT INTO hp_morning_day (day, status, mc_id, presenter_id, commenter_id) VALUES (${day}::date, 'held', ${roles.mc}, ${roles.presenter}, ${roles.commenter})
           ON CONFLICT (day) DO NOTHING`;
-        days.push({ day, status: "held", mc_id: roles.mc, presenter_id: roles.presenter, commenter_id: roles.commenter, absent_ids: [], presentation: null, presentation_at: null, comment: null, comment_at: null });
+        days.push({ day, status: "held", mc_id: roles.mc, presenter_id: roles.presenter, commenter_id: roles.commenter, absent_ids: [], presentation: null, presentation_at: null, presentation_by: null, comment: null, comment_at: null, comment_by: null });
       }
     },
     { timeout: 30_000, maxWait: 15_000 },
@@ -122,23 +124,24 @@ export async function updateToday(change: { absent?: { adminId: number; absent: 
   );
 }
 
-// 発表・コメントを書く（その日の発表者・コメントの人本人だけ。書き直しもできる。空にすると消す）
-export async function writeEntry(day: string, kind: "presentation" | "comment", text: string, adminId: number): Promise<void> {
+// 発表・コメントを書く（その日の発表者・コメントの人本人だけ。特級の管理者は代筆もできる。書き直しもできる。空にすると消す）
+export async function writeEntry(day: string, kind: "presentation" | "comment", text: string, adminId: number, canProxy = false): Promise<void> {
   await ensureAdminTables();
   const [d] = await readDays(prisma, "WHERE day = $1::date", day);
   if (!d || d.status !== "held") throw new MorningError("この日は朝礼の記録がありません。");
   const owner = kind === "presentation" ? d.presenter_id : d.commenter_id;
-  if (owner !== adminId) throw new MorningError(kind === "presentation" ? "発表は、この日の発表者本人だけが書けます。" : "コメントは、この日のコメントの人本人だけが書けます。");
+  if (owner !== adminId && !(canProxy && owner !== null)) throw new MorningError(kind === "presentation" ? "発表は、この日の発表者本人だけが書けます。" : "コメントは、この日のコメントの人本人だけが書けます。");
   const value = text.trim() ? text.trim().slice(0, 5000) : null;
-  if (kind === "presentation") await prisma.$executeRaw`UPDATE hp_morning_day SET presentation = ${value}, presentation_at = ${value ? new Date() : null}, updated_at = now() WHERE day = ${day}::date`;
-  else await prisma.$executeRaw`UPDATE hp_morning_day SET comment = ${value}, comment_at = ${value ? new Date() : null}, updated_at = now() WHERE day = ${day}::date`;
+  const by = value ? adminId : null;
+  if (kind === "presentation") await prisma.$executeRaw`UPDATE hp_morning_day SET presentation = ${value}, presentation_at = ${value ? new Date() : null}, presentation_by = ${by}, updated_at = now() WHERE day = ${day}::date`;
+  else await prisma.$executeRaw`UPDATE hp_morning_day SET comment = ${value}, comment_at = ${value ? new Date() : null}, comment_by = ${by}, updated_at = now() WHERE day = ${day}::date`;
 }
 
 // 発表・コメントを消す（特級の管理者）。その日の当番は、両方とも消えればまた変えられる
 export async function eraseEntry(day: string, kind: "presentation" | "comment"): Promise<void> {
   await ensureAdminTables();
-  if (kind === "presentation") await prisma.$executeRaw`UPDATE hp_morning_day SET presentation = NULL, presentation_at = NULL, updated_at = now() WHERE day = ${day}::date`;
-  else await prisma.$executeRaw`UPDATE hp_morning_day SET comment = NULL, comment_at = NULL, updated_at = now() WHERE day = ${day}::date`;
+  if (kind === "presentation") await prisma.$executeRaw`UPDATE hp_morning_day SET presentation = NULL, presentation_at = NULL, presentation_by = NULL, updated_at = now() WHERE day = ${day}::date`;
+  else await prisma.$executeRaw`UPDATE hp_morning_day SET comment = NULL, comment_at = NULL, comment_by = NULL, updated_at = now() WHERE day = ${day}::date`;
 }
 
 // 当番に入れる・外す

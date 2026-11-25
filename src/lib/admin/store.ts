@@ -329,6 +329,9 @@ export const ADMIN_TABLES_SQL = [
     created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+  // 書いた人（本人か、代筆した特級の管理者）。2026-11-25 追加
+  `ALTER TABLE hp_morning_day ADD COLUMN IF NOT EXISTS presentation_by INTEGER`,
+  `ALTER TABLE hp_morning_day ADD COLUMN IF NOT EXISTS comment_by INTEGER`,
   `CREATE TABLE IF NOT EXISTS hp_morning_member (
     admin_id INTEGER PRIMARY KEY,
     active BOOLEAN NOT NULL DEFAULT true,
@@ -380,8 +383,9 @@ async function isUpToDate(): Promise<boolean> {
         OR (table_name = 'hp_form' AND column_name = 'notify')
         OR (table_name = 'hp_morning_day' AND column_name = 'comment_at')
         OR (table_name = 'hp_morning_member' AND column_name = 'active')
-        OR (table_name = 'hp_morning_holiday' AND column_name = 'name'))`;
-  return rows[0]?.n === 19;
+        OR (table_name = 'hp_morning_holiday' AND column_name = 'name')
+        OR (table_name = 'hp_morning_day' AND column_name = 'comment_by'))`;
+  return rows[0]?.n === 20;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。

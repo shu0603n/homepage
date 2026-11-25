@@ -15,7 +15,9 @@ export type Spot = {
   commenter: number | null;
   absent: number[];
   presentation: string | null;
+  presentationBy: number | null; // 書いた人（本人でなければ代筆）
   comment: string | null;
+  commentBy: number | null;
 };
 
 const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
@@ -269,12 +271,15 @@ function RoleList({ spot, people, selfId }: { spot: { mc: number | null; present
   );
 }
 
-// 発表・コメントの欄（担当の本人なら書ける）
+// 発表・コメントの欄（担当の本人なら書ける。特級の管理者（canErase）は代筆・削除もできる）
 function Entry({ spot, kind, people, selfId, canErase = false }: { spot: Spot; kind: "presentation" | "comment"; people: Map<number, Person>; selfId: number; canErase?: boolean }) {
   const router = useRouter();
   const owner = kind === "presentation" ? spot.presenter : spot.commenter;
   const value = kind === "presentation" ? spot.presentation : spot.comment;
   const mine = owner === selfId && spot.status === "held";
+  const proxy = !mine && canErase && owner !== null && spot.status === "held"; // 代筆できる
+  const by = kind === "presentation" ? spot.presentationBy : spot.commentBy;
+  const ghost = value && by !== null && by !== owner ? people.get(by)?.name ?? "特級の管理者" : null; // 代筆した人
   const [text, setText] = useState(value ?? "");
   const [editing, setEditing] = useState(mine && !value);
   const [busy, setBusy] = useState(false);
@@ -284,10 +289,16 @@ function Entry({ spot, kind, people, selfId, canErase = false }: { spot: Spot; k
     <section className={`mg-entry${value ? " is-done" : ""}`}>
       <h3>
         <i className={`bi ${kind === "presentation" ? "bi-book" : "bi-chat-quote"}`} aria-hidden="true" /> {label}
-        {owner !== null && <small>{people.get(owner)?.name}</small>}
+        {owner !== null && (
+          <small>
+            {people.get(owner)?.name}
+            {ghost && <em className="mg-entry__ghost">代筆：{ghost}</em>}
+          </small>
+        )}
       </h3>
       {editing ? (
         <>
+          {proxy && <p className="mg-entry__proxy">{people.get(owner!)?.name}さんの代わりに書きます（代筆として残ります）。</p>}
           <textarea value={text} rows={5} maxLength={5000} onChange={(e) => setText(e.target.value)} placeholder={kind === "presentation" ? "読み上げたフィロソフィーと、感じたこと・考えたことを書きましょう" : "発表への感想やコメントを書きましょう"} />
           <div className="mg-entry__foot">
             {msg && <small className={msg[0] ? "adm-sheet__ok" : "adm-crm-error"}>{msg[1]}</small>}
@@ -310,7 +321,7 @@ function Entry({ spot, kind, people, selfId, canErase = false }: { spot: Spot; k
                 router.refresh();
               }}
             >
-              <i className="bi bi-flower1" aria-hidden="true" /> {busy ? "保存しています…" : "保存して花を育てる"}
+              <i className="bi bi-flower1" aria-hidden="true" /> {busy ? "保存しています…" : proxy ? "代筆して保存" : "保存して花を育てる"}
             </button>
           </div>
         </>
@@ -319,9 +330,9 @@ function Entry({ spot, kind, people, selfId, canErase = false }: { spot: Spot; k
           <p className="mg-entry__text">{value}</p>
           {(mine || canErase) && (
             <span className="mg-entry__ops">
-              {mine && (
+              {(mine || proxy) && (
                 <button type="button" className="adm-linkbtn" onClick={() => setEditing(true)}>
-                  書き直す
+                  {mine ? "書き直す" : "代筆で書き直す"}
                 </button>
               )}
               {canErase && (
@@ -348,7 +359,14 @@ function Entry({ spot, kind, people, selfId, canErase = false }: { spot: Spot; k
           {msg && !msg[0] && <small className="adm-crm-error">{msg[1]}</small>}
         </>
       ) : (
-        <p className="adm-muted">まだ書かれていません{owner !== null && !mine ? "（担当の人だけが書けます）" : ""}。</p>
+        <>
+          <p className="adm-muted">まだ書かれていません{owner !== null && !mine && !proxy ? "（担当の人だけが書けます）" : ""}。</p>
+          {proxy && (
+            <button type="button" className="adm-chipbtn" onClick={() => setEditing(true)}>
+              <i className="bi bi-pencil" aria-hidden="true" /> 代筆する
+            </button>
+          )}
+        </>
       )}
     </section>
   );
@@ -386,10 +404,10 @@ export function MorningToday({ spot, offReason, people, members, selfId, next, c
             ) : (
               <>
                 <RoleList spot={spot} people={byId} selfId={selfId} />
-                {(spot.presenter === selfId || spot.commenter === selfId) && (
+                {(spot.presenter === selfId || spot.commenter === selfId || canErase) && (
                   <div className="mg-today__mine">
-                    {spot.presenter === selfId && <Entry spot={spot} kind="presentation" people={byId} selfId={selfId} canErase={canErase} />}
-                    {spot.commenter === selfId && <Entry spot={spot} kind="comment" people={byId} selfId={selfId} canErase={canErase} />}
+                    {(spot.presenter === selfId || canErase) && <Entry spot={spot} kind="presentation" people={byId} selfId={selfId} canErase={canErase} />}
+                    {(spot.commenter === selfId || canErase) && <Entry spot={spot} kind="comment" people={byId} selfId={selfId} canErase={canErase} />}
                   </div>
                 )}
               </>
