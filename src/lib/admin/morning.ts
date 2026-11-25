@@ -124,6 +124,24 @@ export async function updateToday(change: { absent?: { adminId: number; absent: 
   );
 }
 
+// 今日の当番を手で決める（特級の管理者。実際の朝礼の当番に合わせるとき）。次の朝礼の日からは、この当番から順に回る。
+// 3人とも別の人で、当番に入っている人。発表かコメントが書かれたあとは変えられない（書いた人と当番がずれないように）
+export async function assignToday(roles: { mc: number; presenter: number; commenter: number }): Promise<void> {
+  await ensureThroughToday();
+  const today = todayJst();
+  const ids = [roles.mc, roles.presenter, roles.commenter];
+  if (new Set(ids).size !== 3) throw new MorningError("司会・発表・コメントは、別々の人にしてください。");
+  const members = await rotationMembers();
+  if (ids.some((id) => !members.includes(id))) throw new MorningError("当番に入っていない人が選ばれています。");
+  const [cur] = await readDays(prisma, "WHERE day = $1::date", today);
+  if (!cur) throw new MorningError("今日は朝礼のない日です。");
+  if (cur.presentation || cur.comment) throw new MorningError("発表かコメントがもう書かれているため、今日の当番は変えられません（先に削除してください）。");
+  await prisma.$executeRaw`
+    UPDATE hp_morning_day SET status = 'held', mc_id = ${roles.mc}, presenter_id = ${roles.presenter}, commenter_id = ${roles.commenter},
+      absent_ids = (SELECT COALESCE(array_agg(a), '{}') FROM unnest(absent_ids) a WHERE a <> ALL(${ids}::int[])), updated_at = now()
+    WHERE day = ${today}::date`;
+}
+
 // 発表・コメントを書く（その日の発表者・コメントの人本人だけ。特級の管理者は代筆もできる。書き直しもできる。空にすると消す）
 export async function writeEntry(day: string, kind: "presentation" | "comment", text: string, adminId: number, canProxy = false): Promise<void> {
   await ensureAdminTables();

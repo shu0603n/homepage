@@ -404,6 +404,7 @@ export function MorningToday({ spot, offReason, people, members, selfId, next, c
             ) : (
               <>
                 <RoleList spot={spot} people={byId} selfId={selfId} />
+                {canErase && !spot.presentation && !spot.comment && <AssignRoles spot={spot} members={members} people={byId} />}
                 {(spot.presenter === selfId || spot.commenter === selfId || canErase) && (
                   <div className="mg-today__mine">
                     {(spot.presenter === selfId || canErase) && <Entry spot={spot} kind="presentation" people={byId} selfId={selfId} canErase={canErase} />}
@@ -544,6 +545,69 @@ export function HolidayEditor({ holidays }: { holidays: { day: string; name: str
         </button>
       </div>
       {error && <small className="adm-crm-error">{error}</small>}
+    </div>
+  );
+}
+
+// 今日の当番を手で決める（特級の管理者。実際の朝礼に合わせるとき）
+function AssignRoles({ spot, members, people }: { spot: Spot; members: number[]; people: Map<number, Person> }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [roles, setRoles] = useState({ mc: spot.mc ?? 0, presenter: spot.presenter ?? 0, commenter: spot.commenter ?? 0 });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  if (!open)
+    return (
+      <button type="button" className="adm-linkbtn mg-assign__open" onClick={() => setOpen(true)}>
+        <i className="bi bi-arrow-left-right" aria-hidden="true" /> 当番を変える
+      </button>
+    );
+  const sorted = [...members].sort((a, b) => (people.get(a)?.name ?? "").localeCompare(people.get(b)?.name ?? "", "ja"));
+  return (
+    <div className="mg-assign">
+      <p className="adm-card__help">実際の朝礼の当番に合わせて選んでください。次の朝礼からは、ここで決めた当番から順に回ります（今日の発表者 → 次の司会、今日のコメント → 次の発表）。</p>
+      <div className="mg-assign__row">
+        {(
+          [
+            ["mc", "司会"],
+            ["presenter", "発表"],
+            ["commenter", "コメント"],
+          ] as const
+        ).map(([key, label]) => (
+          <label key={key}>
+            <span>{label}</span>
+            <select value={roles[key]} onChange={(e) => setRoles({ ...roles, [key]: Number(e.target.value) })}>
+              <option value={0}>選んでください</option>
+              {sorted.map((id) => (
+                <option key={id} value={id}>
+                  {people.get(id)?.name ?? id}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+      {error && <small className="adm-crm-error">{error}</small>}
+      <div className="mg-entry__foot">
+        <button type="button" className="adm-chipbtn" onClick={() => setOpen(false)}>
+          やめる
+        </button>
+        <button
+          type="button"
+          className="adm-chipbtn adm-chipbtn--primary"
+          disabled={busy || !roles.mc || !roles.presenter || !roles.commenter}
+          onClick={async () => {
+            setBusy(true);
+            const err = await post({ action: "assign", ...roles });
+            setBusy(false);
+            if (err) return setError(err);
+            setOpen(false);
+            router.refresh();
+          }}
+        >
+          <i className="bi bi-check2" aria-hidden="true" /> {busy ? "保存しています…" : "この当番にする"}
+        </button>
+      </div>
     </div>
   );
 }
