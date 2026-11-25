@@ -124,35 +124,61 @@ export async function updateToday(change: { absent?: { adminId: number; absent: 
   );
 }
 
-// 今日の当番を手で決める（特級の管理者。実際の朝礼の当番に合わせるとき）。次の朝礼の日からは、この当番から順に回る。
-// 3人とも別の人で、当番に入っている人。発表かコメントが書かれたあとは変えられない（書いた人と当番がずれないように）
-export async function assignToday(roles: { mc: number; presenter: number; commenter: number }): Promise<void> {
-  await ensureThroughToday();
-  const today = todayJst();
-  const ids = [roles.mc, roles.presenter, roles.commenter];
-  if (new Set(ids).size !== 3) throw new MorningError("司会・発表・コメントは、別々の人にしてください。");
-  const members = await rotationMembers();
-  if (ids.some((id) => !members.includes(id))) throw new MorningError("当番に入っていない人が選ばれています。");
-  const [cur] = await readDays(prisma, "WHERE day = $1::date", today);
-  if (!cur) throw new MorningError("今日は朝礼のない日です。");
-  if (cur.presentation || cur.comment) throw new MorningError("発表かコメントがもう書かれているため、今日の当番は変えられません（先に削除してください）。");
-  await prisma.$executeRaw`
-    UPDATE hp_morning_day SET status = 'held', mc_id = ${roles.mc}, presenter_id = ${roles.presenter}, commenter_id = ${roles.commenter},
-      absent_ids = (SELECT COALESCE(array_agg(a), '{}') FROM unnest(absent_ids) a WHERE a <> ALL(${ids}::int[])), updated_at = now()
-    WHERE day = ${today}::date`;
+// 管理画面のアカウントの人か（過去の日は、いまは当番から外している人も選べる）
+async function assertAdmins(ids: number[]): Promise<void> {
+  const admins = new Set((await listAdmins()).map((a) => a.id));
+  if (ids.some((id) => !admins.has(id))) throw new MorningError("管理画面のアカウントにない人が選ばれています。");
 }
 
-// 発表・コメントを書く（その日の発表者・コメントの人本人だけ。特級の管理者は代筆もできる。書き直しもできる。空にすると消す）
-export async function writeEntry(day: string, kind: "presentation" | "comment", text: string, adminId: number, canProxy = false): Promise<void> {
+// 当番を手で決める（特級の管理者。今日か過去の朝礼のある日）。実際の朝礼の当番に合わせるときや、過去の日を登録するときに使う。
+// 記録のない過去の日は、ここで新しく登録する。今日を変えたら、次の朝礼の日からはこの当番から順に回る。
+// 発表・コメントがもう書かれていたら、その文は新しい担当の人のものになる
+export async function assignDay(day: string, roles: { mc: number; presenter: number; commenter: number }): Promise<void> {
+  await ensureThroughToday();
+  const today = todayJst();
+  if (day > today) throw new MorningError("これからの日の当番は決められません。");
+  if (offReason(day, await companyHolidays())) throw new MorningError("この日は朝礼のない日（土日・祝日・会社の休み）です。");
+  const ids = [roles.mc, roles.presenter, roles.commenter];
+  if (new Set(ids).size !== 3) throw new MorningError("司会・発表・コメントは、別々の人にしてください。");
+  await assertAdmins(ids);
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('hp_morning'))::text`;
+    await tx.$executeRaw`
+      INSERT INTO hp_morning_day (day, status, mc_id, presenter_id, commenter_id) VALUES (${day}::date, 'held', ${roles.mc}, ${roles.presenter}, ${roles.commenter})
+      ON CONFLICT (day) DO UPDATE SET status = 'held', mc_id = EXCLUDED.mc_id, presenter_id = EXCLUDED.presenter_id, commenter_id = EXCLUDED.commenter_id,
+        absent_ids = (SELECT COALESCE(array_agg(a), '{}') FROM unnest(hp_morning_day.absent_ids) a WHERE a <> ALL(${ids}::int[])), updated_at = now()`;
+  });
+}
+
+// 過去の日を「朝礼なし」にする・戻す（特級の管理者。今日は「今日の朝礼」の欄で変える）。発表・コメントが書かれた日はなしにできない
+export async function setPastSkipped(day: string, skip: boolean): Promise<void> {
+  await ensureAdminTables();
+  if (day >= todayJst()) throw new MorningError("今日の朝礼なしは、「今日の朝礼」の欄で変えてください。");
+  const [d] = await readDays(prisma, "WHERE day = $1::date", day);
+  if (!d) throw new MorningError("この日は朝礼の記録がありません。");
+  if (skip && (d.presentation || d.comment)) throw new MorningError("発表かコメントが書かれているため、朝礼なしにはできません（先に削除してください）。");
+  await prisma.$executeRaw`UPDATE hp_morning_day SET status = ${skip ? "skipped" : "held"}, updated_at = now() WHERE day = ${day}::date`;
+}
+
+// 発表・コメントを書く（その日の発表者・コメントの人本人だけ。空にすると消す）。過去の日も含め、担当の本人と、その文を書いた人（代筆した人）は書き直せる。
+// 特級の管理者は代筆できる：as に担当の人を選ぶと、その人がその日の担当として保存される。*_by には実際に書いた人を残す（画面には出さない。書き直せる人の判定に使う）
+export async function writeEntry(day: string, kind: "presentation" | "comment", text: string, adminId: number, as: number | null = null): Promise<void> {
   await ensureAdminTables();
   const [d] = await readDays(prisma, "WHERE day = $1::date", day);
   if (!d || d.status !== "held") throw new MorningError("この日は朝礼の記録がありません。");
-  const owner = kind === "presentation" ? d.presenter_id : d.commenter_id;
-  if (owner !== adminId && !(canProxy && owner !== null)) throw new MorningError(kind === "presentation" ? "発表は、この日の発表者本人だけが書けます。" : "コメントは、この日のコメントの人本人だけが書けます。");
+  let owner = kind === "presentation" ? d.presenter_id : d.commenter_id;
+  const writer = kind === "presentation" ? (d.presentation ? d.presentation_by : null) : d.comment ? d.comment_by : null;
+  if (as !== null) {
+    await assertAdmins([as]);
+    const others: [number | null, string][] = kind === "presentation" ? [[d.mc_id, "司会"], [d.commenter_id, "コメント"]] : [[d.mc_id, "司会"], [d.presenter_id, "発表"]];
+    const clash = others.find(([id]) => id === as);
+    if (clash) throw new MorningError(`選んだ人は、この日の${clash[1]}の担当です。先に当番を変えてください。`);
+    owner = as;
+  } else if (owner !== adminId && writer !== adminId) throw new MorningError(kind === "presentation" ? "発表は、この日の発表者本人（と書いた人）だけが書けます。" : "コメントは、この日のコメントの人本人（と書いた人）だけが書けます。");
   const value = text.trim() ? text.trim().slice(0, 5000) : null;
   const by = value ? adminId : null;
-  if (kind === "presentation") await prisma.$executeRaw`UPDATE hp_morning_day SET presentation = ${value}, presentation_at = ${value ? new Date() : null}, presentation_by = ${by}, updated_at = now() WHERE day = ${day}::date`;
-  else await prisma.$executeRaw`UPDATE hp_morning_day SET comment = ${value}, comment_at = ${value ? new Date() : null}, comment_by = ${by}, updated_at = now() WHERE day = ${day}::date`;
+  if (kind === "presentation") await prisma.$executeRaw`UPDATE hp_morning_day SET presenter_id = ${owner}, presentation = ${value}, presentation_at = ${value ? new Date() : null}, presentation_by = ${by}, updated_at = now() WHERE day = ${day}::date`;
+  else await prisma.$executeRaw`UPDATE hp_morning_day SET commenter_id = ${owner}, comment = ${value}, comment_at = ${value ? new Date() : null}, comment_by = ${by}, updated_at = now() WHERE day = ${day}::date`;
 }
 
 // 発表・コメントを消す（特級の管理者）。その日の当番は、両方とも消えればまた変えられる

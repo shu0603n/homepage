@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { adminRequest, str } from "@/lib/admin/api";
-import { addCompanyHoliday, assignToday, eraseEntry, MorningError, removeCompanyHoliday, setMemberActive, updateToday, writeEntry } from "@/lib/admin/morning";
+import { addCompanyHoliday, assignDay, eraseEntry, MorningError, removeCompanyHoliday, setMemberActive, setPastSkipped, updateToday, writeEntry } from "@/lib/admin/morning";
 import { jsonError } from "@/lib/auth/http";
+import { todayJst } from "@/lib/jp-holidays";
 
 // 朝礼の操作（POST { action, ... }。いまは特級の管理者だけ）。仕組みは lib/admin/morning.ts
-//   write   発表・コメントを書く { day, kind: presentation | comment, text }（その日の担当の本人。特級の管理者は代筆もできる）
+//   write   発表・コメントを書く { day, kind: presentation | comment, text, as? }（その日の担当の本人。特級の管理者は as に担当の人を選んで代筆できる）
 //   erase   発表・コメントを消す { day, kind }（特級の管理者）
-//   assign  今日の当番を手で決める { mc, presenter, commenter }（特級の管理者）
+//   assign  当番を手で決める・過去の日を登録する { day?(なければ今日), mc, presenter, commenter }（特級の管理者）
+//   skip_day 過去の日を朝礼なしにする・戻す { day, skip }
 //   absent  今日いない人を変える { admin_id, absent }
 //   skip    今日を朝礼なしにする・戻す { skip }
 //   member  当番に入れる・外す { admin_id, active }
@@ -22,7 +24,12 @@ export async function POST(request: Request) {
     switch (b.action) {
       case "write":
         if (!isDay(b.day) || (b.kind !== "presentation" && b.kind !== "comment") || typeof b.text !== "string") return jsonError("無効なリクエストです。", 400);
-        await writeEntry(b.day, b.kind, b.text, r.session.id, r.session.role === "super");
+        if (b.as != null && (!Number.isInteger(b.as) || r.session.role !== "super")) return jsonError("代筆は、特級の管理者だけができます。", 403);
+        await writeEntry(b.day, b.kind, b.text, r.session.id, (b.as as number | undefined) ?? null);
+        break;
+      case "skip_day":
+        if (!isDay(b.day) || typeof b.skip !== "boolean") return jsonError("無効なリクエストです。", 400);
+        await setPastSkipped(b.day, b.skip);
         break;
       case "erase":
         // 朝礼のページをほかの管理者にも開いたときも、消せるのは特級の管理者だけ
@@ -33,7 +40,8 @@ export async function POST(request: Request) {
       case "assign":
         if (r.session.role !== "super") return jsonError("当番を手で決めるのは、特級の管理者だけができます。", 403);
         if (![b.mc, b.presenter, b.commenter].every((x) => Number.isInteger(x))) return jsonError("司会・発表・コメントの人を選んでください。", 400);
-        await assignToday({ mc: b.mc as number, presenter: b.presenter as number, commenter: b.commenter as number });
+        if (b.day != null && !isDay(b.day)) return jsonError("無効なリクエストです。", 400);
+        await assignDay((b.day as string | undefined) ?? todayJst(), { mc: b.mc as number, presenter: b.presenter as number, commenter: b.commenter as number });
         break;
       case "absent":
         if (!Number.isInteger(b.admin_id) || typeof b.absent !== "boolean") return jsonError("無効なリクエストです。", 400);
