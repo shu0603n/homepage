@@ -101,7 +101,12 @@ export default async function MorningPage({ searchParams }: { searchParams: Prom
         {session.role === "super" && (
           <section className="adm-card">
             <p className="adm-card__en">Members</p>
-            <h2 className="adm-card__title">担当した回数</h2>
+            <h2 className="adm-card__title">
+              担当した回数
+              <em className="adm-role adm-role--super mg-superonly">
+                <i className="bi bi-lock-fill" aria-hidden="true" /> 特級管理者のみ閲覧可能
+              </em>
+            </h2>
             <p className="adm-card__help">朝礼のあった日に担当した回数です（いなかった日・朝礼なしの日は数えません）。回数の少ない人から、新しいコメントの担当に選ばれます。当番から外す人（長期のお休みなど）は、右のスイッチで外せます。</p>
             <div className="adm-tablewrap">
               <table className="adm-table mg-members">

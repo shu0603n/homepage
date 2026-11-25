@@ -3090,3 +3090,4 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .mg-side .mg-stats { flex-direction: column; }
 .mg-side .mg-stats span { justify-content: space-between; padding: 12px 18px; border-radius: 16px; }
 .mg-side .mg-stats strong { margin-left: auto; }
+.mg-superonly { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; vertical-align: middle; }
