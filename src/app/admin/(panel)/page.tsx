@@ -16,7 +16,7 @@ import { countUnhandledInquiries, listAdmins, listInquiries } from "@/lib/admin/
 export const dynamic = "force-dynamic";
 
 // 管理ページのトップ。?tab= で表示する内容を切り替える（左のメニューから選ぶ）。何も指定がなければ、いちばん使うお問い合わせを出す
-const TABS: Record<Exclude<AdminNavKey, "users" | "password">, { en: string; title: string; lead: string }> = {
+const TABS: Record<Exclude<AdminNavKey, "users" | "password" | "morning">, { en: string; title: string; lead: string }> = {
   access: { en: "Analytics", title: "アクセス分析", lead: "ホームページに何人が来て、どのページを見ているか（Google アナリティクス）" },
   search: { en: "Search", title: "検索での見え方", lead: "Google の検索結果にどれだけ出て、どんな言葉で見つけてもらえているか（Search Console）" },
   jobs: { en: "Job Insights", title: "案件の反応", lead: "ホームページの案件一覧での表示・クリック・閲覧の回数と、「気になる」・ホームページからの応募の数" },

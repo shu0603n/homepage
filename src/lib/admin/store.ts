@@ -311,6 +311,35 @@ export const ADMIN_TABLES_SQL = [
   `ALTER TABLE hp_form_submission ADD COLUMN IF NOT EXISTS sheet_status VARCHAR(10)`,
   `ALTER TABLE hp_form_submission ADD COLUMN IF NOT EXISTS sheet_row INTEGER`,
   `ALTER TABLE hp_form_submission ADD COLUMN IF NOT EXISTS sheet_error TEXT`,
+  // 朝礼（2026-11-25 追加。lib/admin/morning.ts）。
+  // hp_morning_day：朝礼のある日ごとの当番（司会・発表者・コメント）・いない人・朝礼なし・発表とコメント
+  // hp_morning_member：当番から外した人（active = false）。行が無い管理者は当番に入る
+  // hp_morning_holiday：会社の休み（土日・祝日は計算で決めるので入れない）
+  `CREATE TABLE IF NOT EXISTS hp_morning_day (
+    day DATE PRIMARY KEY,
+    status VARCHAR(10) NOT NULL DEFAULT 'held',
+    mc_id INTEGER,
+    presenter_id INTEGER,
+    commenter_id INTEGER,
+    absent_ids INTEGER[] NOT NULL DEFAULT '{}',
+    presentation TEXT,
+    presentation_at TIMESTAMPTZ(6),
+    comment TEXT,
+    comment_at TIMESTAMPTZ(6),
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS hp_morning_member (
+    admin_id INTEGER PRIMARY KEY,
+    active BOOLEAN NOT NULL DEFAULT true,
+    updated_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS hp_morning_holiday (
+    day DATE PRIMARY KEY,
+    name VARCHAR(100),
+    created_by INTEGER,
+    created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
   // フォームのテンプレート（2026-11-21 追加。lib/admin/forms.ts）。data はフォームの中身（質問・設定）の JSON
   `CREATE TABLE IF NOT EXISTS hp_form_template (
     id SERIAL PRIMARY KEY,
@@ -348,8 +377,11 @@ async function isUpToDate(): Promise<boolean> {
         OR (table_name = 'hp_google_account' AND column_name = 'refresh_token_enc')
         OR (table_name = 'hp_form_sheet' AND column_name = 'columns')
         OR (table_name = 'hp_form_submission' AND column_name = 'sheet_error')
-        OR (table_name = 'hp_form' AND column_name = 'notify'))`;
-  return rows[0]?.n === 16;
+        OR (table_name = 'hp_form' AND column_name = 'notify')
+        OR (table_name = 'hp_morning_day' AND column_name = 'comment_at')
+        OR (table_name = 'hp_morning_member' AND column_name = 'active')
+        OR (table_name = 'hp_morning_holiday' AND column_name = 'name'))`;
+  return rows[0]?.n === 19;
 }
 
 // 表が無ければ作る（サーバーの起動ごとに 1 回だけ。既に最新なら確認の1回だけで終わる）。
