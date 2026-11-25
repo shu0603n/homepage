@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { byMorningOrder } from "@/lib/morning-order";
 
 // 朝礼のページの、画面で操作する部品（草原と木の絵・花の小窓・今日の当番・回数の一覧・会社の休み）。仕組みは lib/admin/morning.ts
 
@@ -547,9 +548,7 @@ function Entry({ spot, kind, people, selfId, canErase = false }: { spot: Spot; k
               <span>だれの担当として書くか</span>
               <select value={as} onChange={(e) => setAs(Number(e.target.value))}>
                 <option value={0}>選んでください</option>
-                {[...people.values()]
-                  .sort((a, b) => a.name.localeCompare(b.name, "ja"))
-                  .map((p) => (
+                {byMorningOrder([...people.values()], (p) => p.name).map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                       {p.id === owner ? "（この日の担当）" : ""}
@@ -825,7 +824,7 @@ function AssignRoles({ spot, people, startOpen = false, submitLabel = "この当
         <i className="bi bi-arrow-left-right" aria-hidden="true" /> 当番を変える
       </button>
     );
-  const sorted = [...people.keys()].sort((a, b) => (people.get(a)?.name ?? "").localeCompare(people.get(b)?.name ?? "", "ja"));
+  const sorted = byMorningOrder([...people.keys()], (id) => people.get(id)?.name ?? "");
   const written = !!(spot.presentation || spot.comment);
   return (
     <div className="mg-assign">

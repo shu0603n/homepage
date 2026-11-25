@@ -4,6 +4,7 @@ import { HolidayEditor, MemberToggle, MorningGarden, MorningToday, type Spot } f
 import { morningView, type MorningDay } from "@/lib/admin/morning";
 import type { AdminSession } from "@/lib/admin/session";
 import { todayJst } from "@/lib/jp-holidays";
+import { byMorningOrder } from "@/lib/morning-order";
 
 // 朝礼（管理ページの ?tab=morning。いまは特級の管理者だけ）。&month=YYYY-MM で月を切り替える。仕組みは lib/admin/morning.ts
 // ほかのメニューと同じ管理ページのタブにして、移るときに左のメニューごと読み直さないようにしている
@@ -123,9 +124,7 @@ export async function MorningTab({ session, month: param }: { session: AdminSess
                 </tr>
               </thead>
               <tbody>
-                {[...v.members]
-                  .sort((a, b) => a.total - b.total || a.id - b.id)
-                  .map((m) => (
+                {byMorningOrder(v.members, (m) => m.name).map((m) => (
                     <tr key={m.id} className={m.active ? undefined : "is-off"}>
                       <td>{m.name}</td>
                       <td>{m.mc}</td>
