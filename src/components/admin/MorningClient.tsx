@@ -465,8 +465,9 @@ function SpotModal({ spot, people, selfId, today, canErase, onClose }: { spot: S
           <p className="adm-muted">{spot.off}のため、朝礼はお休みです。</p>
         ) : spot.status === null ? (
           <>
-            <p className="adm-muted">この日の記録はまだありません。当番を選んで登録すると、発表・コメントも書けるようになります。</p>
+            <p className="adm-muted">この日の記録はまだありません。当番を選んで登録すると、発表・コメントも書けるようになります。朝礼をしなかった日は、いちばん下の「朝礼なし（人数不足など）として登録」を押してください。</p>
             {canErase && <AssignRoles key={spot.day} spot={spot} people={people} startOpen submitLabel="この日を登録する" />}
+            {canErase && <SkipPast day={spot.day} skip label="朝礼なし（人数不足など）として登録" />}
           </>
         ) : spot.status === "skipped" ? (
           <>
@@ -632,7 +633,8 @@ function Entry({ spot, kind, people, selfId, canErase = false }: { spot: Spot; k
 
 // ---------- 今日の朝礼（当番・自分の欄・いない人・朝礼なし） ----------
 
-export function MorningToday({ spot, offReason, people, members, selfId, next, canErase = false }: { spot: Spot | null; offReason: string | null; people: Person[]; members: number[]; selfId: number; next: { day: string; mc: number | null; presenter: number | null; commenter: number | null }; canErase?: boolean }) {
+// children：次の朝礼の下に縦に並べるもの（今月の花・つぼみの数）
+export function MorningToday({ spot, offReason, people, members, selfId, next, canErase = false, children }: { spot: Spot | null; offReason: string | null; people: Person[]; members: number[]; selfId: number; next: { day: string; mc: number | null; presenter: number | null; commenter: number | null }; canErase?: boolean; children?: React.ReactNode }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -676,14 +678,17 @@ export function MorningToday({ spot, offReason, people, members, selfId, next, c
           </>
         )}
       </section>
-      <section className="adm-card mg-next">
-        <p className="adm-card__en">Next</p>
-        <h2 className="adm-card__title">
-          次の朝礼<small>{dayLabel(next.day)}・見込み</small>
-        </h2>
-        <RoleList spot={next} people={byId} selfId={selfId} />
-        <p className="adm-card__help">今日の当番から決めた見込みです。いない人がいれば、当日に「今日はいない」にすると入れ替わります。</p>
-      </section>
+      <div className="mg-side">
+        <section className="adm-card mg-next">
+          <p className="adm-card__en">Next</p>
+          <h2 className="adm-card__title">
+            次の朝礼<small>{dayLabel(next.day)}・見込み</small>
+          </h2>
+          <RoleList spot={next} people={byId} selfId={selfId} />
+          <p className="adm-card__help">今日の当番から決めた見込みです。いない人がいれば、当日に「今日はいない」にすると入れ替わります。</p>
+        </section>
+        {children}
+      </div>
     </div>
   );
 }
@@ -878,7 +883,7 @@ function AssignRoles({ spot, people, startOpen = false, submitLabel = "この当
 }
 
 // 過去の日を朝礼なしにする・戻す（特級の管理者）
-function SkipPast({ day, skip }: { day: string; skip: boolean }) {
+function SkipPast({ day, skip, label }: { day: string; skip: boolean; label?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -896,7 +901,7 @@ function SkipPast({ day, skip }: { day: string; skip: boolean }) {
           router.refresh();
         }}
       >
-        <i className={`bi ${skip ? "bi-moon-stars" : "bi-sun"}`} aria-hidden="true" /> {skip ? "この日は朝礼なしにする" : "朝礼ありに戻す"}
+        <i className={`bi ${skip ? "bi-moon-stars" : "bi-sun"}`} aria-hidden="true" /> {label ?? (skip ? "この日は朝礼なしにする" : "朝礼ありに戻す")}
       </button>
       {error && <small className="adm-crm-error">{error}</small>}
     </div>

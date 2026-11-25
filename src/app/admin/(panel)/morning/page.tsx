@@ -45,6 +45,20 @@ export default async function MorningPage({ searchParams }: { searchParams: Prom
   const bloomed = held.filter((s) => s.presentation && s.comment).length;
   const buds = held.filter((s) => !!s.presentation !== !!s.comment).length;
   const todaySpot = v.todayRecord ? toSpot(v.today, null, v.todayRecord) : null;
+  // 今月の花・つぼみ・朝礼のあった日（今月は「次の朝礼」の下に縦に、ほかの月は草原の下に出す）
+  const stats = (
+    <div className="mg-stats">
+      <span>
+        <i className="bi bi-flower1" aria-hidden="true" /> 花 <strong>{bloomed}</strong>
+      </span>
+      <span>
+        <i className="bi bi-flower3" aria-hidden="true" /> つぼみ <strong>{buds}</strong>
+      </span>
+      <span>
+        <i className="bi bi-calendar-check" aria-hidden="true" /> 朝礼のあった日 <strong>{held.length}</strong>
+      </span>
+    </div>
+  );
 
   return (
     <AdminShell session={session} active="morning" en="Morning Meeting" title="朝礼" lead="発表かコメントを書くとつぼみが生え、両方そろうと花が咲きます。毎月、みんなで草原いっぱいに花を咲かせましょう。">
@@ -62,18 +76,8 @@ export default async function MorningPage({ searchParams }: { searchParams: Prom
             <span className="mg-monthbar__spacer" />
           )}
         </div>
-        <div className="mg-stats">
-          <span>
-            <i className="bi bi-flower1" aria-hidden="true" /> 花 <strong>{bloomed}</strong>
-          </span>
-          <span>
-            <i className="bi bi-flower3" aria-hidden="true" /> つぼみ <strong>{buds}</strong>
-          </span>
-          <span>
-            <i className="bi bi-calendar-check" aria-hidden="true" /> 朝礼のあった日 <strong>{held.length}</strong>
-          </span>
-        </div>
         <MorningGarden spots={spots} people={people} today={v.today} selfId={session.id} canErase={session.role === "super"} />
+        {month !== thisMonth && stats}
         {month === thisMonth && (
           <MorningToday
             spot={todaySpot}
@@ -83,7 +87,9 @@ export default async function MorningPage({ searchParams }: { searchParams: Prom
             selfId={session.id}
             canErase={session.role === "super"}
             next={{ day: v.next.day, mc: v.next.roles.mc, presenter: v.next.roles.presenter, commenter: v.next.roles.commenter }}
-          />
+          >
+            {stats}
+          </MorningToday>
         )}
         <section className="adm-card">
           <p className="adm-card__en">Members</p>

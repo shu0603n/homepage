@@ -155,7 +155,18 @@ export async function setPastSkipped(day: string, skip: boolean): Promise<void> 
   await ensureAdminTables();
   if (day >= todayJst()) throw new MorningError("今日の朝礼なしは、「今日の朝礼」の欄で変えてください。");
   const [d] = await readDays(prisma, "WHERE day = $1::date", day);
-  if (!d) throw new MorningError("この日は朝礼の記録がありません。");
+  if (!d) {
+    // 記録のない過去の日は、当番を決めずに「朝礼なし」として登録する
+    if (!skip) throw new MorningError("この日は朝礼の記録がありません。");
+    if (offReason(day, await companyHolidays())) throw new MorningError("この日は朝礼のない日（土日・祝日・会社の休み）です。");
+    await prisma.$executeRaw`INSERT INTO hp_morning_day (day, status) VALUES (${day}::date, 'skipped') ON CONFLICT (day) DO NOTHING`;
+    return;
+  }
+  // 当番を決めずに朝礼なしで登録した日を戻すときは、記録のない日に戻す（当番を選んで登録し直せる）
+  if (!skip && d.mc_id === null && d.presenter_id === null && d.commenter_id === null) {
+    await prisma.$executeRaw`DELETE FROM hp_morning_day WHERE day = ${day}::date AND status = 'skipped'`;
+    return;
+  }
   if (skip && (d.presentation || d.comment)) throw new MorningError("発表かコメントが書かれているため、朝礼なしにはできません（先に削除してください）。");
   await prisma.$executeRaw`UPDATE hp_morning_day SET status = ${skip ? "skipped" : "held"}, updated_at = now() WHERE day = ${day}::date`;
 }
