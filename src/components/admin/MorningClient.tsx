@@ -295,7 +295,7 @@ export function MorningGarden({ spots, people, today, selfId, canErase = false }
         {placed.map(({ s, x, y, scale }) => {
           const isToday = s.day === today;
           const n = (s.presentation ? 1 : 0) + (s.comment ? 1 : 0);
-          const kind = s.off ? "off" : s.status === "skipped" ? "skipped" : s.status === null ? (s.day < today ? "empty" : "future") : n === 2 ? "bloom" : n === 1 ? "bud" : "sprout";
+          const kind = s.off ? "off" : s.status === "skipped" ? "skipped" : s.day > today ? "future" : s.status === null ? "empty" : n === 2 ? "bloom" : n === 1 ? "bud" : "sprout";
           const color = petalOf(s.day);
           const clickable = kind !== "future" && (kind !== "empty" || canErase); // 記録のない過去の日は、特級の管理者が登録できる
           return (
@@ -633,7 +633,7 @@ function Entry({ spot, kind, people, selfId, canErase = false }: { spot: Spot; k
 // ---------- 今日の朝礼（当番・自分の欄・いない人・朝礼なし） ----------
 
 // children：次の朝礼の下に縦に並べるもの（今月の花・つぼみの数）
-export function MorningToday({ spot, offReason, people, members, selfId, next, canErase = false, children }: { spot: Spot | null; offReason: string | null; people: Person[]; members: number[]; selfId: number; next: { day: string; mc: number | null; presenter: number | null; commenter: number | null }; canErase?: boolean; children?: React.ReactNode }) {
+export function MorningToday({ spot, offReason, people, members, selfId, next, canErase = false, children }: { spot: Spot | null; offReason: string | null; people: Person[]; members: number[]; selfId: number; next: { day: string; mc: number | null; presenter: number | null; commenter: number | null; reserved: boolean }; canErase?: boolean; children?: React.ReactNode }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -681,10 +681,18 @@ export function MorningToday({ spot, offReason, people, members, selfId, next, c
         <section className="adm-card mg-next">
           <p className="adm-card__en">Next</p>
           <h2 className="adm-card__title">
-            次の朝礼<small>{dayLabel(next.day)}・見込み</small>
+            次の朝礼<small>{dayLabel(next.day)}・{next.reserved ? "決定" : "見込み"}</small>
           </h2>
           <RoleList spot={next} people={byId} selfId={selfId} />
-          <p className="adm-card__help">今日の当番から決めた見込みです。いない人がいれば、当日に「今日はいない」にすると入れ替わります。</p>
+          {canErase && (
+            <AssignRoles
+              key={`${next.day}-${next.mc}-${next.presenter}-${next.commenter}`}
+              spot={{ day: next.day, off: null, status: "held", mc: next.mc, presenter: next.presenter, commenter: next.commenter, absent: [], presentation: null, presentationBy: null, comment: null, commentBy: null }}
+              people={byId}
+              note="次の朝礼の当番を前もって決めておけます。その次の朝礼からは、ここで決めた当番から順に回ります。"
+            />
+          )}
+          <p className="adm-card__help">{next.reserved ? "前もって決めた当番です。" : "今日の当番と決まった順番から出した見込みです。"}いない人がいれば、当日に「今日はいない」にすると入れ替わります。</p>
         </section>
         {children}
       </div>
@@ -812,7 +820,7 @@ export function HolidayEditor({ holidays }: { holidays: { day: string; name: str
 }
 
 // 今日の当番を手で決める（特級の管理者。実際の朝礼に合わせるとき）
-function AssignRoles({ spot, people, startOpen = false, submitLabel = "この当番にする" }: { spot: Spot; people: Map<number, Person>; startOpen?: boolean; submitLabel?: string }) {
+function AssignRoles({ spot, people, startOpen = false, submitLabel = "この当番にする", note }: { spot: Spot; people: Map<number, Person>; startOpen?: boolean; submitLabel?: string; note?: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(startOpen);
   const [roles, setRoles] = useState({ mc: spot.mc ?? 0, presenter: spot.presenter ?? 0, commenter: spot.commenter ?? 0 });
@@ -829,7 +837,7 @@ function AssignRoles({ spot, people, startOpen = false, submitLabel = "この当
   return (
     <div className="mg-assign">
       <p className="adm-card__help">
-        実際の朝礼の当番に合わせて選んでください。{spot.status === null ? "" : "今日を変えたときは、次の朝礼からここで決めた当番から順に回ります（今日の発表者 → 次の司会、今日のコメント → 次の発表）。"}
+        {note ?? <>実際の朝礼の当番に合わせて選んでください。{spot.status === null ? "" : "今日を変えたときは、次の朝礼からここで決めた当番から順に回ります（今日の発表者 → 次の司会、今日のコメント → 次の発表）。"}</>}
         {written ? "書かれている発表・コメントは、新しく選んだ担当の人のものになります。" : ""}
       </p>
       <div className="mg-assign__row">

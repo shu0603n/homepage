@@ -88,7 +88,7 @@ export async function MorningTab({ session, month: param }: { session: AdminSess
           members={v.members.filter((m) => m.active).map((m) => m.id)}
           selfId={session.id}
           canErase={session.role === "super"}
-          next={{ day: v.next.day, mc: v.next.roles.mc, presenter: v.next.roles.presenter, commenter: v.next.roles.commenter }}
+          next={{ day: v.next.day, mc: v.next.roles.mc, presenter: v.next.roles.presenter, commenter: v.next.roles.commenter, reserved: v.next.reserved }}
         >
           {stats}
         </MorningToday>
@@ -109,7 +109,7 @@ export async function MorningTab({ session, month: param }: { session: AdminSess
               <i className="bi bi-lock-fill" aria-hidden="true" /> 特級管理者のみ閲覧可能
             </em>
           </h2>
-          <p className="adm-card__help">朝礼のあった日に担当した回数です（いなかった日・朝礼なしの日は数えません）。回数の少ない人から、新しいコメントの担当に選ばれます。当番から外す人（長期のお休みなど）は、右のスイッチで外せます。</p>
+          <p className="adm-card__help">朝礼のあった日に担当した回数です（いなかった日・朝礼なしの日は数えません）。コメントの担当は決まった順番（高橋 → 村井 → 鈴木 → 真浦 → 飯田 → 南間 → 鷹巣 → 黒田 → 金野）で回ります（休みで飛ばされた人は、回数を見て追いつくように調整します）。当番から外す人（長期のお休みなど）は、右のスイッチで外せます。</p>
           <div className="adm-tablewrap">
             <table className="adm-table mg-members">
               <thead>

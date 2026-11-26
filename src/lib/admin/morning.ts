@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ensureAdminTables, listAdmins } from "@/lib/admin/store";
 import { addDays, holidayName, isWeekend, todayJst } from "@/lib/jp-holidays";
+import { rotationOrder } from "@/lib/morning-order";
 import { assignRoles, type MemberStat, type Roles } from "@/lib/morning-rotation";
 
 // 朝礼（管理画面の「朝礼」。いまは特級の管理者だけ）。
@@ -42,14 +43,14 @@ export function offReason(day: string, company: Map<string, string>): string | n
   return holidayName(day) ?? company.get(day) ?? null;
 }
 
-// 当番に入る人（管理画面のアカウントのうち、この画面で外していない人）
+// 当番に入る人（管理画面のアカウントのうち、この画面で外していない人）。当番が回る順番（lib/morning-order.ts の ROTATION）に並べる
 async function rotationMembers(): Promise<number[]> {
   const [admins, off] = await Promise.all([
     listAdmins(),
     prisma.$queryRaw<{ admin_id: number }[]>`SELECT admin_id FROM hp_morning_member WHERE active = false`,
   ]);
   const out = new Set(off.map((r) => r.admin_id));
-  return admins.map((a) => a.id).filter((id) => !out.has(id));
+  return rotationOrder(admins.map((a) => ({ id: a.id, name: a.name ?? a.email }))).filter((id) => !out.has(id));
 }
 
 const DAY_COLS = `to_char(day, 'YYYY-MM-DD') AS day, status, mc_id, presenter_id, commenter_id, absent_ids, presentation, presentation_at, presentation_by, comment, comment_at, comment_by`;
@@ -57,11 +58,14 @@ type Tx = Pick<typeof prisma, "$queryRawUnsafe" | "$executeRaw" | "$queryRaw">;
 const readDays = (tx: Tx, where = "", ...params: unknown[]) =>
   tx.$queryRawUnsafe<MorningDay[]>(`SELECT ${DAY_COLS} FROM hp_morning_day ${where} ORDER BY day`, ...params);
 
-// 回数と最後に担当した日（朝礼のあった日だけ数える。before より前）
+// 当番を決めるときに数える回数は、決まった順番で回し始めた日から（それより前の回数の偏りで、順番が崩れないように。表の回数はすべて数える)
+const ROTATION_START = "2026-11-27";
+
+// 回数と最後に担当した日（朝礼のあった日だけ数える。ROTATION_START 以降、before より前）
 function statsOf(days: MorningDay[], before: string): Map<number, MemberStat> {
   const m = new Map<number, MemberStat>();
   for (const d of days) {
-    if (d.status !== "held" || d.day >= before) continue;
+    if (d.status !== "held" || d.day >= before || d.day < ROTATION_START) continue;
     for (const id of [d.mc_id, d.presenter_id, d.commenter_id]) {
       if (id == null) continue;
       const s = m.get(id) ?? { count: 0, last: null };
@@ -84,13 +88,16 @@ export async function ensureThroughToday(): Promise<void> {
     async (tx) => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('hp_morning'))::text`;
       const days = await readDays(tx);
-      const last = days[days.length - 1]?.day ?? null;
+      // 前もって決めた次の朝礼の日（明日以降）の記録は、ここでは数えない
+      const upTo = days.filter((d) => d.day <= today);
+      const last = upTo[upTo.length - 1]?.day ?? null;
       if (last && last >= today) return;
+      const have = new Set(days.map((d) => d.day));
       // 初めて使うときは今日から。間が空いていたら、最後に記録した日の次の日から（長く空いていても、さかのぼるのは 60 日まで）
       let day = last ? addDays(last, 1) : today;
       if (day < addDays(today, -60)) day = addDays(today, -60);
       for (; day <= today; day = addDays(day, 1)) {
-        if (offReason(day, company)) continue;
+        if (offReason(day, company) || have.has(day)) continue;
         const roles = assignRoles({ prev: prevHeld(days, day), members, absent: [], stats: statsOf(days, day) });
         await tx.$executeRaw`
           INSERT INTO hp_morning_day (day, status, mc_id, presenter_id, commenter_id) VALUES (${day}::date, 'held', ${roles.mc}, ${roles.presenter}, ${roles.commenter})
@@ -133,15 +140,23 @@ async function assertAdmins(ids: number[]): Promise<void> {
   if (ids.some((id) => !admins.has(id))) throw new MorningError("管理画面のアカウントにない人が選ばれています。");
 }
 
-// 当番を手で決める（特級の管理者。今日か過去の朝礼のある日）。実際の朝礼の当番に合わせるときや、過去の日を登録するときに使う。
+// 今日のあとの最初の朝礼のある日
+function nextMeetingDay(today: string, company: Map<string, string>): string {
+  let next = addDays(today, 1);
+  for (let i = 0; i < 30 && offReason(next, company); i++) next = addDays(next, 1);
+  return next;
+}
+
+// 当番を手で決める（特級の管理者。今日か過去の朝礼のある日と、次の朝礼の日）。次の朝礼の日は、前もって当番を決めておける。実際の朝礼の当番に合わせるときや、過去の日を登録するときに使う。
 // 記録のない過去の日は、ここで新しく登録する。今日を変えたら、次の朝礼の日からはこの当番から順に回る。
 // 発表・コメントがもう書かれていたら、その文は新しい担当の人のものになる
 export async function assignDay(day: string, roles: { mc: number; presenter: number; commenter: number }): Promise<void> {
   await ensureThroughToday();
   const today = todayJst();
-  if (day > today) throw new MorningError("これからの日の当番は決められません。");
+  const company = await companyHolidays();
+  if (day > today && day !== nextMeetingDay(today, company)) throw new MorningError("これからの日は、次の朝礼の日だけ当番を決められます。");
   if (day < FIRST_DAY) throw new MorningError("2026年9月以前の日は登録できません。");
-  if (offReason(day, await companyHolidays())) throw new MorningError("この日は朝礼のない日（土日・祝日・会社の休み）です。");
+  if (offReason(day, company)) throw new MorningError("この日は朝礼のない日（土日・祝日・会社の休み）です。");
   const ids = [roles.mc, roles.presenter, roles.commenter];
   if (new Set(ids).size !== 3) throw new MorningError("司会・発表・コメントは、別々の人にしてください。");
   await assertAdmins(ids);
@@ -256,7 +271,7 @@ export async function morningView(month: string) {
   }
   const active = new Map(offRows.map((r) => [r.admin_id, r.active]));
   const members: MorningMember[] = admins.map((a) => {
-    const held = days.filter((d) => d.status === "held");
+    const held = days.filter((d) => d.status === "held" && d.day <= today); // 前もって決めた次の朝礼の日は、まだ数えない
     const c = (k: "mc_id" | "presenter_id" | "commenter_id") => held.filter((d) => d[k] === a.id).length;
     const mine = held.filter((d) => d.mc_id === a.id || d.presenter_id === a.id || d.commenter_id === a.id);
     return {
@@ -272,9 +287,11 @@ export async function morningView(month: string) {
     };
   });
   // 次の朝礼（見込み）：今日のあとの最初の朝礼のある日。今日の当番から決める（まだ記録はしない）
-  let next = addDays(today, 1);
-  for (let i = 0; i < 30 && offReason(next, company); i++) next = addDays(next, 1);
-  const memberIds = members.filter((x) => x.active).map((x) => x.id);
-  const nextRoles = assignRoles({ prev: prevHeld(days, next), members: memberIds, absent: [], stats: statsOf(days, next) });
-  return { today, month, first, spots, members, todayRecord: byDay.get(today) ?? null, todayOff: offReason(today, company), next: { day: next, roles: nextRoles }, holidays };
+  // 前もって当番を決めてあれば、それを出す
+  const next = nextMeetingDay(today, company);
+  const reserved = byDay.get(next);
+  const activeIds = new Set(members.filter((x) => x.active).map((x) => x.id));
+  const memberIds = rotationOrder(members.map((x) => ({ id: x.id, name: x.name }))).filter((id) => activeIds.has(id));
+  const nextRoles: Roles = reserved ? { mc: reserved.mc_id, presenter: reserved.presenter_id, commenter: reserved.commenter_id } : assignRoles({ prev: prevHeld(days, next), members: memberIds, absent: [], stats: statsOf(days, next) });
+  return { today, month, first, spots, members, todayRecord: byDay.get(today) ?? null, todayOff: offReason(today, company), next: { day: next, roles: nextRoles, reserved: !!reserved }, holidays };
 }
