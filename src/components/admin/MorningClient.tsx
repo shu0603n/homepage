@@ -76,6 +76,13 @@ const CANOPY: [number, number, number][] = [
   [392, 252, 40],
   [808, 256, 42],
 ];
+// 満開のときの木の花：葉の茂み（CANOPY）の中に、偏らないように散らす
+const BLOSSOMS: [number, number][] = Array.from({ length: 52 }, (_, i) => {
+  const [cx, cy, r] = CANOPY[i % CANOPY.length];
+  const a = i * 2.39996;
+  const d = r * 0.78 * Math.sqrt((((i * 7) % 10) + 0.5) / 10);
+  return [Math.round(cx + Math.cos(a) * d), Math.round(cy + Math.sin(a) * d)];
+});
 // 地平線の森（x, 高さ, 形 0=丸い木 1=とがった木）
 const FOREST: [number, number, number][] = Array.from({ length: 34 }, (_, i) => {
   const x = i < 17 ? 10 + i * 24 + ((i * 7) % 9) : 770 + (i - 17) * 26 + ((i * 5) % 9);
@@ -263,8 +270,8 @@ export function MorningGarden({ spots, people, today, selfId, canErase = false }
               <circle key={`t${i}`} cx={410 + ((i * 67) % 380)} cy={50 + ((i * 41) % 250)} r={9 + (i % 3) * 4} fill={i % 2 ? "#4f9d40" : "#86cb5e"} opacity=".28" />
             ))}
             {full &&
-              Array.from({ length: 52 }, (_, i) => (
-                <g key={`b${i}`} transform={`translate(${420 + ((i * 53) % 360)} ${60 + ((i * 37) % 240)})`}>
+              BLOSSOMS.map(([bx, by], i) => (
+                <g key={`b${i}`} transform={`translate(${bx} ${by})`}>
                   <g className="mg-blossom" style={{ animationDelay: `${(i % 9) * 0.12}s` }}>
                     {Array.from({ length: 5 }, (_, k) => (
                       <ellipse key={k} rx="3.4" ry="5.5" cy="-4.5" fill={i % 2 ? "#ffd0e4" : "#ff9cc9"} transform={`rotate(${k * 72})`} />
@@ -277,7 +284,7 @@ export function MorningGarden({ spots, people, today, selfId, canErase = false }
         </g>
         {full &&
           Array.from({ length: 22 }, (_, i) => (
-            <ellipse key={`p${i}`} className="mg-petal" style={{ animationDelay: `${i * 0.55}s`, animationDuration: `${7 + (i % 4)}s` }} cx={360 + i * 24} cy={150} rx="6" ry="4" fill="#ffb3d6" />
+            <ellipse key={`p${i}`} className="mg-petal" style={{ animationDelay: `-${(i * 1.37) % 10}s`, animationDuration: `${7 + (i % 4)}s` }} cx={400 + ((i * 89) % 460)} cy={110 + ((i * 47) % 150)} rx="6" ry="4" fill="#ffb3d6" />
           ))}
 
         {/* 草と小さな花 */}
