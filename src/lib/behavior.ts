@@ -677,8 +677,32 @@ export function initSite() {
     if (radio) {
       radio.checked = true;
       const msg = radio.form.querySelector('[name="message"]');
-      if (msg && !msg.value) msg.value = text;
+      if (msg && !msg.value) msg.value = text + lpCarryOver();
     }
+  }
+
+  // 広告用ページ（LP）で入力した内容（給与チェック・当てはまったモヤモヤ）を、お問い合わせの文に書き足す。
+  // LP（components/lp/SeLpClient.tsx）が同じタブの sessionStorage に残したものだけを使う
+  function lpCarryOver() {
+    if (new URLSearchParams(location.search).get('from') !== 'lp-se') return '';
+    let d;
+    try {
+      d = JSON.parse(sessionStorage.getItem('lpse-answers') || 'null');
+    } catch {
+      return '';
+    }
+    if (!d) return '';
+    const lines = [];
+    const c = d.check;
+    if (c) {
+      if (c.age) lines.push(`年齢：${c.age}`);
+      if (c.years) lines.push(`経験年数：${c.years}`);
+      if (c.phases && c.phases.length) lines.push(`経験のある工程：${c.phases.join('、')}`);
+      if (c.langs && c.langs.length) lines.push(`使える言語：${c.langs.join('、')}`);
+      if (c.now) lines.push(`現在の月給：${c.now}万円`);
+    }
+    if (d.worries && d.worries.length) lines.push('今のモヤモヤ：', ...d.worries.map((w) => `・${w}`));
+    return lines.length ? `\n【ページでチェックした内容】\n${lines.join('\n')}\n` : '';
   }
 
   // ---------- お問い合わせフォーム（PHP不使用：外部フォームサービスへ送信／未設定時はメール作成） ----------

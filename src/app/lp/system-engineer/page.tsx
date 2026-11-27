@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { SalaryCheck, Worries } from "@/components/lp/SeLpClient";
 import { PageShell } from "@/components/site/PageShell";
 import { LP_SE_APPLY } from "@/lib/lp";
+import { CASES } from "@/lib/lp-cases";
+import { PROJECTS } from "@/lib/lp-projects";
 import { PHOTOS_ARE_IMAGES, SHOW_VOICES, VOICES, VOICES_ARE_REAL } from "@/lib/lp-voices";
 import { buildMetadata } from "@/lib/metadata";
 
@@ -130,10 +132,10 @@ export default function SystemEngineerLp() {
         {/* 原因：働く場所の仕組み */}
         <section className="lpse-sec lpse-sec--tint">
           <div className="lpse-wrap">
-            <Head en="Why" lead="同じスキルでも、働く会社の仕組みが違えば、給与も働き方も変わります。">
-              給与が上がらないのは、
+            <Head en="Why" lead="あなたのスキルはそのままに。働く会社を変えるだけで、これだけ違います。">
+              <mark>仕組み</mark>が変われば、
               <br />
-              <mark>会社の仕組み</mark>のせいかもしれません。
+              給与も働き方も変わる。
             </Head>
             <div className="lpse-compare fade">
               <div className="lpse-compare__col is-before">
@@ -172,7 +174,7 @@ export default function SystemEngineerLp() {
         {/* 給与チェック */}
         <section className="lpse-sec" id="check">
           <div className="lpse-wrap">
-            <Head en="Market Value" lead="経験と今の月給を選ぶだけ。当社での月給の目安が分かります。">
+            <Head en="Market Value" lead="5つの質問に答えるだけ。当社での月給の目安が分かり、答えはそのまま応募フォームに入ります。">
               あなたの<mark>市場価値</mark>、
               <br />
               チェックしてみましょう。
@@ -217,6 +219,20 @@ export default function SystemEngineerLp() {
                 <p>転職前の給与を下回らない安心の制度。待機期間中も給与は変わりません。初年度で年収80万円UPの実績もあります。</p>
               </article>
             </div>
+            {/* 3つの理由に、さらに入社祝い金 */}
+            <a className="lpse-plus fade" href="#bonus">
+              <span className="lpse-plus__mark" aria-hidden="true">
+                <i className="bi bi-plus-lg" />
+              </span>
+              <span className="lpse-plus__body">
+                <small>公式HPからの応募限定</small>
+                入社祝い金<b>20</b>万円
+              </span>
+              <span className="lpse-plus__more">
+                詳しく見る
+                <i className="bi bi-chevron-down" aria-hidden="true" />
+              </span>
+            </a>
           </div>
         </section>
 
@@ -281,6 +297,45 @@ export default function SystemEngineerLp() {
                 ))}
               </div>
             </div>
+            {/* 年収アップの事例（lib/lp-cases.ts。実際の社員の事例が入ったときだけ出す） */}
+            {CASES.length > 0 && (
+              <div className="lpse-cases">
+                <p className="lpse-cases__title">
+                  <i className="bi bi-graph-up-arrow" aria-hidden="true" />
+                  年収アップの事例
+                </p>
+                <ul className="lpse-cases__list">
+                  {CASES.map((c, i) => (
+                    <li key={c.name} className="lpse-case fade" style={{ ["--d" as string]: `${i * 0.1}s` }}>
+                      <p className="lpse-case__who">
+                        <b>{c.name}</b>
+                        <span>{c.meta}</span>
+                      </p>
+                      <div className="lpse-case__flow">
+                        <div className="lpse-case__side is-before">
+                          <small>入社前</small>
+                          <strong>
+                            年収<b>{c.before.income}</b>万円
+                          </strong>
+                          <span>{c.before.work}</span>
+                        </div>
+                        <span className="lpse-case__arrow" aria-hidden="true">
+                          <i className="bi bi-arrow-right" />
+                        </span>
+                        <div className="lpse-case__side is-after">
+                          <small>入社後{c.note ? `（${c.note}）` : ""}</small>
+                          <strong>
+                            年収<b>{c.after.income}</b>万円
+                          </strong>
+                          <span>{c.after.work}</span>
+                        </div>
+                      </div>
+                      {c.after.income > c.before.income && <p className="lpse-case__up">+{c.after.income - c.before.income}万円UP</p>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <p className="lpse-note">※ 給与は経験・スキルを考慮して決定します。固定残業（30時間分）を含み、超過分は別途支給。昇給は年1回（3月）。</p>
           </div>
         </section>
@@ -338,24 +393,28 @@ export default function SystemEngineerLp() {
               <mark>選べる案件</mark>で、スキルの幅を広げる。
             </Head>
             <div className="lpse-projects">
-              {(
-                [
-                  ["保険・金融", "保険会社向け契約管理システムの再構築", ["Java", "Spring", "Oracle"]],
-                  ["製造・IoT", "製造業向け IoT デバイス管理プラットフォーム開発", ["Python", "FastAPI", "React", "AWS"]],
-                  ["公共・自治体", "自治体向け電子申請ポータルの開発", ["PHP", "Laravel", "MySQL"]],
-                  ["Web サービス", "Web サービスの運用・改修", ["PHP", "Laravel", "Vue.js"]],
-                  ["モビリティ", "車載系アプリの設計・開発", ["Python", "React", "PostgreSQL"]],
-                  ["AI・最先端", "生成 AI サービス開発", ["AI / LLM", "Python", "Vue.js", "Azure"]],
-                ] as const
-              ).map(([cat, title, tech], i) => (
-                <article key={title} className="lpse-project fade" style={{ ["--d" as string]: `${(i % 3) * 0.08}s` }}>
-                  <span className="lpse-project__cat">{cat}</span>
-                  <h3>{title}</h3>
+              {PROJECTS.map((p, i) => (
+                <article key={p.title} className="lpse-project fade" style={{ ["--d" as string]: `${(i % 3) * 0.08}s` }}>
+                  <span className="lpse-project__cat">{p.cat}</span>
+                  <h3>{p.title}</h3>
+                  {p.detail && <p className="lpse-project__detail">{p.detail}</p>}
+                  {p.phases && p.phases.length > 0 && (
+                    <p className="lpse-project__phases">
+                      <span>担当工程</span>
+                      {p.phases.join(" / ")}
+                    </p>
+                  )}
                   <ul>
-                    {tech.map((t) => (
+                    {p.tech.map((t) => (
                       <li key={t}>{t}</li>
                     ))}
                   </ul>
+                  {p.price && (
+                    <p className="lpse-project__price">
+                      <span>単金</span>
+                      <b>{p.price}</b>
+                    </p>
+                  )}
                 </article>
               ))}
             </div>
@@ -403,7 +462,7 @@ export default function SystemEngineerLp() {
         )}
 
         {/* 入社祝い金 */}
-        <section className="lpse-bonus">
+        <section className="lpse-bonus" id="bonus">
           <span className="lpse-blob lpse-blob--4" aria-hidden="true" />
           <div className="lpse-wrap fade">
             <p className="lpse-ribbon">
