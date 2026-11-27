@@ -3341,9 +3341,6 @@ body:has(.lpse) .contact-cta { display: none; }
 .lpse-fv__copy > :nth-child(6) { animation-delay: .55s; }
 .lpse-fv__copy > :nth-child(7) { animation-delay: .65s; }
 @keyframes lpseRise { from { opacity: 0; transform: translateY(24px); } }
-.lpse-fv__logo { display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--f-head); font-size: 22px; font-weight: 900; line-height: 1.1; }
-.lpse-fv__logo img { width: 44px; height: 44px; }
-.lpse-fv__logo small { display: block; font-size: 12px; }
 .lpse-fv__kicker { margin: 6px 0 0; padding: 0 6px 2px; font-family: var(--f-head); font-size: clamp(18px, 2vw, 24px); font-weight: 900; letter-spacing: .08em; background: linear-gradient(transparent 62%, var(--lp-yellow) 62%); transform: rotate(-3deg); transform-origin: left; }
 .lpse-fv__kicker span { font-size: 1.12em; }
 .lpse-fv__title { display: grid; justify-items: start; gap: 8px; margin: 0; font-family: var(--f-head); font-weight: 900; line-height: 1.2; transform: rotate(-3deg); transform-origin: left; }
@@ -3407,7 +3404,6 @@ body:has(.lpse) .contact-cta { display: none; }
 }
 /* スマホ：顔に文字が重ならないよう、ロゴは出さず（上のヘッダーにある）、文字は写真の下の方から始める。祝い金のシールは写真の右上 */
 @media (max-width: 767px) {
-  .lpse-fv__logo { display: none; }
   .lpse-fv__copy { padding-top: 66vw; }
   .lpse-fv__title { margin-top: 4px; }
   .lpse-fv__seal { top: calc(var(--header-h) + 14px); right: 12px; }

@@ -46,7 +46,7 @@ export default function SystemEngineerLp() {
     <PageShell route="lp/system-engineer/" meta={meta} special>
       <div className="lpse">
         {/* ファーストビュー：広告と同じ写真・言葉・色で始める（広告から来た人が「さっきの広告だ」と分かるように）。
-            写真の左側が空いているので、そこにロゴ・見出し・特徴・給与・応募ボタンを載せる */}
+            写真の左側が空いているので、そこに見出し・特徴・給与・応募ボタンを載せる（ロゴは上のヘッダーにあるので載せない） */}
         <section className="lpse-fv">
           <picture className="lpse-fv__bg">
             <source media="(max-width: 767px)" srcSet="/assets/img/lp/se-hero-sp.webp" width={800} height={767} />
@@ -54,12 +54,6 @@ export default function SystemEngineerLp() {
           </picture>
           <div className="lpse-fv__inner">
             <div className="lpse-fv__copy">
-              <p className="lpse-fv__logo">
-                <img src="/assets/img/logo-mark.png" alt="" width={64} height={64} />
-                <span>
-                  <small>株式会社</small>エモリスリンク
-                </span>
-              </p>
               <p className="lpse-fv__kicker">
                 <span>エンジニア経験者</span>のあなたへ
               </p>
