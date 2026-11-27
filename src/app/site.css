@@ -3236,7 +3236,17 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .lpse-check__carry .bi { color: var(--lp-pink); }
 /* Reasons の下：さらに入社祝い金 */
 .lpse-plus { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 2.4vw, 26px); width: fit-content; max-width: 100%; margin: 34px auto 0; padding: 16px clamp(18px, 3vw, 34px); border-radius: 999px; background: var(--lp-grad); color: #fff; text-decoration: none; box-shadow: 0 20px 40px -22px rgba(255, 79, 143, .9); transition: transform .25s var(--ease), box-shadow .25s; }
-.lpse-plus:hover { transform: translateY(-3px); box-shadow: 0 26px 46px -22px rgba(255, 79, 143, 1); }
+.lpse-plus { position: relative; overflow: hidden; isolation: isolate; }
+.lpse-plus, .lpse-plus:hover, .lpse-plus:focus-visible, .lpse-plus:visited { color: #fff; }
+.lpse-plus::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .45) 50%, transparent 65%); transform: translateX(-120%); }
+.lpse-plus:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 28px 48px -22px rgba(255, 79, 143, 1); }
+.lpse-plus:hover::after { transition: transform .8s var(--ease); transform: translateX(120%); }
+.lpse-plus__mark { transition: transform .4s var(--ease); }
+.lpse-plus:hover .lpse-plus__mark { animation: none; transform: rotate(90deg) scale(1.08); }
+.lpse-plus__more { transition: background .25s; }
+.lpse-plus:hover .lpse-plus__more { background: rgba(255, 255, 255, .32); }
+.lpse-plus__more .bi { transition: transform .3s var(--ease); }
+.lpse-plus:hover .lpse-plus__more .bi { transform: translateY(3px); }
 .lpse-plus__mark { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 50%; background: #fff; color: var(--lp-pink); font-size: 24px; animation: lpsePulse 2.2s ease-in-out infinite; }
 @keyframes lpsePulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, .6); } 50% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); } }
 .lpse-plus__body { font-family: var(--f-head); font-size: clamp(20px, 2.6vw, 28px); font-weight: 900; line-height: 1.15; white-space: nowrap; }
