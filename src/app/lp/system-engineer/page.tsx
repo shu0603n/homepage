@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { SalaryCheck, Worries } from "@/components/lp/SeLpClient";
 import { PageShell } from "@/components/site/PageShell";
 import { LP_SE_APPLY } from "@/lib/lp";
+import { SHOW_VOICES, VOICES } from "@/lib/lp-voices";
 import { buildMetadata } from "@/lib/metadata";
 
 // Meta 広告「システムエンジニア（経験者）」の行き先のページ（LP）。広告の画像と同じ見た目で始め、
@@ -160,7 +161,7 @@ export default function SystemEngineerLp() {
                     <strong>前給保証制度</strong>で、転職前の給与を下回らない
                   </li>
                   <li>
-                    月平均残業<strong>5時間以内</strong>。定時退社が基本
+                    月平均残業<strong>5時間以内</strong>。プライベートも大切にできる
                   </li>
                 </ul>
               </div>
@@ -287,8 +288,8 @@ export default function SystemEngineerLp() {
         {/* 働き方（広告の4つのマスと同じ） */}
         <section className="lpse-sec lpse-sec--tint">
           <div className="lpse-wrap">
-            <Head en="Work Style" lead="プライベートも大切にしながら、長くキャリアを積み上げられます。">
-              <mark>定時退社</mark>が当たり前の働き方。
+            <Head en="Work Style" lead="残業時間は参画先によって異なりますが、平均は月5時間以内。プライベートも大切にしながら、長くキャリアを積み上げられます。">
+              残業は<mark>月平均5時間以内</mark>。
             </Head>
             <div className="lpse-tiles" data-count-group>
               <div className="lpse-tile fade is-pink">
@@ -363,6 +364,35 @@ export default function SystemEngineerLp() {
             </p>
           </div>
         </section>
+
+        {/* 社員の声（lib/lp-voices.ts。実際の社員の声に差し替えるまでは出さない） */}
+        {SHOW_VOICES && (
+          <section className="lpse-sec lpse-sec--tint">
+            <div className="lpse-wrap">
+              <Head en="Voices" lead="エモリスリンクで働くエンジニアに、入社してからの変化を聞きました。">
+                <mark>社員の声</mark>
+              </Head>
+              <div className="lpse-voices">
+                {VOICES.map((v, i) => (
+                  <article key={v.name} className={`lpse-voice fade is-${v.color}`} style={{ ["--d" as string]: `${i * 0.1}s` }}>
+                    <div className="lpse-voice__who">
+                      <span className="lpse-voice__face" aria-hidden="true">
+                        {v.avatar ? <img src={`/assets/img/${v.avatar}`} alt="" width={64} height={64} /> : v.initial}
+                      </span>
+                      <p>
+                        <strong>{v.name}</strong>
+                        <span>{v.meta}</span>
+                        <small>{v.before}</small>
+                      </p>
+                    </div>
+                    <h3>{v.title}</h3>
+                    <p className="lpse-voice__text">{v.text}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* 入社祝い金 */}
         <section className="lpse-bonus">
