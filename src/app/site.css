@@ -2991,8 +2991,17 @@ a.adm-jobs__title:hover { text-decoration: underline; }
 .mg-canopy { transform-box: fill-box; transform-origin: 50% 100%; animation: mgSway 7s ease-in-out infinite; }
 @keyframes mgSway { 0%, 100% { transform: rotate(-.6deg); } 50% { transform: rotate(.6deg); } }
 .mg-blossom { transform-box: fill-box; transform-origin: center; animation: mgPop .8s var(--ease) both; }
-.mg-petal { animation: mgFall linear infinite; }
-@keyframes mgFall { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(-120px, 470px) rotate(360deg); opacity: 0; } }
+/* 満開：葉の茂みが桜色に染まる・遠くの森も桜並木に・花びらがひらひら舞う */
+.mg-sakura { animation: mgBlush 1.6s ease-out both; }
+@keyframes mgBlush { from { opacity: 0; } }
+.mg-farsakura { transform-box: fill-box; transform-origin: 50% 100%; animation: mgPop .9s var(--ease) both; }
+.mg-fallen { animation: mgBlush 2.4s ease-out 1s both; }
+.mg-falling { pointer-events: none; }
+.mg-fall { animation: mgDrift linear infinite; }
+@keyframes mgDrift { 0% { transform: translate(0, 0); opacity: 0; } 6%, 86% { opacity: 1; } 100% { transform: translate(-260px, 700px); opacity: 0; } }
+.mg-flutter { transform-box: fill-box; transform-origin: center; animation: mgFlutter ease-in-out infinite; }
+@keyframes mgFlutter { 0%, 100% { transform: translateX(-12px) rotate(-25deg) scaleY(1); } 25% { transform: translateX(0) rotate(40deg) scaleY(.35); } 50% { transform: translateX(12px) rotate(115deg) scaleY(1); } 75% { transform: translateX(0) rotate(40deg) scaleY(.35); } }
+@media (prefers-reduced-motion: reduce) { .mg-sakura, .mg-fallen, .mg-farsakura, .mg-blossom, .mg-fall, .mg-flutter { animation: none; } }
 @keyframes mgPop { from { transform: scale(0); } to { transform: scale(1); } }
 .mg-spot { cursor: default; outline: none; }
 .mg-spot[role="button"] { cursor: pointer; }

@@ -76,13 +76,58 @@ const CANOPY: [number, number, number][] = [
   [392, 252, 40],
   [808, 256, 42],
 ];
-// 満開のときの木の花：葉の茂み（CANOPY）の中に、偏らないように散らす
-const BLOSSOMS: [number, number][] = Array.from({ length: 52 }, (_, i) => {
-  const [cx, cy, r] = CANOPY[i % CANOPY.length];
-  const a = i * 2.39996;
-  const d = r * 0.78 * Math.sqrt((((i * 7) % 10) + 0.5) / 10);
-  return [Math.round(cx + Math.cos(a) * d), Math.round(cy + Math.sin(a) * d)];
-});
+// ---------- 満開（その月の全部の日に花が咲いた）のときの桜 ----------
+// いつも同じ並びになる乱数（サーバーと画面で同じ絵になるように）
+function seeded(seed: number) {
+  let a = seed;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const r1 = (n: number) => Math.round(n * 10) / 10;
+// 桜の花びら（先が割れた形。根元が原点で、上へ伸びる）
+const SAKURA_PETAL = "M0 0 C -3.4 -1.8 -3.8 -5.4 -1.5 -7 L 0 -5.8 L 1.5 -7 C 3.8 -5.4 3.4 -1.8 0 0 Z";
+// 木の桜の花：葉の茂みの中に、重ならないよう間を空けて散らす（x, y, 大きさ, 向き）
+const SAKURA: [number, number, number, number][] = (() => {
+  const rnd = seeded(11);
+  const out: [number, number, number, number][] = [];
+  for (let t = 0; t < 6000 && out.length < 44; t++) {
+    const x = 350 + rnd() * 500;
+    const y = -20 + rnd() * 320;
+    if (!CANOPY.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 < (r * 0.84) ** 2)) continue;
+    if (out.some(([ox, oy]) => (ox - x) ** 2 + (oy - y) ** 2 < 36 * 36)) continue;
+    out.push([r1(x), r1(y), r1(1.25 + rnd() * 0.55), Math.round(rnd() * 72)]);
+  }
+  return out;
+})();
+// 葉の茂みの中の、花の房の濃淡（x, y, 半径, 0=濃い 1=明るい）
+const SAKURA_TUFTS: [number, number, number, number][] = (() => {
+  const rnd = seeded(29);
+  const out: [number, number, number, number][] = [];
+  for (let t = 0; t < 4000 && out.length < 60; t++) {
+    const x = 350 + rnd() * 500;
+    const y = -20 + rnd() * 320;
+    if (!CANOPY.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 < (r * 0.8) ** 2)) continue;
+    out.push([r1(x), r1(y), r1(8 + rnd() * 14), rnd() < 0.5 ? 0 : 1]);
+  }
+  return out;
+})();
+// 舞う花びら（x, y, 大きさ, 落ちる秒数, 揺れる秒数, 始まりのずれ）
+const FALLING: [number, number, number, number, number, number][] = (() => {
+  const rnd = seeded(47);
+  return Array.from({ length: 42 }, () => [Math.round(rnd() * 1380), Math.round(-60 + rnd() * 260), r1(0.8 + rnd() * 0.8), r1(9 + rnd() * 7), r1(1.8 + rnd() * 1.8), r1(rnd() * 16)]);
+})();
+// 草原に散った花びら（x, y, 向き, 大きさ）
+const FALLEN: [number, number, number, number][] = (() => {
+  const rnd = seeded(83);
+  return Array.from({ length: 70 }, () => {
+    const y = 380 + rnd() * 275;
+    return [Math.round(rnd() * 1200), Math.round(y), Math.round(rnd() * 360), r1(0.6 + ((y - 380) / 275) * 0.6)];
+  });
+})();
 // 地平線の森（x, 高さ, 形 0=丸い木 1=とがった木）
 const FOREST: [number, number, number][] = Array.from({ length: 34 }, (_, i) => {
   const x = i < 17 ? 10 + i * 24 + ((i * 7) % 9) : 770 + (i - 17) * 26 + ((i * 5) % 9);
@@ -226,7 +271,15 @@ export function MorningGarden({ spots, people, today, selfId, canErase = false }
 
         {/* 地平線の森 */}
         {FOREST.map(([x, h, pointed], i) =>
-          pointed ? (
+          full ? (
+            // 満開の月は、地平線の森も桜並木に
+            <g key={`f${i}`} className="mg-farsakura" style={{ animationDelay: `${(i % 7) * 0.08}s` }}>
+              <rect x={x - 1.5} y={354 - h * 0.4} width="3" height={h * 0.5} fill="#6b4a40" />
+              <circle cx={x} cy={356 - h} r={h * 0.78} fill={i % 3 ? "#f0a2c0" : "#f5b5cd"} />
+              <circle cx={x + h * 0.2} cy={356 - h * 0.86} r={h * 0.42} fill="#e58cb0" opacity=".55" />
+              <circle cx={x - h * 0.24} cy={356 - h * 1.2} r={h * 0.36} fill="#ffe0ec" opacity=".85" />
+            </g>
+          ) : pointed ? (
             <path key={`f${i}`} d={`M${x} ${360 - h * 1.6} l ${h * 0.55} ${h * 1.6} h ${-h * 1.1} Z`} fill={i % 2 ? "#3f8648" : "#4a9450"} />
           ) : (
             <g key={`f${i}`}>
@@ -266,26 +319,44 @@ export function MorningGarden({ spots, people, today, selfId, canErase = false }
               <circle key={`h${i}`} cx={cx - r * 0.34} cy={cy - r * 0.42} r={r * 0.3} fill="#a8dc78" opacity=".32" />
             ))}
             {/* 葉っぱの細かい模様 */}
-            {Array.from({ length: 26 }, (_, i) => (
+            {!full && Array.from({ length: 26 }, (_, i) => (
               <circle key={`t${i}`} cx={410 + ((i * 67) % 380)} cy={50 + ((i * 41) % 250)} r={9 + (i % 3) * 4} fill={i % 2 ? "#4f9d40" : "#86cb5e"} opacity=".28" />
             ))}
-            {full &&
-              BLOSSOMS.map(([bx, by], i) => (
-                <g key={`b${i}`} transform={`translate(${bx} ${by})`}>
-                  <g className="mg-blossom" style={{ animationDelay: `${(i % 9) * 0.12}s` }}>
-                    {Array.from({ length: 5 }, (_, k) => (
-                      <ellipse key={k} rx="3.4" ry="5.5" cy="-4.5" fill={i % 2 ? "#ffd0e4" : "#ff9cc9"} transform={`rotate(${k * 72})`} />
-                    ))}
-                    <circle r="2.4" fill="#fff3a8" />
+            {/* 満開：葉の茂みが桜色に染まり、花が開く */}
+            {full && (
+              <g className="mg-sakura">
+                {CANOPY.map(([cx, cy, r], i) => (
+                  <circle key={`sd${i}`} cx={cx + 6} cy={cy + 10} r={r} fill="#d9799e" />
+                ))}
+                {CANOPY.map(([cx, cy, r], i) => (
+                  <circle key={`sm${i}`} cx={cx} cy={cy} r={r * 0.94} fill={i % 2 ? "#f4a6c4" : "#f7b4cd"} />
+                ))}
+                {CANOPY.map(([cx, cy, r], i) => (
+                  <circle key={`sl${i}`} cx={cx - r * 0.22} cy={cy - r * 0.26} r={r * 0.62} fill="#ffd0e1" opacity=".6" />
+                ))}
+                {CANOPY.map(([cx, cy, r], i) => (
+                  <circle key={`sh${i}`} cx={cx - r * 0.34} cy={cy - r * 0.42} r={r * 0.3} fill="#fff3f8" opacity=".55" />
+                ))}
+                {SAKURA_TUFTS.map(([x, y, r, light], i) => (
+                  <circle key={`st${i}`} cx={x} cy={y} r={r} fill={light ? "#ffe6ef" : "#e88db2"} opacity={light ? 0.45 : 0.3} />
+                ))}
+                {SAKURA.map(([x, y, s, rot], i) => (
+                  <g key={`sk${i}`} transform={`translate(${x} ${y}) rotate(${rot}) scale(${s})`}>
+                    <g className="mg-blossom" style={{ animationDelay: `${0.6 + (i % 11) * 0.09}s` }}>
+                      {Array.from({ length: 5 }, (_, k) => (
+                        <path key={k} d={SAKURA_PETAL} fill={i % 3 ? "#fff4f8" : "#ffe1ec"} stroke="#f08db4" strokeWidth=".5" transform={`rotate(${k * 72})`} />
+                      ))}
+                      <circle r="1.9" fill="#e2557f" />
+                      {Array.from({ length: 5 }, (_, k) => (
+                        <circle key={`s${k}`} cx={Math.round(Math.sin((k * 72 * Math.PI) / 180) * 30) / 10} cy={-Math.round(Math.cos((k * 72 * Math.PI) / 180) * 30) / 10} r=".7" fill="#f6c23e" />
+                      ))}
+                    </g>
                   </g>
-                </g>
-              ))}
+                ))}
+              </g>
+            )}
           </g>
         </g>
-        {full &&
-          Array.from({ length: 22 }, (_, i) => (
-            <ellipse key={`p${i}`} className="mg-petal" style={{ animationDelay: `-${(i * 1.37) % 10}s`, animationDuration: `${7 + (i % 4)}s` }} cx={400 + ((i * 89) % 460)} cy={110 + ((i * 47) % 150)} rx="6" ry="4" fill="#ffb3d6" />
-          ))}
 
         {/* 草と小さな花 */}
         {Array.from({ length: 70 }, (_, i) => {
@@ -297,6 +368,14 @@ export function MorningGarden({ spots, people, today, selfId, canErase = false }
         {DAISIES.map(([x, y, s], i) => (
           <Daisy key={`dz${i}`} x={x} y={y} s={s} />
         ))}
+        {/* 満開：草原に散った花びら */}
+        {full && (
+          <g className="mg-fallen">
+            {FALLEN.map(([x, y, rot, s], i) => (
+              <path key={`fp${i}`} d={SAKURA_PETAL} transform={`translate(${x} ${y}) rotate(${rot}) scale(${r1(s * 1.6)} ${r1(s * 1.0)})`} fill={i % 3 ? "#ffd6e5" : "#fbb9d0"} opacity=".9" />
+            ))}
+          </g>
+        )}
 
         {/* 日ごとの花壇 */}
         {placed.map(({ s, x, y, scale }) => {
@@ -430,6 +509,20 @@ export function MorningGarden({ spots, people, today, selfId, canErase = false }
             </g>
           ))}
         </g>
+        {/* 満開：風に乗って舞う花びら（いちばん手前） */}
+        {full && (
+          <g className="mg-falling" aria-hidden="true">
+            {FALLING.map(([x, y, s, fall, flutter, delay], i) => (
+              <g key={`fl${i}`} transform={`translate(${x} ${y})`}>
+                <g className="mg-fall" style={{ animationDuration: `${fall}s`, animationDelay: `-${delay}s` }}>
+                  <g className="mg-flutter" style={{ animationDuration: `${flutter}s`, animationDelay: `-${r1(delay % flutter)}s` }}>
+                    <path d={SAKURA_PETAL} transform={`scale(${r1(s * 2.4)})`} fill={i % 3 ? "#ffc6dc" : "#ffe4ee"} stroke="#f39abd" strokeWidth=".4" />
+                  </g>
+                </g>
+              </g>
+            ))}
+          </g>
+        )}
       </svg>
       <div className="mg-progress">
         <span className="mg-progress__icon" aria-hidden="true">
