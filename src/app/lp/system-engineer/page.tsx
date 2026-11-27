@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { SalaryCheck, Worries } from "@/components/lp/SeLpClient";
 import { PageShell } from "@/components/site/PageShell";
 import { LP_SE_APPLY } from "@/lib/lp";
-import { SHOW_VOICES, VOICES } from "@/lib/lp-voices";
+import { SHOW_VOICES, VOICES, VOICES_ARE_REAL } from "@/lib/lp-voices";
 import { buildMetadata } from "@/lib/metadata";
 
 // Meta 広告「システムエンジニア（経験者）」の行き先のページ（LP）。広告の画像と同じ見た目で始め、
@@ -365,13 +365,19 @@ export default function SystemEngineerLp() {
           </div>
         </section>
 
-        {/* 社員の声（lib/lp-voices.ts。実際の社員の声に差し替えるまでは出さない） */}
+        {/* 入社後のイメージ（lib/lp-voices.ts）。いまは実際の社員の声ではないので、そう分かるように見出しと注記を付けて出す。実際の声に差し替えたら VOICES_ARE_REAL を true に */}
         {SHOW_VOICES && (
           <section className="lpse-sec lpse-sec--tint">
             <div className="lpse-wrap">
-              <Head en="Voices" lead="エモリスリンクで働くエンジニアに、入社してからの変化を聞きました。">
-                <mark>社員の声</mark>
-              </Head>
+              {VOICES_ARE_REAL ? (
+                <Head en="Voices" lead="エモリスリンクで働くエンジニアに、入社してからの変化を聞きました。">
+                  <mark>社員の声</mark>
+                </Head>
+              ) : (
+                <Head en="Image" lead="こんな想いを持った方が、エモリスリンクで新しいキャリアを始めています。">
+                  <mark>入社後のイメージ</mark>
+                </Head>
+              )}
               <div className="lpse-voices">
                 {VOICES.map((v, i) => (
                   <article key={v.name} className={`lpse-voice fade is-${v.color}`} style={{ ["--d" as string]: `${i * 0.1}s` }}>
@@ -390,6 +396,7 @@ export default function SystemEngineerLp() {
                   </article>
                 ))}
               </div>
+              {!VOICES_ARE_REAL && <p className="lpse-note">※ 入社後の働き方を分かりやすくするためのイメージで、実際の社員の声ではありません。</p>}
             </div>
           </section>
         )}
