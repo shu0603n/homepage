@@ -270,7 +270,7 @@ export default function SystemEngineerLp() {
                   </strong>
                 </li>
                 <li>
-                  <span>高スキル・シニアクラス</span>
+                  <span>実務経験 10年以上</span>
                   <strong>
                     月給<b>50</b>万円〜
                   </strong>
@@ -336,7 +336,7 @@ export default function SystemEngineerLp() {
                 </ul>
               </div>
             )}
-            <p className="lpse-note">※ 給与は経験・スキルを考慮して決定します。固定残業（30時間分）を含み、超過分は別途支給。昇給は年1回（3月）。</p>
+            <p className="lpse-note">※ 給与は経験・スキルを考慮して決定します。昇給は年1回（3月）。</p>
           </div>
         </section>
 

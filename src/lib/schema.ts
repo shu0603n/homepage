@@ -83,7 +83,7 @@ const jobLocation = { '@type': 'Place', address: ADDRESS };
 const JOBS: Record<string, { title: string; description: string; minValue: number; maxValue: number }> = {
   'system-engineer/': {
     title: 'システムエンジニア',
-    description: '<p>大手企業のプライム案件を中心に、Java・JavaScriptなどを使ったWeb系システム開発を担当していただきます。要件定義・基本設計などの上流工程から運用保守まで、希望とスキルに合わせて案件を自由に選択できます。</p><p>月給35万円〜55万円（経験・スキルを考慮して決定、固定残業30時間分を含む）。月平均残業5時間以内、年間休日125日、フルリモート相談可、前給保証制度あり。勤務地は自社内または札幌市内（中央区）のクライアント先、転居を伴う転勤なし。</p><p>応募資格：学歴不問。いずれかの言語経験がある方（Java / Python / PHP / JavaScript / C# / Ruby / Go / Swift 等）。第二新卒・ブランクの方も歓迎。</p>',
+    description: '<p>大手企業のプライム案件を中心に、Java・JavaScriptなどを使ったWeb系システム開発を担当していただきます。要件定義・基本設計などの上流工程から運用保守まで、希望とスキルに合わせて案件を自由に選択できます。</p><p>月給35万円〜55万円（経験・スキルを考慮して決定）。月平均残業5時間以内、年間休日125日、フルリモート相談可、前給保証制度あり。勤務地は自社内または札幌市内（中央区）のクライアント先、転居を伴う転勤なし。</p><p>応募資格：学歴不問。いずれかの言語経験がある方（Java / Python / PHP / JavaScript / C# / Ruby / Go / Swift 等）。第二新卒・ブランクの方も歓迎。</p>',
     minValue: 350000,
     maxValue: 550000,
   },

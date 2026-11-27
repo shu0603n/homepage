@@ -101,13 +101,12 @@ const YEARS = [
   { key: "10~", label: "10年以上", min: 10 },
 ] as const;
 const PHASES = ["要件定義", "基本設計", "詳細設計", "製造（実装）", "テスト", "運用・保守", "PM・PL"] as const;
-const UPSTREAM = new Set<string>(["要件定義", "基本設計", "PM・PL"]);
 const LANGS = ["Java", "C#", "Python", "PHP", "JavaScript / TypeScript", "Go", "Ruby", "C / C++", "COBOL", "Kotlin / Swift", "SQL", "その他"] as const;
 
-// 月給の下限の目安（求人の条件どおり。5年未満：35万円〜、5年以上：40万円〜、高スキル：50万円〜。上限 55万円）
-// 高スキルの目安は「10年以上」かつ「上流工程（要件定義・基本設計）か PM・PL の経験あり」。実際の給与は面接で決める
-function estimate(years: number, phases: string[]) {
-  if (years >= 10 && phases.some((p) => UPSTREAM.has(p))) return { base: 50, rank: "高スキル・シニアクラス" };
+// 月給の下限の目安（求人の条件どおり。5年未満：35万円〜、5年以上：40万円〜、10年以上：50万円〜。上限 55万円）
+// 実際の給与は面接で決める
+function estimate(years: number) {
+  if (years >= 10) return { base: 50, rank: "実務経験 10年以上" };
   if (years >= 5) return { base: 40, rank: "実務経験 5年以上" };
   return { base: 35, rank: "実務経験 5年未満" };
 }
@@ -142,7 +141,7 @@ export function SalaryCheck() {
   const [now, setNow] = useState(28);
   const [touched, setTouched] = useState(false);
   const y = YEARS.find((v) => v.key === years)!;
-  const { base, rank } = estimate(y.min, phases);
+  const { base, rank } = estimate(y.min);
   const diff = Math.max(0, (base - now) * 12);
   const shownBase = useTween(base);
   const shownDiff = useTween(diff);
@@ -248,7 +247,7 @@ export function SalaryCheck() {
             ))}
           </ul>
         )}
-        <p className="lpse-check__note">※ 目安です。給与は経験・スキルをもとに面接で決めます（固定残業30時間分を含み、超過分は別途支給）。</p>
+        <p className="lpse-check__note">※ 目安です。給与は経験・スキルをもとに面接で決めます。</p>
         <Link className="lpse-btn lpse-btn--sm" href={LP_SE_APPLY} onClick={() => saveLp({ check: { age, years: y.label, phases, langs, now, base } })}>
           この条件で話を聞いてみる
           <i className="bi bi-chevron-right" aria-hidden="true" />
