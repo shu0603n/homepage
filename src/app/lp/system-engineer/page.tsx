@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { SalaryCheck, Worries } from "@/components/lp/SeLpClient";
 import { PageShell } from "@/components/site/PageShell";
 import { LP_SE_APPLY } from "@/lib/lp";
-import { SHOW_VOICES, VOICES, VOICES_ARE_REAL } from "@/lib/lp-voices";
+import { PHOTOS_ARE_IMAGES, SHOW_VOICES, VOICES, VOICES_ARE_REAL } from "@/lib/lp-voices";
 import { buildMetadata } from "@/lib/metadata";
 
 // Meta 広告「システムエンジニア（経験者）」の行き先のページ（LP）。広告の画像と同じ見た目で始め、
@@ -397,6 +397,7 @@ export default function SystemEngineerLp() {
                 ))}
               </div>
               {!VOICES_ARE_REAL && <p className="lpse-note">※ 入社後の働き方を分かりやすくするためのイメージで、実際の社員の声ではありません。</p>}
+              {VOICES_ARE_REAL && PHOTOS_ARE_IMAGES && <p className="lpse-note">※ 写真はイメージです。</p>}
             </div>
           </section>
         )}

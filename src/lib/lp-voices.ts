@@ -3,6 +3,8 @@
 // 本物でない声を入れるときは VOICES_ARE_REAL を false にすると、「入社後のイメージ」の見出しと注記を付けて出す
 export const SHOW_VOICES = true;
 export const VOICES_ARE_REAL = true;
+// 顔写真が本人の写真でない（イメージ写真）ときは true。「※写真はイメージです」を添える
+export const PHOTOS_ARE_IMAGES = true;
 
 export type Voice = { initial: string; name: string; meta: string; before: string; title: string; text: string; color: "pink" | "green" | "blue" | "purple"; avatar?: string };
 
@@ -10,6 +12,7 @@ export const VOICES: Voice[] = [
   {
     initial: "K",
     name: "K.I さん",
+    avatar: "lp/voice-1.webp",
     meta: "30代",
     before: "前職：SES企業",
     title: "会社に決められるキャリアから、自分で選ぶキャリアへ。",
@@ -19,6 +22,7 @@ export const VOICES: Voice[] = [
   {
     initial: "R",
     name: "R.T さん",
+    avatar: "lp/voice-2.webp",
     meta: "20代",
     before: "前職：受託開発企業",
     title: "自分のスキルに見合った給与を、実感できるようになった。",
@@ -28,6 +32,7 @@ export const VOICES: Voice[] = [
   {
     initial: "R",
     name: "R.K さん",
+    avatar: "lp/voice-3.webp",
     meta: "30代",
     before: "前職：社内SE",
     title: "仕事も、家族との時間も。どちらも諦めなくてよかった。",
